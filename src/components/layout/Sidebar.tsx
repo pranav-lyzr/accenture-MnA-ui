@@ -2,9 +2,9 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { 
-  Home, Search, BarChart2, FileText, 
-  Settings, ChevronRight, ChevronLeft,
-  Database, Users
+  Home, Search, FileText, 
+   ChevronRight, ChevronLeft,
+  Database
 } from 'lucide-react';
 
 const Sidebar = () => {
@@ -29,7 +29,7 @@ const Sidebar = () => {
       <div className="flex items-center justify-between p-4 border-b border-gray-200">
         {!collapsed && (
           <Link to="/" className="flex items-center">
-            <div className="h-8 w-8 rounded bg-purple-500"></div>
+            {/* <div className="h-8 w-8 rounded bg-purple-500"></div> */}
             <span className="ml-2 font-bold text-lg">Accenture</span>
           </Link>
         )}

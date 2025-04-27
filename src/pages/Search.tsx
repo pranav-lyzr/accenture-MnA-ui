@@ -16,6 +16,19 @@ const formatFieldName = (key: string): string => {
     .join(' ');
 };
 
+// Utility function to normalize company data from different response formats
+const getCompaniesFromResponse = (response: SearchResponse['response']): any[] => {
+  // If response is an array (new format)
+  if (Array.isArray(response)) {
+    return response;
+  }
+  // If response is an object with companies array (previous format)
+  if (response && typeof response === 'object' && Array.isArray(response.companies)) {
+    return response.companies;
+  }
+  return [];
+};
+
 const Search = () => {
   const { toast } = useToast();
   const [prompts, setPrompts] = useState<Prompt[]>([]);
@@ -60,7 +73,7 @@ const Search = () => {
   const handleRunPrompt = async (index: number) => {
     try {
       setRunningPrompts(prev => new Set([...prev, index]));
-      const result = await api.runPrompt(index);
+      const result = (await api.runPrompt(index) as unknown) as SearchResponse;
 
       setResults(prev => ({
         ...prev,
@@ -230,12 +243,12 @@ const Search = () => {
                     ))}
                   </div>
 
-                  {/* Display response array */}
-                  {result.response?.length > 0 && (
+                  {/* Display normalized companies array */}
+                  {getCompaniesFromResponse(result.response).length > 0 && (
                     <div className="mt-4 pt-4 border-t border-gray-100">
                       <h4 className="text-sm font-medium text-gray-500 mb-2">Detailed Company Information:</h4>
                       <div className="space-y-4">
-                        {result.response.map((company, i) => (
+                        {getCompaniesFromResponse(result.response).map((company, i) => (
                           <div key={i} className="border-b border-gray-100 pb-4 last:border-b-0 last:pb-0">
                             <h5 className="text-base font-semibold text-gray-800">{company.name}</h5>
                             <div className="mt-2 space-y-1 text-sm text-gray-600">

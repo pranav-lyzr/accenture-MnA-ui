@@ -1,8 +1,6 @@
-import React from 'react';
 import { Card, CardContent, CardHeader } from '../ui/card';
 import Badge from '../ui/badge';
 import { FileText, Link, TrendingUp, Users, Briefcase, Star, Award, Circle } from 'lucide-react';
-
 
 interface CompanyData {
   rank?: number;
@@ -33,7 +31,7 @@ interface CompanyData {
 }
 
 export interface CompanyCardProps {
-  company?: CompanyData;
+  company: CompanyData; // Make company required
 }
 
 const CompanyCard: React.FC<CompanyCardProps> = ({ company }) => {

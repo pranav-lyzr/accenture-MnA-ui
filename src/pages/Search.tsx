@@ -111,63 +111,66 @@ const Search = () => {
     handleRunPrompt(index);
   };
 
-  // Utility function to render field values
-  const renderFieldValue = (key: string, value: any): JSX.Element | null => {
+  // Utility function to render field values as HTML strings
+  const renderFieldValue = (key: string, value: any): string | null => {
     if (value == null) return null;
 
     // Handle arrays (e.g., office_locations, key_clients, primary_domains, technology_tools)
     if (Array.isArray(value) && key !== 'leadership' && key !== 'sources') {
-      return (
+      return `
         <p>
-          <span className="font-medium">{formatFieldName(key)}:</span>{' '}
-          {value.join(', ')}
+          <span class="font-medium">${formatFieldName(key)}:</span> ${value.join(', ')}
         </p>
-      );
+      `;
     }
 
     // Handle sources array (render as links)
     if (key === 'sources' && Array.isArray(value)) {
-      return (
+      const links = value
+        .map((source: string, j: number) => `
+          <a
+            href="${source}"
+            target="_blank"
+            rel="noopener noreferrer"
+            class="text-blue-500 hover:underline mr-2"
+          >
+            [Source ${j + 1}]
+          </a>
+        `)
+        .join('');
+      return `
         <p>
-          <span className="font-medium">{formatFieldName(key)}:</span>{' '}
-          {value.map((source, j) => (
-            <a
-              key={j}
-              href={source}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-blue-500 hover:underline mr-2"
-            >
-              [Source {j + 1}]
-            </a>
-          ))}
+          <span class="font-medium">${formatFieldName(key)}:</span> ${links}
         </p>
-      );
+      `;
     }
 
     // Handle leadership array (render as list of name, title, experience)
     if (key === 'leadership' && Array.isArray(value)) {
-      return (
+      const listItems = value
+        .map((leader: any) => `
+          <li>
+            ${leader.name} (${leader.title}) - ${leader.experience}
+          </li>
+        `)
+        .join('');
+      return `
         <div>
-          <span className="font-medium">{formatFieldName(key)}:</span>
-          <ul className="list-disc pl-5">
-            {value.map((leader, j) => (
-              <li key={j}>
-                {leader.name} ({leader.title}) - {leader.experience}
-              </li>
-            ))}
+          <span class="font-medium">${formatFieldName(key)}:</span>
+          <ul class="list-disc pl-5">
+            ${listItems}
           </ul>
         </div>
-      );
+      `;
     }
 
     // Handle string or number values
     if (typeof value === 'string' || typeof value === 'number') {
-      return (
+      return `
         <p>
-          <span className="font-medium">{formatFieldName(key)}:</span> {value}
+          <span class="font-medium">${formatFieldName(key)}:</span> ${value}
         </p>
-      );
+      `;
     }
 
     return null; // Skip other types
@@ -255,7 +258,14 @@ const Search = () => {
                               {Object.entries(company).map(([key, value]) => {
                                 // Skip name (already displayed)
                                 if (key === 'name') return null;
-                                return renderFieldValue(key, value);
+                                const html = renderFieldValue(key, value);
+                                if (!html) return null;
+                                return (
+                                  <div
+                                    key={key}
+                                    dangerouslySetInnerHTML={{ __html: html }}
+                                  />
+                                );
                               })}
                             </div>
                           </div>

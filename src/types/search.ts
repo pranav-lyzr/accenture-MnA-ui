@@ -42,6 +42,7 @@ export interface AnalysisData {
 }
 
 export interface Company {
+  rank: BigInteger,
   name: string;
   domain_name: string;
   estimated_revenue: string;

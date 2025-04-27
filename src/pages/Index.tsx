@@ -39,23 +39,7 @@ const Index = () => {
       }
     };
     fetchResults();
-  }, []);
-
-  // const handleDownloadCSV = () => {
-  //   api.downloadCSV();
-  //   toast({
-  //     title: "Download Started",
-  //     description: "Your CSV file is being downloaded",
-  //   });
-  // };
-
-  // const handleDownloadJSON = () => {
-  //   api.downloadJSON();
-  //   toast({
-  //     title: "Download Started",
-  //     description: "Your JSON file is being downloaded",
-  //   });
-  // };
+  }, [toast]);
 
   const handleRunMergerSearch = async () => {
     try {
@@ -79,19 +63,12 @@ const Index = () => {
     }
   };
 
-  // const handleRedo = async () => {
-  //   localStorage.removeItem(STORAGE_KEY);
-  //   setResults(null);
-  //   await handleRunMergerSearch();
-  // };
-
   // Safely access nested properties
   const companiesCount = results?.results?.consolidated_companies?.length || 0;
-  const topCandidatesCount = results?.results?.claude_analysis?.rankings?.length || 0;
+  const topCandidatesCount = results?.results?.claude_analysis?.top_candidates?.length || 0;
   const hasAnalysis = !!results?.results?.claude_analysis;
-  const recommendedCandidate = results?.results?.claude_analysis?.rankings?.[0];
-  const topCandidates = results?.results?.claude_analysis?.rankings || [];
-  const recommendations = results?.results?.claude_analysis?.recommendations || [];
+  const recommendedCandidate = results?.results?.claude_analysis?.top_candidates?.[0];
+  const topCandidates = results?.results?.claude_analysis?.top_candidates || [];
 
   return (
     <Layout>
@@ -109,34 +86,6 @@ const Index = () => {
           >
             {loading ? "Running Analysis..." : "Run Analysis"}
           </Button>
-          {results && (
-            <>
-              {/* <Button
-                variant="outline"
-                className="flex items-center space-x-2"
-                onClick={handleDownloadCSV}
-              >
-                <Download size={16} />
-                <span>CSV</span>
-              </Button>
-              <Button
-                variant="outline"
-                className="flex items-center space-x-2"
-                onClick={handleDownloadJSON}
-              >
-                <Download size={16} />
-                <span>JSON</span>
-              </Button>
-              <Button
-                variant="outline"
-                onClick={handleRedo}
-                className="flex items-center space-x-2"
-              >
-                <Redo size={16} />
-                <span>Redo Analysis</span>
-              </Button> */}
-            </>
-          )}
         </div>
       </div>
 
@@ -156,11 +105,6 @@ const Index = () => {
           value={topCandidatesCount.toString()}
           icon={<Users size={24} />}
         />
-        {/* <DashboardCard
-          title="Analysis Reports"
-          value={results ? "1" : "0"}
-          icon={<BarChart2 size={24} />}
-        /> */}
       </div>
 
       {loading ? (
@@ -177,18 +121,14 @@ const Index = () => {
             <CardContent>
               <div className="space-y-4">
                 <h3 className="text-lg font-semibold">{recommendedCandidate.name}</h3>
-                <p className="text-gray-600">{recommendedCandidate.rationale}</p>
+                <p className="text-gray-600">{recommendedCandidate.reason}</p>
                 <div>
-                  <h4 className="font-medium mb-1">Overall Score</h4>
-                  <p className="text-gray-600">{recommendedCandidate.overall_score}</p>
-                </div>
-                <div>
-                  <h4 className="font-medium mb-1">Financial Health</h4>
-                  <p className="text-gray-600">{recommendedCandidate.financial_health_score}</p>
+                  <h4 className="font-medium mb-1">Valuation</h4>
+                  <p className="text-gray-600">{recommendedCandidate.valuation}</p>
                 </div>
                 <div>
                   <h4 className="font-medium mb-1">Strategic Fit</h4>
-                  <p className="text-gray-600">{recommendedCandidate.strategic_fit_score}</p>
+                  <p className="text-gray-600">{recommendedCandidate.strategic_fit}</p>
                 </div>
               </div>
             </CardContent>
@@ -201,62 +141,55 @@ const Index = () => {
             <CardContent>
               <div className="space-y-6">
                 {topCandidates.map((candidate: { 
+                  rank: number;
                   name: string;
-                  rationale: string;
-                  overall_score: string;
-                  strategic_fit_score: string;
-                }, index: number) => {
-                  const recommendation = recommendations.find((rec: { name: string }) => rec.name === candidate.name);
-                  return (
-                    <div key={index} className="border-b border-gray-100 last:border-0 pb-6 last:pb-0">
-                      <div className="flex justify-between items-start mb-3">
-                        <h3 className="text-lg font-semibold">{candidate.name}</h3>
-                        <span className="text-sm bg-purple-500/10 text-purple-500 px-2 py-1 rounded">
-                          Rank #{index + 1}
-                        </span>
+                  reason: string;
+                  valuation: string;
+                  strategic_fit: string;
+                  synergies: string;
+                  challenges: string;
+                  references: string[];
+                }, index: number) => (
+                  <div key={index} className="border-b border-gray-100 last:border-0 pb-6 last:pb-0">
+                    <div className="flex justify-between items-start mb-3">
+                      <h3 className="text-lg font-semibold">{candidate.name}</h3>
+                      <span className="text-sm bg-purple-500/10 text-purple-500 px-2 py-1 rounded">
+                        Rank #{candidate.rank}
+                      </span>
+                    </div>
+
+                    <div className="grid gap-4">
+                      <div>
+                        <h4 className="font-medium mb-1">Reason</h4>
+                        <p className="text-gray-600">{candidate.reason}</p>
                       </div>
 
-                      <div className="grid gap-4">
-                        <div>
-                          <h4 className="font-medium mb-1">Rationale</h4>
-                          <p className="text-gray-600">{candidate.rationale}</p>
-                        </div>
+                      <div>
+                        <h4 className="font-medium mb-1">Valuation</h4>
+                        <p className="text-gray-600">{candidate.valuation}</p>
+                      </div>
 
-                        <div>
-                          <h4 className="font-medium mb-1">Overall Score</h4>
-                          <p className="text-gray-600">{candidate.overall_score}</p>
-                        </div>
+                      <div>
+                        <h4 className="font-medium mb-1">Strategic Fit</h4>
+                        <p className="text-gray-600">{candidate.strategic_fit}</p>
+                      </div>
 
-                        <div>
-                          <h4 className="font-medium mb-1">Strategic Fit</h4>
-                          <p className="text-gray-600">{candidate.strategic_fit_score}</p>
-                        </div>
+                      <div>
+                        <h4 className="font-medium mb-1">Synergies</h4>
+                        <ul className="text-gray-600 list-disc pl-5">
+                          <li>{candidate.synergies}</li>
+                        </ul>
+                      </div>
 
-                        {recommendation && (
-                          <>
-                            <div>
-                              <h4 className="font-medium mb-1">Synergies</h4>
-                              <ul className="text-gray-600 list-disc pl-5">
-                                {recommendation.key_synergies.map((synergy: string, i: number) => (
-                                  <li key={i}>{synergy}</li>
-                                ))}
-                              </ul>
-                            </div>
-
-                            <div>
-                              <h4 className="font-medium mb-1">Challenges</h4>
-                              <ul className="text-gray-600 list-disc pl-5">
-                                {recommendation.potential_risks.map((risk: string, i: number) => (
-                                  <li key={i}>{risk}</li>
-                                ))}
-                              </ul>
-                            </div>
-                          </>
-                        )}
+                      <div>
+                        <h4 className="font-medium mb-1">Challenges</h4>
+                        <ul className="text-gray-600 list-disc pl-5">
+                          <li>{candidate.challenges}</li>
+                        </ul>
                       </div>
                     </div>
-                  );
-                })}
+                  </div>
+                ))}
               </div>
             </CardContent>
           </Card>

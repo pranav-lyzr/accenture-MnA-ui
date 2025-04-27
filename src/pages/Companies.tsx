@@ -2,10 +2,35 @@ import { useState, useEffect } from 'react';
 import { useToast } from "../hooks/use-toast";
 import Layout from '../components/layout/Layout';
 import CompanyCard from '../components/companies/CompanyCard';
-import type { CompanyDataProps } from '../components/companies/CompanyCard';
-import CompanyModal from '../components/modal/CompanyModal';
 import { Search } from 'lucide-react';
-import { EnrichedCompanyData } from '../services/api';
+// import { EnrichedCompanyData } from '../services/api';
+
+// Define CompanyCardProps to match the data structure
+interface CompanyCardProps {
+  rank: number;
+  name: string;
+  domain_name?: string;
+  estimated_revenue?: string;
+  revenue_growth?: string;
+  profitability?: string;
+  valuation_estimate?: string;
+  employee_count?: string;
+  office_locations?: string[];
+  key_clients?: string[];
+  average_contract_value?: string;
+  leadership?: { name: string; title: string; experience: string }[];
+  primary_domains?: string[];
+  proprietary_methodologies?: string;
+  technology_tools?: string[];
+  competitive_advantage?: string;
+  merger_synergies?: string;
+  cultural_alignment?: string;
+  integration_challenges?: string;
+  market_penetration?: string;
+  sources?: string[];
+  technological_enablement_score?: string;
+  global_sourcing_reach?: string;
+}
 
 const MERGER_STORAGE_KEY = 'accenture-merger-results';
 const SEARCH_STORAGE_KEY = 'accenture-search-results';
@@ -13,12 +38,8 @@ const SEARCH_STORAGE_KEY = 'accenture-search-results';
 const Companies = () => {
   const { toast } = useToast();
   const [loading, setLoading] = useState(true);
-  const [companies, setCompanies] = useState<CompanyDataProps[]>([]);
+  const [companies, setCompanies] = useState<CompanyCardProps[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
-  const [modalOpen, setModalOpen] = useState(false);
-  const [selectedCompany, setSelectedCompany] = useState<EnrichedCompanyData | null>(null);
-  const [modalLoading, setModalLoading] = useState(false);
-  const [modalError, setModalError] = useState<string | null>(null);
 
   // Utility function to normalize company data from different response formats
   const getCompaniesFromResponse = (response: any): any[] => {
@@ -35,36 +56,35 @@ const Companies = () => {
 
   // Function to create a mapping of company data
   const createCompanyDataMapping = (mergerData: any, searchData: any) => {
-    const companyMap: { [key: string]: CompanyDataProps } = {};
+    const companyMap: { [key: string]: CompanyCardProps } = {};
 
     const addCompanyData = (company: any) => {
       if (!company.name) return;
 
-      const existing = companyMap[company.name] || {};
       companyMap[company.name] = {
-        rank: company.rank || existing.rank || 0,
+        rank: company.rank || 0,
         name: company.name,
-        domain_name: company.domain_name || existing.domain_name,
-        estimated_revenue: company.estimated_revenue || existing.estimated_revenue || 'Unknown',
-        revenue_growth: company.revenue_growth || existing.revenue_growth,
-        profitability: company.profitability || existing.profitability,
-        valuation_estimate: company.valuation_estimate || existing.valuation_estimate,
-        employee_count: company.employee_count || existing.employee_count,
-        office_locations: company.office_locations || existing.office_locations,
-        key_clients: company.key_clients || existing.key_clients,
-        average_contract_value: company.average_contract_value || existing.average_contract_value,
-        leadership: company.leadership || existing.leadership,
-        primary_domains: company.primary_domains || existing.primary_domains || ['Various consulting services'],
-        proprietary_methodologies: company.proprietary_methodologies || existing.proprietary_methodologies,
-        technology_tools: company.technology_tools || existing.technology_tools,
-        competitive_advantage: company.competitive_advantage || existing.competitive_advantage || 'Specializes in consulting services for enterprise clients',
-        merger_synergies: company.merger_synergies || existing.merger_synergies,
-        cultural_alignment: company.cultural_alignment || existing.cultural_alignment,
-        integration_challenges: company.integration_challenges || existing.integration_challenges,
-        market_penetration: company.market_penetration || existing.market_penetration || 'Enterprise clients',
-        sources: Array.from(new Set([...(company.sources || []), ...(existing.sources || [])])).filter(Boolean),
-        technological_enablement_score: company.technological_enablement_score || existing.technological_enablement_score,
-        global_sourcing_reach: company.global_sourcing_reach || existing.global_sourcing_reach,
+        domain_name: company.domain_name,
+        estimated_revenue: company.estimated_revenue || 'Unknown',
+        revenue_growth: company.revenue_growth,
+        profitability: company.profitability,
+        valuation_estimate: company.valuation_estimate,
+        employee_count: company.employee_count,
+        office_locations: company.office_locations,
+        key_clients: company.key_clients,
+        average_contract_value: company.average_contract_value,
+        leadership: company.leadership,
+        primary_domains: company.primary_domains || ['Various consulting services'],
+        proprietary_methodologies: company.proprietary_methodologies,
+        technology_tools: company.technology_tools,
+        competitive_advantage: company.competitive_advantage || 'Specializes in consulting services for enterprise clients',
+        merger_synergies: company.merger_synergies,
+        cultural_alignment: company.cultural_alignment,
+        integration_challenges: company.integration_challenges,
+        market_penetration: company.market_penetration || 'Enterprise clients',
+        sources: Array.from(new Set([...(company.sources || [])])).filter(Boolean),
+        technological_enablement_score: company.technological_enablement_score,
+        global_sourcing_reach: company.global_sourcing_reach,
       };
     };
 
@@ -94,8 +114,7 @@ const Companies = () => {
         console.log('Search Results:', searchResults);
 
         const companyMap = createCompanyDataMapping(mergerResults.results || {}, searchResults);
-        const uniqueCompanies = Object.values(companyMap)
-          .sort((a, b) => (a.rank - b.rank) || a.name.localeCompare(b.name));
+        const uniqueCompanies = Object.values(companyMap);
 
         console.log('Unique Companies:', uniqueCompanies);
         setCompanies(uniqueCompanies);
@@ -112,28 +131,6 @@ const Companies = () => {
     };
     loadCompanies();
   }, [toast]);
-
-  // const handleCompanyClick = async (companyName: string) => {
-  //   setModalOpen(true);
-  //   setModalLoading(true);
-  //   setModalError(null);
-
-  //   try {
-  //     const domain = companies.find(c => c.name === companyName)?.domain_name ||
-  //       companyName.toLowerCase().replace(/\s+/g, '') + '.com';
-  //     const enrichedData = await api.enrichCompany(domain);
-  //     setSelectedCompany(enrichedData);
-  //   } catch (error) {
-  //     setModalError('Failed to load company details');
-  //     toast({
-  //       title: "Error",
-  //       description: "Failed to load company details",
-  //       variant: "destructive",
-  //     });
-  //   } finally {
-  //     setModalLoading(false);
-  //   }
-  // };
 
   const filteredCompanies = searchTerm
     ? companies.filter(company =>
@@ -179,7 +176,6 @@ const Companies = () => {
           {filteredCompanies.map((company) => (
             <div
               key={company.name}
-              // onClick={() => handleCompanyClick(company.name)}
               className="cursor-pointer"
             >
               <CompanyCard company={company} />
@@ -193,18 +189,6 @@ const Companies = () => {
           <p className="text-gray-500 mt-2">Try adjusting your search terms</p>
         </div>
       )}
-
-      <CompanyModal
-        isOpen={modalOpen}
-        onClose={() => {
-          setModalOpen(false);
-          setSelectedCompany(null);
-          setModalError(null);
-        }}
-        companyData={selectedCompany}
-        loading={modalLoading}
-        error={modalError}
-      />
     </Layout>
   );
 };

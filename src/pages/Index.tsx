@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useToast } from "../hooks/use-toast";
 import Layout from '../components/layout/Layout';
 import DashboardCard from "../ui/DashboardCard";
-import { BarChart2, Search, Users, Download, Redo } from 'lucide-react';
+import { BarChart2, Search, Users } from 'lucide-react';
 import { Button } from '../components/botton';
 import api, { MergerSearchResponse } from '../services/api';
 import { Card, CardHeader, CardTitle, CardContent } from "../components/ui/card";
@@ -84,27 +84,27 @@ const Index = () => {
     }
   };
 
-  const handleDownloadCSV = () => {
-    api.downloadCSV();
-    toast({
-      title: "Download Started",
-      description: "Your CSV file is being downloaded",
-    });
-  };
+  // const handleDownloadCSV = () => {
+  //   api.downloadCSV();
+  //   toast({
+  //     title: "Download Started",
+  //     description: "Your CSV file is being downloaded",
+  //   });
+  // };
 
-  const handleDownloadJSON = () => {
-    api.downloadJSON();
-    toast({
-      title: "Download Started",
-      description: "Your JSON file is being downloaded",
-    });
-  };
+  // const handleDownloadJSON = () => {
+  //   api.downloadJSON();
+  //   toast({
+  //     title: "Download Started",
+  //     description: "Your JSON file is being downloaded",
+  //   });
+  // };
 
-  const handleRedo = async () => {
-    localStorage.removeItem(STORAGE_KEY);
-    setResults(null);
-    await handleRunMergerSearch();
-  };
+  // const handleRedo = async () => {
+  //   localStorage.removeItem(STORAGE_KEY);
+  //   setResults(null);
+  //   await handleRunMergerSearch();
+  // };
 
   // Safely access nested properties with type assertion
   const claudeAnalysis = results?.results?.claude_analysis as ClaudeAnalysis | undefined;
@@ -133,7 +133,7 @@ const Index = () => {
           </Button>
           {results && (
             <>
-              <Button
+              {/* <Button
                 variant="outline"
                 className="flex items-center space-x-2"
                 onClick={handleDownloadCSV}
@@ -156,7 +156,7 @@ const Index = () => {
               >
                 <Redo size={16} />
                 <span>Redo Analysis</span>
-              </Button>
+              </Button> */}
             </>
           )}
         </div>

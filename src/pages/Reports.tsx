@@ -1,5 +1,5 @@
 import Layout from '../components/layout/Layout';
-import { FileText, Download, ArrowRight, File } from 'lucide-react';
+import { FileText, Download, File } from 'lucide-react';
 import { Button } from '../components/botton';
 import { useToast } from "../hooks/use-toast";
 import api from '../services/api';
@@ -70,7 +70,7 @@ const Reports = () => {
         ))}
       </div>
       
-      <div className="mt-8">
+      {/* <div className="mt-8">
         <h2 className="text-xl font-bold text-gray-800 mb-4">Generate Custom Reports</h2>
         <div className="bg-gray-100 rounded-xl p-6">
           <p className="text-gray-700">
@@ -84,7 +84,7 @@ const Reports = () => {
             <ArrowRight size={16} />
           </Button>
         </div>
-      </div>
+      </div> */}
     </Layout>
   );
 };

@@ -2,9 +2,9 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { 
-  Home, Search, FileText, 
+  Home,  FileText, 
    ChevronRight, ChevronLeft,
-  Database
+  Database, BarChart2
 } from 'lucide-react';
 
 const Sidebar = () => {
@@ -12,8 +12,8 @@ const Sidebar = () => {
 
   const navItems = [
     { name: 'Dashboard', icon: <Home size={20} />, path: '/' },
-    { name: 'Search', icon: <Search size={20} />, path: '/search' },
-    // { name: 'Analysis', icon: <BarChart2 size={20} />, path: '/analysis' },
+    // { name: 'Search', icon: <Search size={20} />, path: '/search' },
+    { name: 'Analysis', icon: <BarChart2 size={20} />, path: '/analysis' },
     { name: 'Companies', icon: <Database size={20} />, path: '/companies' },
     // { name: 'Candidates', icon: <Users size={20} />, path: '/candidates' },
     { name: 'Reports', icon: <FileText size={20} />, path: '/reports' },

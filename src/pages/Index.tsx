@@ -6,6 +6,7 @@ import { BarChart2, Search, Users } from 'lucide-react';
 import { Button } from '../components/botton';
 import api, { MergerSearchResponse } from '../services/api';
 import { Card, CardHeader, CardTitle, CardContent } from "../components/ui/card";
+import LoadingPopup from '../components/ui/LoadingPopup';
 
 const STORAGE_KEY = 'accenture-merger-results';
 
@@ -84,28 +85,6 @@ const Index = () => {
     }
   };
 
-  // const handleDownloadCSV = () => {
-  //   api.downloadCSV();
-  //   toast({
-  //     title: "Download Started",
-  //     description: "Your CSV file is being downloaded",
-  //   });
-  // };
-
-  // const handleDownloadJSON = () => {
-  //   api.downloadJSON();
-  //   toast({
-  //     title: "Download Started",
-  //     description: "Your JSON file is being downloaded",
-  //   });
-  // };
-
-  // const handleRedo = async () => {
-  //   localStorage.removeItem(STORAGE_KEY);
-  //   setResults(null);
-  //   await handleRunMergerSearch();
-  // };
-
   // Safely access nested properties with type assertion
   const claudeAnalysis = results?.results?.claude_analysis as ClaudeAnalysis | undefined;
   const companiesCount = results?.results?.consolidated_companies?.length || 0;
@@ -117,6 +96,11 @@ const Index = () => {
 
   return (
     <Layout>
+      <LoadingPopup
+        isOpen={loading}
+        message="Running Merger Analysis"
+      />
+
       <div className="mb-6 flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold text-gray-800">Merger Analysis Dashboard</h1>
@@ -131,34 +115,6 @@ const Index = () => {
           >
             {loading ? "Running Analysis..." : "Run Analysis"}
           </Button>
-          {results && (
-            <>
-              {/* <Button
-                variant="outline"
-                className="flex items-center space-x-2"
-                onClick={handleDownloadCSV}
-              >
-                <Download size={16} />
-                <span>CSV</span>
-              </Button>
-              <Button
-                variant="outline"
-                className="flex items-center space-x-2"
-                onClick={handleDownloadJSON}
-              >
-                <Download size={16} />
-                <span>JSON</span>
-              </Button>
-              <Button
-                variant="outline"
-                onClick={handleRedo}
-                className="flex items-center space-x-2"
-              >
-                <Redo size={16} />
-                <span>Redo Analysis</span>
-              </Button> */}
-            </>
-          )}
         </div>
       </div>
 
@@ -185,12 +141,7 @@ const Index = () => {
         />
       </div>
 
-      {loading ? (
-        <div className="text-center py-10">
-          <div className="inline-block animate-spin rounded-full h-8 w-8 border-4 border-purple-500 border-opacity-25 border-t-purple-500"></div>
-          <p className="mt-2 text-gray-600">Running analysis...</p>
-        </div>
-      ) : hasAnalysis && recommendedCandidate ? (
+      {loading ? null : hasAnalysis && recommendedCandidate ? (
         <div className="space-y-6">
           <Card>
             <CardHeader>

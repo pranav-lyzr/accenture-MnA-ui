@@ -42,7 +42,7 @@ const PromptCard = ({
         </div>
         
         <p className="mt-2 text-sm text-gray-500">
-          Search prompt #{index + 1} - {hasResults ? 'Results available' : 'Not yet executed'}
+          Search Agent #{index + 1} - {hasResults ? 'Results available' : 'Not yet executed'}
         </p>
       </div>
     </div>

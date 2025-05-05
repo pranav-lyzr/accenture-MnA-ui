@@ -3,7 +3,6 @@ import { TooltipProvider } from "./components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 
-import Index from "./pages/Index";
 import Search from "./pages/Search";
 import Analysis from "./pages/Analysis";
 import Companies from "./pages/Companies";
@@ -19,8 +18,8 @@ const App = () => (
       <Sonner />
       <BrowserRouter>
         <Routes>
-          <Route path="/" element={<Index />} />
-          <Route path="/search" element={<Search />} />
+          <Route path="/" element={<Search />} />
+          {/* <Route path="/search" element={<Search />} /> */}
           <Route path="/analysis" element={<Analysis />} />
           <Route path="/companies" element={<Companies />} />
           <Route path="/candidates" element={<Candidates />} />

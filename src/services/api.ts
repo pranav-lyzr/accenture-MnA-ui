@@ -1,8 +1,6 @@
 // Base API URL - would typically come from environment variables
-const API_BASE_URL = 'https://accenture-mna.lyzr.app';
-// const API_BASE_URL = 'http://localhost:8002';
-
-// Type definitions for API responses
+// const API_BASE_URL = 'https://accenture-mna.lyzr.app';
+const API_BASE_URL = 'http://localhost:8002';
 export interface Prompt {
   index: number;
   title: string;
@@ -49,40 +47,14 @@ export interface MergerSearchResponse {
   message: string;
 }
 
-
-export interface EnrichedCompanyData {
-  id: string;
-  name: string;
-  website_url: string;
-  linkedin_url: string;
-  twitter_url: string;
-  facebook_url: string;
-  primary_phone: {
-    number: string;
-    source: string;
-    sanitized_number: string;
-  };
-  phone: string;
-  founded_year: number;
-  logo_url: string;
-  primary_domain: string;
-  industry: string;
-  keywords: string[];
-  estimated_num_employees: number;
-  industries: string[];
-  raw_address: string;
-  street_address: string;
-  city: string;
-  state: string;
-  postal_code: string;
-  country: string;
-  seo_description: string;
-  short_description: string;
-  annual_revenue: number;
-  technology_names: string[];
-  current_technologies: { uid: string; name: string; category: string }[];
+export interface EnrichCompanyRequest {
+  company_domain: string;
 }
 
+export interface FetchCompanyPerplexityRequest {
+  company_name: string;
+  company_domain: string;
+}
 
 // API service functions
 const api = {
@@ -156,28 +128,86 @@ const api = {
     }
   },
 
-  enrichCompany: async (companyDomain: string): Promise<EnrichedCompanyData> => {
+  // Redo search
+  redoSearch: async (): Promise<MergerSearchResponse> => {
     try {
-      const response = await fetch(`${API_BASE_URL}/enrich_company`, {
+      const response = await fetch(`${API_BASE_URL}/redo_search`, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Accept': 'application/json',
-        },
-        body: JSON.stringify({ company_domain: companyDomain }),
       });
-
+      
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
-
+      
       return await response.json();
     } catch (error) {
-      console.error('Error enriching company:', error);
+      console.error('Error redoing search:', error);
       throw error;
     }
   },
-  
+
+  // Fetch existing items
+  fetchExistingItems: async (): Promise<{ results: any; message: string }> => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/fetch_existing_items`);
+      
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      
+      return await response.json();
+    } catch (error) {
+      console.error('Error fetching existing items:', error);
+      throw error;
+    }
+  },
+
+  // Enrich company with Apollo API
+  enrichCompanyApollo: async (companyDomain: string): Promise<any> => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/fetch_company_apollo`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ company_domain: companyDomain }),
+      });
+      
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      
+      return await response.json();
+    } catch (error) {
+      console.error('Error enriching company with Apollo:', error);
+      throw error;
+    }
+  },
+
+  // Enrich company with Perplexity API
+  enrichCompanyPerplexity: async (companyName: string, companyDomain: string): Promise<any> => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/fetch_company_perplexity`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ 
+          company_name: companyName,
+          company_domain: companyDomain 
+        }),
+      });
+      
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      
+      return await response.json();
+    } catch (error) {
+      console.error('Error enriching company with Perplexity:', error);
+      throw error;
+    }
+  },
 
   // Download CSVs and JSONs
   downloadCSV: () => {

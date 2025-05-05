@@ -1,27 +1,21 @@
 export interface CompanyDetails {
   name: string;
-  rank?: number;
-  primary_domains?: string;
-  competitive_advantage?: string;
-  market_penetration?: string;
-  technological_enablement_score?: string;
-  notable_retail_clients?: string;
-  unique_procurement_methodology?: string;
-  global_sourcing_reach?: string;
-  supply_chain_optimization_domains?: string; // Add new fields from the API
-  digital_transformation_score?: string;
-  sustainability_performance?: string;
-  unique_methodology?: string;
-  representative_technology_stack?: string;
-  sources?: string[];
-  [key: string]: string | string[] | number | undefined; // Allow arbitrary fields
+  domain_name?: string;
+  estimated_revenue?: string;
+  employee_count?: string;
+  Industries?: string | string[];
+  Services?: string | string[];
+  [key: string]: any; // Allow additional properties
 }
 
 // Update the MergerSearchResponse interface to use AnalysisData
 export interface MergerSearchResponse {
   results: {
-    consolidated_companies: string[];
-    claude_analysis: AnalysisData;
+    [key: string]: {
+      raw_response: any;
+      extracted_companies: CompanyDetails[];
+      validation_warnings?: string[];
+    };
   };
 }
 
@@ -68,10 +62,13 @@ export interface Company {
 
 export interface SearchResponse {
   title: string;
-  companies: string[];
-  response: Company[] | { companies: Company[] };
+  response: any;
+  companies: CompanyDetails[];
   sources: string[];
+  validation_warnings?: string[];
 }
+
+
 
 export interface AnalysisData {
   rankings: Array<{

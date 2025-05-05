@@ -1,69 +1,110 @@
 import { useState, useEffect } from 'react';
-import { useToast } from "../hooks/use-toast";
 import Layout from '../components/layout/Layout';
 import PromptCard from '../components/search/PromptCard';
-import { AlertCircle } from 'lucide-react';
-import { SearchResponse } from '../types/search';
+import { AlertCircle, ArrowDown, ArrowUp, RefreshCw } from 'lucide-react';
+import { SearchResponse, CompanyDetails } from '../types/search';
 import api, { Prompt } from '../services/api';
+import LoadingPopup from '../components/ui/LoadingPopup';
+import { Button } from '../components/botton'; // Fixed typo
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "../components/ui/table";
+import CompanyDetailsDialog from '../components/companies/CompanyDetailsDialog';
 
 const STORAGE_KEY = 'accenture-search-results';
 
-// Utility function to format field names for display
-const formatFieldName = (key: string): string => {
-  return key
-    .split('_')
-    .map(word => word.charAt(0).toUpperCase() + word.slice(1))
-    .join(' ');
-};
+// Define type for API response to allow string indexing
+interface MergerSearchResponse {
+  results: {
+    [key: string]: {
+      raw_response: any;
+      extracted_companies: CompanyDetails[];
+      validation_warnings?: string[];
+    };
+  };
+}
 
-// Utility function to normalize company data from different response formats
-const getCompaniesFromResponse = (response: SearchResponse['response']): any[] => {
-  // If response is an array (new format)
+// Utility function to get companies from response
+const getCompaniesFromResponse = (response: any): CompanyDetails[] => {
   if (Array.isArray(response)) {
-    return response;
+    return response as CompanyDetails[];
   }
-  // If response is an object with companies array (previous format)
   if (response && typeof response === 'object' && Array.isArray(response.companies)) {
-    return response.companies;
+    return response.companies as CompanyDetails[];
   }
   return [];
 };
 
 const Search = () => {
-  const { toast } = useToast();
   const [prompts, setPrompts] = useState<Prompt[]>([]);
   const [loading, setLoading] = useState(true);
+  const [redoingSearch, setRedoingSearch] = useState(false);
   const [runningPrompts, setRunningPrompts] = useState<Set<number>>(new Set());
   const [results, setResults] = useState<{ [key: number]: SearchResponse }>({});
-
+  const [sortConfig, setSortConfig] = useState<{ key: string; direction: 'asc' | 'desc' } | null>(null);
+  const [selectedCompany, setSelectedCompany] = useState<CompanyDetails | null>(null);
+  const [openDialog, setOpenDialog] = useState(false);
+  
+  // Load existing results from API when the component mounts
   useEffect(() => {
-    const fetchPrompts = async () => {
+    const fetchData = async () => {
       try {
         setLoading(true);
-        const data = await api.getPrompts();
-        setPrompts(data);
-
-        // Load saved results from localStorage
-        const savedResults = localStorage.getItem(STORAGE_KEY);
-        if (savedResults) {
-          setResults(JSON.parse(savedResults));
+        // Fetch prompts
+        const promptsData = await api.getPrompts();
+        setPrompts(promptsData);
+        
+        // Try to fetch saved results from API
+        try {
+          const savedApiResults = await api.getResults() as MergerSearchResponse;
+          if (savedApiResults && Object.keys(savedApiResults.results).length > 0) {
+            // Format API results to match our state structure
+            const formattedResults: { [key: number]: SearchResponse } = {};
+            promptsData.forEach((prompt: Prompt, index: number) => {
+              if (savedApiResults.results[prompt.title]) {
+                formattedResults[index] = {
+                  title: prompt.title,
+                  response: savedApiResults.results[prompt.title].raw_response,
+                  companies: savedApiResults.results[prompt.title].extracted_companies,
+                  sources: [],
+                  validation_warnings: savedApiResults.results[prompt.title].validation_warnings || []
+                };
+              }
+            });
+            setResults(formattedResults);
+            // Save to localStorage as well
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(formattedResults));
+          } else {
+            // If no API results, try to use localStorage results
+            const savedLocalResults = localStorage.getItem(STORAGE_KEY);
+            if (savedLocalResults) {
+              setResults(JSON.parse(savedLocalResults));
+            }
+          }
+        } catch (error) {
+          console.error('Error fetching results from API:', error);
+          // Fallback to localStorage if API fails
+          const savedLocalResults = localStorage.getItem(STORAGE_KEY);
+          if (savedLocalResults) {
+            setResults(JSON.parse(savedLocalResults));
+          }
         }
       } catch (error) {
-        console.error('Error fetching prompts:', error);
-        toast({
-          title: "Error",
-          description: "Failed to load search prompts",
-          variant: "destructive",
-        });
+        console.error('Error fetching data:', error);
       } finally {
         setLoading(false);
       }
     };
 
-    fetchPrompts();
-  }, [toast]);
+    fetchData();
+  }, []);
 
-  // Save results to localStorage whenever they change
+  // Save results to localStorage when they change
   useEffect(() => {
     if (Object.keys(results).length > 0) {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(results));
@@ -80,17 +121,8 @@ const Search = () => {
         [index]: result,
       }));
 
-      toast({
-        title: "Search Complete",
-        description: `Found ${result.companies.length} companies`,
-      });
     } catch (error) {
       console.error('Error running prompt:', error);
-      toast({
-        title: "Search Failed",
-        description: "An error occurred while running the search prompt",
-        variant: "destructive",
-      });
     } finally {
       setRunningPrompts(prev => {
         const updated = new Set([...prev]);
@@ -101,86 +133,132 @@ const Search = () => {
   };
 
   const handleRedo = (index: number) => {
-    // Remove result for this prompt
     const newResults = { ...results };
     delete newResults[index];
     setResults(newResults);
     localStorage.setItem(STORAGE_KEY, JSON.stringify(newResults));
-
-    // Run the prompt again
+    
     handleRunPrompt(index);
   };
 
-  // Utility function to render field values as HTML strings
-  const renderFieldValue = (key: string, value: any): string | null => {
-    if (value == null) return null;
-
-    // Handle arrays (e.g., office_locations, key_clients, primary_domains, technology_tools)
-    if (Array.isArray(value) && key !== 'leadership' && key !== 'sources') {
-      return `
-        <p>
-          <span class="font-medium">${formatFieldName(key)}:</span> ${value.join(', ')}
-        </p>
-      `;
+  const handleRedoAllSearch = async () => {
+    try {
+      setRedoingSearch(true);
+      const result = await api.redoSearch() as { results: { [key: string]: { raw_response: any; extracted_companies: CompanyDetails[]; validation_warnings?: string[] } } };
+      
+      // Format API results to match our state structure
+      const formattedResults: { [key: number]: SearchResponse } = {};
+      prompts.forEach((prompt: Prompt, index: number) => {
+        if (result.results[prompt.title]) {
+          formattedResults[index] = {
+            title: prompt.title,
+            response: result.results[prompt.title].raw_response,
+            companies: result.results[prompt.title].extracted_companies,
+            sources: [],
+            validation_warnings: result.results[prompt.title].validation_warnings || []
+          };
+        }
+      });
+      
+      setResults(formattedResults);
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(formattedResults));
+      
+    } catch (error) {
+      console.error('Error redoing search:', error);
+    } finally {
+      setRedoingSearch(false);
     }
+  };
 
-    // Handle sources array (render as links)
-    if (key === 'sources' && Array.isArray(value)) {
-      const links = value
-        .map((source: string, j: number) => `
-          <a
-            href="${source}"
-            target="_blank"
-            rel="noopener noreferrer"
-            class="text-blue-500 hover:underline mr-2"
-          >
-            [Source ${j + 1}]
-          </a>
-        `)
-        .join('');
-      return `
-        <p>
-          <span class="font-medium">${formatFieldName(key)}:</span> ${links}
-        </p>
-      `;
+  const openCompanyDetails = (company: CompanyDetails) => {
+    setSelectedCompany(company);
+    setOpenDialog(true);
+  };
+
+  // Handle sorting for table columns
+  const handleSort = (key: string) => {
+    let direction: 'asc' | 'desc' = 'asc';
+    
+    if (sortConfig && sortConfig.key === key && sortConfig.direction === 'asc') {
+      direction = 'desc';
     }
+    
+    setSortConfig({ key, direction });
+  };
 
-    // Handle leadership array (render as list of name, title, experience)
-    if (key === 'leadership' && Array.isArray(value)) {
-      const listItems = value
-        .map((leader: any) => `
-          <li>
-            ${leader.name} (${leader.title}) - ${leader.experience}
-          </li>
-        `)
-        .join('');
-      return `
-        <div>
-          <span class="font-medium">${formatFieldName(key)}:</span>
-          <ul class="list-disc pl-5">
-            ${listItems}
-          </ul>
-        </div>
-      `;
-    }
+  // Get sorted companies data
+  const getSortedCompanies = (companies: CompanyDetails[]) => {
+    if (!sortConfig) return companies;
+    
+    return [...companies].sort((a, b) => {
+      if (!a[sortConfig.key] && !b[sortConfig.key]) return 0;
+      if (!a[sortConfig.key]) return 1;
+      if (!b[sortConfig.key]) return -1;
+      
+      const aValue = a[sortConfig.key];
+      const bValue = b[sortConfig.key];
+      
+      if (typeof aValue === 'string' && typeof bValue === 'string') {
+        return sortConfig.direction === 'asc' 
+          ? aValue.localeCompare(bValue) 
+          : bValue.localeCompare(aValue);
+      }
+      
+      return sortConfig.direction === 'asc' 
+        ? (aValue > bValue ? 1 : -1) 
+        : (aValue < bValue ? 1 : -1);
+    });
+  };
 
-    // Handle string or number values
-    if (typeof value === 'string' || typeof value === 'number') {
-      return `
-        <p>
-          <span class="font-medium">${formatFieldName(key)}:</span> ${value}
-        </p>
-      `;
-    }
+  const renderSortIcon = (key: string) => {
+    if (!sortConfig || sortConfig.key !== key) return null;
+    return sortConfig.direction === 'asc' ? <ArrowUp className="h-4 w-4 inline ml-1" /> : <ArrowDown className="h-4 w-4 inline ml-1" />;
+  };
 
-    return null; // Skip other types
+  // Function to get all available keys from companies for table headers
+  const getTableHeaders = (companies: CompanyDetails[]) => {
+    if (!companies || companies.length === 0) return [];
+    
+    // Priority keys that should appear first in the table
+    const priorityKeys = ['name', 'domain_name', 'estimated_revenue', 'employee_count', 'Industries', 'Services'];
+    
+    // Get all unique keys from all companies
+    const allKeys = new Set<string>();
+    companies.forEach(company => {
+      Object.keys(company).forEach(key => {
+        // Skip validation warnings, we'll display them separately
+        if (key !== 'validation_warnings') {
+          allKeys.add(key);
+        }
+      });
+    });
+    
+    // Sort keys with priority keys first, then alphabetically
+    return [...priorityKeys.filter(key => allKeys.has(key)), 
+            ...[...allKeys].filter(key => !priorityKeys.includes(key)).sort()];
   };
 
   return (
     <Layout>
-      <div className="mb-6">
-        <h1 className="text-2xl font-bold text-gray-800">Search Prompts</h1>
-        <p className="text-gray-500">Execute search prompts to identify potential merger candidates</p>
+      <LoadingPopup
+        isOpen={loading || runningPrompts.size > 0 || redoingSearch}
+        message={loading ? "Loading Search Agents" : (redoingSearch ? "Redoing All Searches" : "Running Search Agents")}
+      />
+
+      <div className="mb-6 flex justify-between items-center">
+        <div>
+          <h1 className="text-2xl font-bold text-gray-800">Search Agents</h1>
+          <p className="text-gray-500">Execute search Agents to identify potential merger candidates</p>
+        </div>
+        
+        <Button 
+          onClick={handleRedoAllSearch}
+          disabled={redoingSearch}
+          className="flex items-center gap-2"
+        >
+          <RefreshCw size={16} className={redoingSearch ? "animate-spin" : ""} />
+          Redo All Searches
+        </Button>
       </div>
 
       <div className="mb-6 bg-blue-50 border border-blue-100 rounded-lg p-4 flex items-start">
@@ -188,22 +266,17 @@ const Search = () => {
           <AlertCircle size={20} />
         </div>
         <div>
-          <h3 className="text-sm font-medium text-blue-800">Running Search Prompts</h3>
+          <h3 className="text-sm font-medium text-blue-800">Running Search Agents</h3>
           <p className="text-sm text-blue-600 mt-1">
-            Run individual prompts to explore specific criteria or use the complete analysis
-            to generate a comprehensive merger candidate report.
+            Run individual Agents to explore specific criteria or use the Redo All button
+            to regenerate a comprehensive merger candidate report.
           </p>
         </div>
       </div>
 
-      {loading ? (
+      {loading ? null : prompts.length === 0 ? (
         <div className="text-center py-10">
-          <div className="inline-block animate-spin rounded-full h-8 w-8 border-4 border-purple-500 border-opacity-25 border-t-purple-500"></div>
-          <p className="mt-2 text-gray-500">Loading search prompts...</p>
-        </div>
-      ) : prompts.length === 0 ? (
-        <div className="text-center py-10">
-          <p className="text-gray-500">No search prompts available.</p>
+          <p className="text-gray-500">No search Agents available.</p>
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -221,83 +294,149 @@ const Search = () => {
       )}
 
       {Object.keys(results).length > 0 && (
-        <div className="mt-8 space-y-6">
+        <div className="mt-8 space-y-8">
           <h2 className="text-xl font-bold text-gray-800">Search Results</h2>
           {Object.entries(results).map(([index, result]) => (
-            <div key={index} className="bg-white rounded-xl shadow-sm p-6">
-              <div className="flex justify-between items-center mb-3">
-                <h3 className="text-lg font-bold">{result.title}</h3>
-                <button
-                  onClick={() => handleRedo(Number(index))}
-                  className="text-sm text-blue-500 hover:underline"
-                >
-                  Redo Search
-                </button>
+            <div key={index} className="bg-white rounded-xl shadow-sm overflow-hidden">
+              <div className="p-6 border-b border-gray-100">
+                <div className="flex justify-between items-center">
+                  <h3 className="text-lg font-bold">{result.title}</h3>
+                  <Button
+                    onClick={() => handleRedo(Number(index))}
+                    className="flex items-center gap-2"
+                  >
+                    <RefreshCw className="h-4 w-4" />
+                    Redo Search
+                  </Button>
+                </div>
+                <p className="text-gray-500 mt-2">Found {result.companies?.length || 0} potential candidates</p>
               </div>
-              <p className="text-gray-500 mb-4">Found {result.companies.length} potential candidates</p>
-
-              {result.companies.length > 0 && (
-                <div className="space-y-4">
-                  <div className="flex flex-wrap gap-2">
-                    {result.companies.map((company, i) => (
-                      <div key={i} className="bg-gray-100 rounded-full px-3 py-1 text-sm">
-                        {company}
-                      </div>
-                    ))}
-                  </div>
-
-                  {/* Display normalized companies array */}
-                  {getCompaniesFromResponse(result.response).length > 0 && (
-                    <div className="mt-4 pt-4 border-t border-gray-100">
-                      <h4 className="text-sm font-medium text-gray-500 mb-2">Detailed Company Information:</h4>
-                      <div className="space-y-4">
-                        {getCompaniesFromResponse(result.response).map((company, i) => (
-                          <div key={i} className="border-b border-gray-100 pb-4 last:border-b-0 last:pb-0">
-                            <h5 className="text-base font-semibold text-gray-800">{company.name}</h5>
-                            <div className="mt-2 space-y-1 text-sm text-gray-600">
-                              {Object.entries(company).map(([key, value]) => {
-                                // Skip name (already displayed)
-                                if (key === 'name') return null;
-                                const html = renderFieldValue(key, value);
-                                if (!html) return null;
-                                return (
-                                  <div
-                                    key={key}
-                                    dangerouslySetInnerHTML={{ __html: html }}
-                                  />
-                                );
-                              })}
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-
-                  {result.sources && (
-                    <div className="mt-4 pt-4 border-t border-gray-100">
-                      <h4 className="text-sm font-medium text-gray-500 mb-2">Sources:</h4>
-                      <div className="space-y-1">
-                        {result.sources.map((source, i) => (
-                          <a
-                            key={i}
-                            href={source}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="block text-sm text-blue-500 hover:underline"
+              
+              {result.companies && result.companies.length > 0 && (
+                <div className="overflow-x-auto">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        {getTableHeaders(getCompaniesFromResponse(result.response)).map((header) => (
+                          <TableHead 
+                            key={header} 
+                            onClick={() => handleSort(header)} 
+                            className="whitespace-nowrap cursor-pointer hover:bg-gray-100"
                           >
-                            {source}
-                          </a>
+                            {header.replace(/_/g, ' ').charAt(0).toUpperCase() + header.replace(/_/g, ' ').slice(1)}
+                            {renderSortIcon(header)}
+                          </TableHead>
                         ))}
-                      </div>
-                    </div>
-                  )}
+                        <TableHead>Actions</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    
+                    <TableBody>
+                      {getSortedCompanies(getCompaniesFromResponse(result.response)).map((company, i) => (
+                        <TableRow key={i} className="border-b hover:bg-gray-50">
+                          {getTableHeaders(getCompaniesFromResponse(result.response)).map((key) => (
+                            <TableCell key={key} className="align-top py-3">
+                              {(() => {
+                                const value = company[key];
+                                if (key === 'name') {
+                                  return (
+                                    <span className="font-semibold text-gray-900">
+                                      {value || 'N/A'}
+                                    </span>
+                                  );
+                                } else if (key === 'domain_name' && value) {
+                                  return (
+                                    <a 
+                                      href={`https://${value}`} 
+                                      target="_blank" 
+                                      rel="noopener noreferrer"
+                                      className="text-blue-600 hover:underline"
+                                    >
+                                      {value}
+                                    </a>
+                                  );
+                                } else if (key === 'leadership') {
+                                  if (!value || !Array.isArray(value)) return 'N/A';
+                                  return value.map((leader: any) => 
+                                    `${leader.name} (${leader.title || 'N/A'})`
+                                  ).join(', ');
+                                } else if (key === 'sources' && Array.isArray(value)) {
+                                  return `${value.length} sources`;
+                                } else if (Array.isArray(value)) {
+                                  return value.join(', ') || 'N/A';
+                                } else if (value === undefined || value === null) {
+                                  return 'N/A';
+                                } else if (typeof value === 'object') {
+                                  return JSON.stringify(value);
+                                } else {
+                                  return value.toString();
+                                }
+                              })()}
+                            </TableCell>
+                          ))}
+                          <TableCell>
+                            <Button 
+                              onClick={() => openCompanyDetails(company)}
+                              className="text-blue-600"
+                            >
+                              View Details
+                            </Button>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
+              )}
+
+              {result.validation_warnings && result.validation_warnings.length > 0 && (
+                <div className="p-4 bg-yellow-50 border-t border-yellow-100">
+                  <h4 className="text-sm font-medium text-yellow-800 mb-2">Validation Warnings:</h4>
+                  <ul className="list-disc list-inside text-sm text-yellow-700">
+                    {result.validation_warnings.map((warning, i) => (
+                      <li key={i}>{warning}</li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+
+              {result.sources && result.sources.length > 0 && (
+                <div className="p-4 bg-gray-50 border-t border-gray-100">
+                  <h4 className="text-sm font-medium text-gray-700 mb-2">Research Sources:</h4>
+                  <div className="flex flex-wrap gap-2">
+                    {result.sources.map((source, i) => {
+                      let hostname;
+                      try {
+                        hostname = new URL(source).hostname.replace('www.', '');
+                      } catch (e) {
+                        hostname = source;
+                      }
+                      return (
+                        <a
+                          key={i}
+                          href={source}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-xs bg-gray-100 text-gray-600 px-2 py-1 rounded hover:bg-gray-200"
+                        >
+                          {hostname}
+                        </a>
+                      );
+                    })}
+                  </div>
                 </div>
               )}
             </div>
           ))}
         </div>
       )}
+
+      {/* Company Details Dialog */}
+      <CompanyDetailsDialog 
+        open={openDialog} 
+        onOpenChange={setOpenDialog} 
+        company={selectedCompany} 
+      />
     </Layout>
   );
 };

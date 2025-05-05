@@ -49,7 +49,7 @@ const PromptResult = ({ title, companies, sources }: PromptResultProps) => {
                   <span>Sources:</span>
                 </div>
                 <div className="mt-1 space-y-1">
-                  {company.sources.map((source, i) => (
+                  {company.sources.map((source: string, i: number) => (
                     <a
                       key={i}
                       href={source}
@@ -73,7 +73,7 @@ const PromptResult = ({ title, companies, sources }: PromptResultProps) => {
           <span>Research Sources:</span>
         </div>
         <div className="mt-2 space-y-1">
-          {sources.map((source, i) => (
+          {sources.map((source: string, i: number) => (
             <a
               key={i}
               href={source}

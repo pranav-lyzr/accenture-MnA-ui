@@ -1,5 +1,5 @@
 import { Card, CardContent, CardHeader } from '../ui/card';
-import Badge from '../ui/badge';
+import { Badge } from '../ui/badge';
 import { FileText, Link, TrendingUp, Users, Briefcase, Star, Award, Circle } from 'lucide-react';
 
 interface CompanyData {

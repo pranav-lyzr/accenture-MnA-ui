@@ -180,7 +180,7 @@ const CompanyDetailsDialog = ({ open, onOpenChange, company }: CompanyDetailsPro
         })}
       </div>
       
-      {displayData.validation_warnings && displayData.validation_warnings.length > 0 && (
+      {/* {displayData.validation_warnings && displayData.validation_warnings.length > 0 && (
         <div className="mt-4 p-3 bg-yellow-50 rounded-md border border-yellow-200">
           <h4 className="font-medium text-yellow-800 mb-1">Validation Warnings:</h4>
           <ul className="list-disc list-inside text-sm text-yellow-700">
@@ -189,7 +189,7 @@ const CompanyDetailsDialog = ({ open, onOpenChange, company }: CompanyDetailsPro
             ))}
           </ul>
         </div>
-      )}
+      )} */}
     </DetailDialog>
   );
 };

@@ -389,7 +389,7 @@ const Search = () => {
                 </div>
               )}
 
-              {result.validation_warnings && result.validation_warnings.length > 0 && (
+              {/* {result.validation_warnings && result.validation_warnings.length > 0 && (
                 <div className="p-4 bg-yellow-50 border-t border-yellow-100">
                   <h4 className="text-sm font-medium text-yellow-800 mb-2">Validation Warnings:</h4>
                   <ul className="list-disc list-inside text-sm text-yellow-700">
@@ -398,7 +398,7 @@ const Search = () => {
                     ))}
                   </ul>
                 </div>
-              )}
+              )} */}
 
               {result.sources && result.sources.length > 0 && (
                 <div className="p-4 bg-gray-50 border-t border-gray-100">

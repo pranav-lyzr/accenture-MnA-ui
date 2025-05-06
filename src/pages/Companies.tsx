@@ -15,9 +15,6 @@ import api from '../services/api';
 import CompanyDetailsDialog from '../components/companies/CompanyDetailsDialog';
 import LoadingPopup from '../components/ui/LoadingPopup';
 
-// import { CompanyDetails } from '../types/search';
-
-// Define CompanyCardProps to match the data structure
 interface CompanyCardProps {
   rank: number;
   name: string;
@@ -30,7 +27,7 @@ interface CompanyCardProps {
   office_locations?: string[];
   key_clients?: string[];
   average_contract_value?: string;
-  leadership?: { name: string; title: string; experience: string }[];
+  leadership?: { name: string; title: string; experience?: string }[];
   primary_domains?: string[];
   proprietary_methodologies?: string;
   technology_tools?: string[];
@@ -42,6 +39,11 @@ interface CompanyCardProps {
   sources?: string[];
   technological_enablement_score?: string;
   global_sourcing_reach?: string;
+  Industries?: string | string[];
+  Services?: string | string[];
+  Broad_Category?: string;
+  Ownership?: string;
+  validation_warnings?: string[];
 }
 
 const MERGER_STORAGE_KEY = 'accenture-merger-results';
@@ -59,11 +61,9 @@ const Companies = () => {
 
   // Utility function to normalize company data from different response formats
   const getCompaniesFromResponse = (response: any): any[] => {
-    // If response is an array (new format)
     if (Array.isArray(response)) {
       return response;
     }
-    // If response is an object with companies array (previous format)
     if (response && typeof response === 'object' && Array.isArray(response.companies)) {
       return response.companies;
     }
@@ -101,6 +101,11 @@ const Companies = () => {
         sources: Array.from(new Set([...(company.sources || [])])).filter(Boolean),
         technological_enablement_score: company.technological_enablement_score,
         global_sourcing_reach: company.global_sourcing_reach,
+        Industries: company.Industries,
+        Services: company.Services,
+        Broad_Category: company.Broad_Category,
+        Ownership: company.Ownership,
+        validation_warnings: company.validation_warnings,
       };
     };
 
@@ -108,7 +113,6 @@ const Companies = () => {
     [mergerData, searchData].forEach(data => {
       if (data) {
         Object.values(data).forEach((section: any) => {
-          // Handle both response formats
           const companies = getCompaniesFromResponse(section.response || section.raw_response);
           companies.forEach(addCompanyData);
         });
@@ -129,10 +133,7 @@ const Companies = () => {
     try {
       const results = await api.getResults();
       if (results) {
-        // Save to localStorage for future use
         localStorage.setItem(MERGER_STORAGE_KEY, JSON.stringify({ results }));
-        
-        // Process API results to get companies
         const companyMap = createCompanyDataMapping({ results }, {});
         return Object.values(companyMap);
       }
@@ -147,8 +148,6 @@ const Companies = () => {
     const loadCompanies = async () => {
       try {
         setLoading(true);
-        
-        // First try to load from API
         let loadedCompanies: CompanyCardProps[] = [];
         try {
           loadedCompanies = await loadCompaniesFromAPI();
@@ -156,7 +155,6 @@ const Companies = () => {
           console.error('Error loading from API, falling back to local storage:', error);
         }
         
-        // If no API results, try local storage
         if (loadedCompanies.length === 0) {
           loadedCompanies = loadCompaniesFromLocal();
           console.log('Loaded companies from local storage:', loadedCompanies.length);
@@ -176,14 +174,9 @@ const Companies = () => {
     try {
       setRedoingSearch(true);
       const result = await api.redoSearch();
-      
-      // Save to localStorage
       localStorage.setItem(MERGER_STORAGE_KEY, JSON.stringify({ results: result.results }));
-      
-      // Process results to get updated companies
       const companyMap = createCompanyDataMapping({ results: result.results }, {});
       const uniqueCompanies = Object.values(companyMap);
-      
       setCompanies(uniqueCompanies);
     } catch (error) {
       console.error('Error redoing search:', error);
@@ -194,10 +187,8 @@ const Companies = () => {
 
   const handleSort = (column: string) => {
     if (sortColumn === column) {
-      // Toggle direction if same column is clicked
       setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
     } else {
-      // Set new column and default to ascending
       setSortColumn(column);
       setSortDirection('asc');
     }
@@ -209,18 +200,15 @@ const Companies = () => {
   };
 
   const sortedCompanies = [...companies].sort((a, b) => {
-    // Handle different column types
     let valueA = (a as any)[sortColumn];
     let valueB = (b as any)[sortColumn];
     
-    // Handle string comparison
     if (typeof valueA === 'string' && typeof valueB === 'string') {
       return sortDirection === 'asc' 
         ? valueA.localeCompare(valueB) 
         : valueB.localeCompare(valueA);
     }
     
-    // Handle numeric or undefined comparison
     valueA = valueA || 0;
     valueB = valueB || 0;
     
@@ -279,16 +267,24 @@ const Companies = () => {
       );
     } else {
       return (
-        <div className="rounded-lg border bg-card overflow-hidden">
+        <div className="rounded-lg border bg-card overflow-x-auto">
           <Table>
             <TableCaption>A list of potential merger candidates ({filteredCompanies.length} companies)</TableCaption>
             <TableHeader>
               <TableRow className="bg-gray-50 hover:bg-gray-50">
-                <SortableHeader column="rank" title="Rank" />
                 <SortableHeader column="name" title="Company" />
                 <TableHead>Domains</TableHead>
                 <TableHead>Competitive Advantage</TableHead>
-                <TableHead>Market</TableHead>
+                <TableHead>Estimated Revenue</TableHead>
+                <TableHead>Employee Count</TableHead>
+                <TableHead>Industries</TableHead>
+                <TableHead>Services</TableHead>
+                <TableHead>Ownership</TableHead>
+                <TableHead>Key Clients</TableHead>
+                <TableHead>Leadership</TableHead>
+                <TableHead>Merger Synergies</TableHead>
+                <TableHead>Office Locations</TableHead>
+                <TableHead>Revenue Growth</TableHead>
                 <TableHead>Sources</TableHead>
                 <TableHead>Actions</TableHead>
               </TableRow>
@@ -296,9 +292,6 @@ const Companies = () => {
             <TableBody>
               {filteredCompanies.map((company) => (
                 <TableRow key={company.name} className="hover:bg-gray-50/70">
-                  <TableCell className="font-medium text-center">
-                    {company.rank > 0 ? company.rank : '-'}
-                  </TableCell>
                   <TableCell className="font-semibold text-purple-500">
                     {company.name}
                     {company.domain_name && (
@@ -319,8 +312,54 @@ const Companies = () => {
                       ? company.primary_domains.join(', ') 
                       : (company.primary_domains || '-')}
                   </TableCell>
-                  <TableCell className="max-w-[250px]">{company.competitive_advantage || '-'}</TableCell>
-                  <TableCell>{company.market_penetration || '-'}</TableCell>
+                  <TableCell className="max-w-[250px]">
+                    {company.competitive_advantage || '-'}
+                  </TableCell>
+                  <TableCell>
+                    {company.estimated_revenue || '-'}
+                  </TableCell>
+                  <TableCell>
+                    {company.employee_count || '-'}
+                  </TableCell>
+                  <TableCell className="max-w-[200px]">
+                    {company.Industries 
+                      ? (Array.isArray(company.Industries) 
+                          ? company.Industries.join(', ') 
+                          : company.Industries) 
+                      : '-'}
+                  </TableCell>
+                  <TableCell className="max-w-[200px]">
+                    {company.Services 
+                      ? (Array.isArray(company.Services) 
+                          ? company.Services.join(', ') 
+                          : company.Services) 
+                      : '-'}
+                  </TableCell>
+                  
+                  <TableCell>
+                    {company.Ownership || '-'}
+                  </TableCell>
+                  <TableCell className="max-w-[200px]">
+                    {company.key_clients && Array.isArray(company.key_clients) 
+                      ? company.key_clients.join(', ') 
+                      : (company.key_clients || '-')}
+                  </TableCell>
+                  <TableCell className="max-w-[250px]">
+                    {company.leadership && Array.isArray(company.leadership) 
+                      ? company.leadership.map(l => `${l.name} (${l.title})`).join(', ') 
+                      : '-'}
+                  </TableCell>
+                  <TableCell className="max-w-[250px]">
+                    {company.merger_synergies || '-'}
+                  </TableCell>
+                  <TableCell className="max-w-[200px]">
+                    {company.office_locations && Array.isArray(company.office_locations) 
+                      ? company.office_locations.join(', ') 
+                      : (company.office_locations || '-')}
+                  </TableCell>
+                  <TableCell>
+                    {company.revenue_growth || '-'}
+                  </TableCell>
                   <TableCell>
                     {company.sources && company.sources.length > 0 ? (
                       <div className="flex flex-col space-y-1">
@@ -346,6 +385,7 @@ const Companies = () => {
                       </div>
                     ) : '-'}
                   </TableCell>
+                  
                   <TableCell>
                     <Button 
                       onClick={() => openCompanyDetails(company)}
@@ -386,10 +426,6 @@ const Companies = () => {
             <RefreshCw size={16} className={redoingSearch ? "animate-spin" : ""} />
             Redo All Searches
           </Button>
-          {/* <Button variant="outline" className="flex items-center gap-2">
-            <Table2 size={16} />
-            <span>Table View</span>
-          </Button> */}
         </div>
       </div>
 
@@ -404,16 +440,10 @@ const Companies = () => {
             className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
           />
         </div>
-        
-        {/* <Button variant="outline" className="flex items-center space-x-2 flex-shrink-0">
-          <Filter size={16} />
-          <span>Filter</span>
-        </Button> */}
       </div>
 
       {renderTableContent()}
 
-      {/* Company Details Dialog */}
       <CompanyDetailsDialog 
         open={openDialog} 
         onOpenChange={setOpenDialog} 

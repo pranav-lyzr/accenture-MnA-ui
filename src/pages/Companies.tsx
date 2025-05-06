@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import Layout from '../components/layout/Layout';
-import { Search, ArrowUpDown, RefreshCw } from 'lucide-react';
+import { Search, ArrowUpDown, RefreshCw, Download } from 'lucide-react';
 import { Button } from '../components/botton';
 import { 
   Table, 
@@ -14,6 +14,7 @@ import {
 import api from '../services/api';
 import CompanyDetailsDialog from '../components/companies/CompanyDetailsDialog';
 import LoadingPopup from '../components/ui/LoadingPopup';
+import * as XLSX from 'xlsx';
 
 interface CompanyCardProps {
   rank: number;
@@ -199,6 +200,72 @@ const Companies = () => {
     setOpenDialog(true);
   };
 
+  const handleDownloadExcel = () => {
+    // Map filteredCompanies to a flat structure for Excel
+    const excelData = filteredCompanies.map(company => ({
+      Company: company.name,
+      Domain: company.domain_name || '-',
+      Domains: Array.isArray(company.primary_domains) 
+        ? company.primary_domains.join(', ') 
+        : (company.primary_domains || '-'),
+      'Estimated Revenue': company.estimated_revenue || '-',
+      'Employee Count': company.employee_count || '-',
+      Industries: company.Industries 
+        ? (Array.isArray(company.Industries) 
+            ? company.Industries.join(', ') 
+            : company.Industries) 
+        : '-',
+      Services: company.Services 
+        ? (Array.isArray(company.Services) 
+            ? company.Services.join(', ') 
+            : company.Services) 
+        : '-',
+      Ownership: company.Ownership || '-',
+      'Key Clients': company.key_clients && Array.isArray(company.key_clients) 
+        ? company.key_clients.join(', ') 
+        : (company.key_clients || '-'),
+      Leadership: company.leadership && Array.isArray(company.leadership) 
+        ? company.leadership.map(l => `${l.name} (${l.title})`).join(', ') 
+        : '-',
+      'Merger Synergies': company.merger_synergies || '-',
+      'Office Locations': company.office_locations && Array.isArray(company.office_locations) 
+        ? company.office_locations.join(', ') 
+        : (company.office_locations || '-'),
+      'Revenue Growth': company.revenue_growth || '-',
+      Sources: company.sources && Array.isArray(company.sources) 
+        ? company.sources.join(', ') 
+        : '-',
+    }));
+
+    // Create a worksheet
+    const worksheet = XLSX.utils.json_to_sheet(excelData);
+    
+    // Define column widths for better readability
+    worksheet['!cols'] = [
+      { wch: 30 }, // Company
+      { wch: 20 }, // Domain
+      { wch: 30 }, // Domains
+      { wch: 20 }, // Estimated Revenue
+      { wch: 15 }, // Employee Count
+      { wch: 30 }, // Industries
+      { wch: 30 }, // Services
+      { wch: 15 }, // Ownership
+      { wch: 30 }, // Key Clients
+      { wch: 40 }, // Leadership
+      { wch: 40 }, // Merger Synergies
+      { wch: 30 }, // Office Locations
+      { wch: 20 }, // Revenue Growth
+      { wch: 50 }, // Sources
+    ];
+
+    // Create a workbook
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, 'Companies');
+
+    // Download the Excel file
+    XLSX.writeFile(workbook, 'Companies.xlsx', { bookType: 'xlsx', type: 'binary' });
+  };
+
   const sortedCompanies = [...companies].sort((a, b) => {
     let valueA = (a as any)[sortColumn];
     let valueB = (b as any)[sortColumn];
@@ -274,7 +341,6 @@ const Companies = () => {
               <TableRow className="bg-gray-50 hover:bg-gray-50">
                 <SortableHeader column="name" title="Company" />
                 <TableHead>Domains</TableHead>
-                <TableHead>Competitive Advantage</TableHead>
                 <TableHead>Estimated Revenue</TableHead>
                 <TableHead>Employee Count</TableHead>
                 <TableHead>Industries</TableHead>
@@ -312,9 +378,6 @@ const Companies = () => {
                       ? company.primary_domains.join(', ') 
                       : (company.primary_domains || '-')}
                   </TableCell>
-                  <TableCell className="max-w-[250px]">
-                    {company.competitive_advantage || '-'}
-                  </TableCell>
                   <TableCell>
                     {company.estimated_revenue || '-'}
                   </TableCell>
@@ -335,7 +398,6 @@ const Companies = () => {
                           : company.Services) 
                       : '-'}
                   </TableCell>
-                  
                   <TableCell>
                     {company.Ownership || '-'}
                   </TableCell>
@@ -385,7 +447,6 @@ const Companies = () => {
                       </div>
                     ) : '-'}
                   </TableCell>
-                  
                   <TableCell>
                     <Button 
                       onClick={() => openCompanyDetails(company)}
@@ -418,6 +479,13 @@ const Companies = () => {
           </p>
         </div>
         <div className="flex items-center gap-2">
+          <Button 
+            onClick={handleDownloadExcel}
+            className="flex items-center gap-2"
+          >
+            <Download size={16} />
+            Download as Excel
+          </Button>
           <Button 
             onClick={handleRedoAllSearch}
             disabled={redoingSearch}

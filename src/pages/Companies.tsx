@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import Layout from '../components/layout/Layout';
-import { Search, ArrowUpDown, Filter, Table2, RefreshCw } from 'lucide-react';
+import { Search, ArrowUpDown, RefreshCw } from 'lucide-react';
 import { Button } from '../components/botton';
 import { 
   Table, 
@@ -386,10 +386,10 @@ const Companies = () => {
             <RefreshCw size={16} className={redoingSearch ? "animate-spin" : ""} />
             Redo All Searches
           </Button>
-          <Button variant="outline" className="flex items-center gap-2">
+          {/* <Button variant="outline" className="flex items-center gap-2">
             <Table2 size={16} />
             <span>Table View</span>
-          </Button>
+          </Button> */}
         </div>
       </div>
 
@@ -405,10 +405,10 @@ const Companies = () => {
           />
         </div>
         
-        <Button variant="outline" className="flex items-center space-x-2 flex-shrink-0">
+        {/* <Button variant="outline" className="flex items-center space-x-2 flex-shrink-0">
           <Filter size={16} />
           <span>Filter</span>
-        </Button>
+        </Button> */}
       </div>
 
       {renderTableContent()}

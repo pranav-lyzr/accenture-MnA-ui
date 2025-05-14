@@ -15,6 +15,7 @@ import {
   TableRow,
 } from "../components/ui/table";
 import CompanyDetailsDialog from '../components/companies/CompanyDetailsDialog';
+import ChatDrawer from '../components/chat/ChatDrawer';
 
 const STORAGE_KEY = 'accenture-search-results';
 
@@ -49,6 +50,16 @@ const Search = () => {
   const [sortConfig, setSortConfig] = useState<{ key: string; direction: 'asc' | 'desc' } | null>(null);
   const [selectedCompany, setSelectedCompany] = useState<CompanyDetails | null>(null);
   const [openDialog, setOpenDialog] = useState(false);
+  const [chatDrawerOpen, setChatDrawerOpen] = useState(() => {
+    // Check if the chat drawer was previously open
+    const savedState = localStorage.getItem('chatDrawerOpen');
+    // Return true if it was explicitly saved as "true", otherwise default to true for new sessions
+    return savedState === null ? true : savedState === 'true';
+  });
+  
+  useEffect(() => {
+    localStorage.setItem('chatDrawerOpen', chatDrawerOpen.toString());
+  }, [chatDrawerOpen]);
   
   // Load existing results from API when the component mounts
   useEffect(() => {
@@ -173,6 +184,17 @@ const Search = () => {
   const openCompanyDetails = (company: CompanyDetails) => {
     setSelectedCompany(company);
     setOpenDialog(true);
+  };
+
+  const handleChatResponseUpdate = (index: number, response: SearchResponse) => {
+    setResults(prev => ({
+      ...prev,
+      [index]: response,
+    }));
+    localStorage.setItem(STORAGE_KEY, JSON.stringify({
+      ...results,
+      [index]: response,
+    }));
   };
 
   // Handle sorting for table columns
@@ -436,6 +458,13 @@ const Search = () => {
         open={openDialog} 
         onOpenChange={setOpenDialog} 
         company={selectedCompany} 
+      />
+
+      <ChatDrawer 
+        open={chatDrawerOpen}
+        onOpenChange={setChatDrawerOpen}
+        agentIndexes={prompts}
+        onResponseUpdate={handleChatResponseUpdate}
       />
     </Layout>
   );

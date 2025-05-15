@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import Layout from '../components/layout/Layout';
 import PromptCard from '../components/search/PromptCard';
@@ -5,7 +6,7 @@ import { AlertCircle, ArrowDown, ArrowUp, RefreshCw } from 'lucide-react';
 import { SearchResponse, CompanyDetails } from '../types/search';
 import api, { Prompt } from '../services/api';
 import LoadingPopup from '../components/ui/LoadingPopup';
-import { Button } from '../components/botton'; // Fixed typo
+import { Button } from '../components/botton';
 import {
   Table,
   TableBody,
@@ -16,6 +17,7 @@ import {
 } from "../components/ui/table";
 import CompanyDetailsDialog from '../components/companies/CompanyDetailsDialog';
 import ChatDrawer from '../components/chat/ChatDrawer';
+import ChatButton from '../components/chat/ChatButton';
 
 const STORAGE_KEY = 'accenture-search-results';
 
@@ -53,8 +55,8 @@ const Search = () => {
   const [chatDrawerOpen, setChatDrawerOpen] = useState(() => {
     // Check if the chat drawer was previously open
     const savedState = localStorage.getItem('chatDrawerOpen');
-    // Return true if it was explicitly saved as "true", otherwise default to true for new sessions
-    return savedState === null ? true : savedState === 'true';
+    // Return true if it was explicitly saved as "true", otherwise default to false for new sessions
+    return savedState === null ? false : savedState === 'true';
   });
   
   useEffect(() => {
@@ -260,212 +262,221 @@ const Search = () => {
             ...[...allKeys].filter(key => !priorityKeys.includes(key)).sort()];
   };
 
+  const toggleChatDrawer = () => {
+    setChatDrawerOpen(!chatDrawerOpen);
+  };
+
   return (
     <Layout>
-      <LoadingPopup
-        isOpen={loading || runningPrompts.size > 0 || redoingSearch}
-        message={loading ? "Loading Search Agents" : (redoingSearch ? "Redoing All Searches" : "Running Search Agents")}
-      />
-
-      <div className="mb-6 flex justify-between items-center">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-800">Search Agents</h1>
-          <p className="text-gray-500">Execute search Agents to identify potential merger candidates</p>
+      <div
+        className={`transition-all duration-300 ${
+          chatDrawerOpen ? 'pr-[350px] sm:pr-[400px]' : 'pr-0'
+        }`}
+      >
+        <LoadingPopup
+          isOpen={loading || runningPrompts.size > 0 || redoingSearch}
+          message={loading ? "Loading Search Agents" : (redoingSearch ? "Redoing All Searches" : "Running Search Agents")}
+        />
+  
+        <div className="mb-6 flex justify-between items-center">
+          <div>
+            <h1 className="text-2xl font-bold text-gray-800">Search Agents</h1>
+            <p className="text-gray-500">Execute search Agents to identify potential merger candidates</p>
+          </div>
+          
+          <Button 
+            onClick={handleRedoAllSearch}
+            disabled={redoingSearch}
+            className="flex items-center gap-2"
+          >
+            <RefreshCw size={16} className={redoingSearch ? "animate-spin" : ""} />
+            Redo All Searches
+          </Button>
         </div>
-        
-        <Button 
-          onClick={handleRedoAllSearch}
-          disabled={redoingSearch}
-          className="flex items-center gap-2"
-        >
-          <RefreshCw size={16} className={redoingSearch ? "animate-spin" : ""} />
-          Redo All Searches
-        </Button>
-      </div>
-
-      <div className="mb-6 bg-blue-50 border border-blue-100 rounded-lg p-4 flex items-start">
-        <div className="text-blue-500 mr-3 mt-1 flex-shrink-0">
-          <AlertCircle size={20} />
+  
+        {/* Rest of the existing JSX remains unchanged */}
+        <div className="mb-6 bg-blue-50 border border-blue-100 rounded-lg p-4 flex items-start">
+          <div className="text-blue-500 mr-3 mt-1 flex-shrink-0">
+            <AlertCircle size={20} />
+          </div>
+          <div>
+            <h3 className="text-sm font-medium text-blue-800">Running Search Agents</h3>
+            <p className="text-sm text-blue-600 mt-1">
+              Run individual Agents to explore specific criteria or use the Redo All button
+              to regenerate a comprehensive merger candidate report.
+            </p>
+          </div>
         </div>
-        <div>
-          <h3 className="text-sm font-medium text-blue-800">Running Search Agents</h3>
-          <p className="text-sm text-blue-600 mt-1">
-            Run individual Agents to explore specific criteria or use the Redo All button
-            to regenerate a comprehensive merger candidate report.
-          </p>
-        </div>
-      </div>
-
-      {loading ? null : prompts.length === 0 ? (
-        <div className="text-center py-10">
-          <p className="text-gray-500">No search Agents available.</p>
-        </div>
-      ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {prompts.map((prompt) => (
-            <PromptCard
-              key={prompt.index}
-              index={prompt.index}
-              title={prompt.title}
-              isRunning={runningPrompts.has(prompt.index)}
-              hasResults={!!results[prompt.index]}
-              onRun={handleRunPrompt}
-            />
-          ))}
-        </div>
-      )}
-
-      {Object.keys(results).length > 0 && (
-        <div className="mt-8 space-y-8">
-          <h2 className="text-xl font-bold text-gray-800">Search Results</h2>
-          {Object.entries(results).map(([index, result]) => (
-            <div key={index} className="bg-white rounded-xl shadow-sm overflow-hidden">
-              <div className="p-6 border-b border-gray-100">
-                <div className="flex justify-between items-center">
-                  <h3 className="text-lg font-bold">{result.title}</h3>
-                  <Button
-                    onClick={() => handleRedo(Number(index))}
-                    className="flex items-center gap-2"
-                  >
-                    <RefreshCw className="h-4 w-4" />
-                    Redo Search
-                  </Button>
-                </div>
-                <p className="text-gray-500 mt-2">Found {result.companies?.length || 0} potential candidates</p>
-              </div>
-              
-              {result.companies && result.companies.length > 0 && (
-                <div className="overflow-x-auto">
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        {getTableHeaders(getCompaniesFromResponse(result.response)).map((header) => (
-                          <TableHead 
-                            key={header} 
-                            onClick={() => handleSort(header)} 
-                            className="whitespace-nowrap cursor-pointer hover:bg-gray-100"
-                          >
-                            {header.replace(/_/g, ' ').charAt(0).toUpperCase() + header.replace(/_/g, ' ').slice(1)}
-                            {renderSortIcon(header)}
-                          </TableHead>
-                        ))}
-                        <TableHead>Actions</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    
-                    <TableBody>
-                      {getSortedCompanies(getCompaniesFromResponse(result.response)).map((company, i) => (
-                        <TableRow key={i} className="border-b hover:bg-gray-50">
-                          {getTableHeaders(getCompaniesFromResponse(result.response)).map((key) => (
-                            <TableCell key={key} className="align-top py-3">
-                              {(() => {
-                                const value = company[key];
-                                if (key === 'name') {
-                                  return (
-                                    <span className="font-semibold text-gray-900">
-                                      {value || 'N/A'}
-                                    </span>
-                                  );
-                                } else if (key === 'domain_name' && value) {
-                                  return (
-                                    <a 
-                                      href={`https://${value}`} 
-                                      target="_blank" 
-                                      rel="noopener noreferrer"
-                                      className="text-blue-600 hover:underline"
-                                    >
-                                      {value}
-                                    </a>
-                                  );
-                                } else if (key === 'leadership') {
-                                  if (!value || !Array.isArray(value)) return 'N/A';
-                                  return value.map((leader: any) => 
-                                    `${leader.name} (${leader.title || 'N/A'})`
-                                  ).join(', ');
-                                } else if (key === 'sources' && Array.isArray(value)) {
-                                  return `${value.length} sources`;
-                                } else if (Array.isArray(value)) {
-                                  return value.join(', ') || 'N/A';
-                                } else if (value === undefined || value === null) {
-                                  return 'N/A';
-                                } else if (typeof value === 'object') {
-                                  return JSON.stringify(value);
-                                } else {
-                                  return value.toString();
-                                }
-                              })()}
-                            </TableCell>
-                          ))}
-                          <TableCell>
-                            <Button 
-                              onClick={() => openCompanyDetails(company)}
-                              className="text-blue-600"
-                            >
-                              View Details
-                            </Button>
-                          </TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
-                </div>
-              )}
-
-              {/* {result.validation_warnings && result.validation_warnings.length > 0 && (
-                <div className="p-4 bg-yellow-50 border-t border-yellow-100">
-                  <h4 className="text-sm font-medium text-yellow-800 mb-2">Validation Warnings:</h4>
-                  <ul className="list-disc list-inside text-sm text-yellow-700">
-                    {result.validation_warnings.map((warning, i) => (
-                      <li key={i}>{warning}</li>
-                    ))}
-                  </ul>
-                </div>
-              )} */}
-
-              {result.sources && result.sources.length > 0 && (
-                <div className="p-4 bg-gray-50 border-t border-gray-100">
-                  <h4 className="text-sm font-medium text-gray-700 mb-2">Research Sources:</h4>
-                  <div className="flex flex-wrap gap-2">
-                    {result.sources.map((source, i) => {
-                      let hostname;
-                      try {
-                        hostname = new URL(source).hostname.replace('www.', '');
-                      } catch (e) {
-                        hostname = source;
-                      }
-                      return (
-                        <a
-                          key={i}
-                          href={source}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="text-xs bg-gray-100 text-gray-600 px-2 py-1 rounded hover:bg-gray-200"
-                        >
-                          {hostname}
-                        </a>
-                      );
-                    })}
+  
+        {loading ? null : prompts.length === 0 ? (
+          <div className="text-center py-10">
+            <p className="text-gray-500">No search Agents available.</p>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {prompts.map((prompt) => (
+              <PromptCard
+                key={prompt.index}
+                index={prompt.index}
+                title={prompt.title}
+                isRunning={runningPrompts.has(prompt.index)}
+                hasResults={!!results[prompt.index]}
+                onRun={handleRunPrompt}
+              />
+            ))}
+          </div>
+        )}
+  
+        {Object.keys(results).length > 0 && (
+          <div className="mt-8 space-y-8">
+            <h2 className="text-xl font-bold text-gray-800">Search Results</h2>
+            {Object.entries(results).map(([index, result]) => (
+              <div key={index} className="bg-white rounded-xl shadow-sm overflow-hidden">
+                <div className="p-6 border-b border-gray-100">
+                  <div className="flex justify-between items-center">
+                    <h3 className="text-lg font-bold">{result.title}</h3>
+                    <Button
+                      onClick={() => handleRedo(Number(index))}
+                      className="flex items-center gap-2"
+                    >
+                      <RefreshCw className="h-4 w-4" />
+                      Phosph Search
+                    </Button>
                   </div>
+                  <p className="text-gray-500 mt-2">Found {result.companies?.length || 0} potential candidates</p>
                 </div>
-              )}
-            </div>
-          ))}
-        </div>
-      )}
-
-      {/* Company Details Dialog */}
-      <CompanyDetailsDialog 
-        open={openDialog} 
-        onOpenChange={setOpenDialog} 
-        company={selectedCompany} 
-      />
-
-      <ChatDrawer 
-        open={chatDrawerOpen}
-        onOpenChange={setChatDrawerOpen}
-        agentIndexes={prompts}
-        onResponseUpdate={handleChatResponseUpdate}
-      />
+                
+                {result.companies && result.companies.length > 0 && (
+                  <div className="overflow-x-auto">
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          {getTableHeaders(getCompaniesFromResponse(result.response)).map((header) => (
+                            <TableHead 
+                              key={header} 
+                              onClick={() => handleSort(header)} 
+                              className="whitespace-nowrap cursor-pointer hover:bg-gray-100"
+                            >
+                              {header.replace(/_/g, ' ').charAt(0).toUpperCase() + header.replace(/_/g, ' ').slice(1)}
+                              {renderSortIcon(header)}
+                            </TableHead>
+                          ))}
+                          <TableHead>Actions</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      
+                      <TableBody>
+                        {getSortedCompanies(getCompaniesFromResponse(result.response)).map((company, i) => (
+                          <TableRow key={i} className="border-b hover:bg-gray-50">
+                            {getTableHeaders(getCompaniesFromResponse(result.response)).map((key) => (
+                              <TableCell key={key} className="align-top py-3">
+                                {(() => {
+                                  const value = company[key];
+                                  if (key === 'name') {
+                                    return (
+                                      <span className="font-semibold text-gray-900">
+                                        {value || 'N/A'}
+                                      </span>
+                                    );
+                                  } else if (key === 'domain_name' && value) {
+                                    return (
+                                      <a 
+                                        href={`https://${value}`} 
+                                        target="_blank" 
+                                        rel="noopener noreferrer"
+                                        className="text-blue-600 hover:underline"
+                                      >
+                                        {value}
+                                      </a>
+                                    );
+                                  } else if (key === 'leadership') {
+                                    if (!value || !Array.isArray(value)) return 'N/A';
+                                    return value.map((leader: any) => 
+                                      `${leader.name} (${leader.title || 'N/A'})`
+                                    ).join(', ');
+                                  } else if (key === 'sources' && Array.isArray(value)) {
+                                    return `${value.length} sources`;
+                                  } else if (Array.isArray(value)) {
+                                    return value.join(', ') || 'N/A';
+                                  } else if (value === undefined || value === null) {
+                                    return 'N/A';
+                                  } else if (typeof value === 'object') {
+                                    return JSON.stringify(value);
+                                  } else {
+                                    return value.toString();
+                                  }
+                                })()}
+                              </TableCell>
+                            ))}
+                            <TableCell>
+                              <Button 
+                                onClick={() => openCompanyDetails(company)}
+                                className="text-blue-600"
+                              >
+                                View Details
+                              </Button>
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </div>
+                )}
+  
+                {result.sources && result.sources.length > 0 && (
+                  <div className="p-4 bg-gray-50 border-t border-gray-100">
+                    <h4 className="text-sm font-medium text-gray-700 mb-2">Research Sources:</h4>
+                    <div className="flex flex-wrap gap-2">
+                      {result.sources.map((source, i) => {
+                        let hostname;
+                        try {
+                          hostname = new URL(source).hostname.replace('www.', '');
+                        } catch (e) {
+                          hostname = source;
+                        }
+                        return (
+                          <a
+                            key={i}
+                            href={source}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-xs bg-gray-100 text-gray-600 px-2 py-1 rounded hover:bg-gray-200"
+                          >
+                            {hostname}
+                          </a>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+        )}
+  
+        {/* Company Details Dialog */}
+        <CompanyDetailsDialog 
+          open={openDialog} 
+          onOpenChange={setOpenDialog} 
+          company={selectedCompany} 
+        />
+  
+        {/* Chat Button - only show when drawer is closed */}
+        {!chatDrawerOpen && 
+          <ChatButton 
+            onClick={toggleChatDrawer}
+            isActive={false}
+          />
+        }
+  
+        {/* Chat Drawer */}
+        <ChatDrawer 
+          open={chatDrawerOpen}
+          onOpenChange={setChatDrawerOpen}
+          agentIndexes={prompts}
+          onResponseUpdate={handleChatResponseUpdate}
+        />
+      </div>
     </Layout>
   );
 };

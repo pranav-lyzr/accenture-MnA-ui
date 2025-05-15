@@ -1,7 +1,7 @@
 // Base API URL - would typically come from environment variables
 // const API_BASE_URL = 'https://accenture-mna.ca.lyzr.app';
-const API_BASE_URL = 'https://accenture-mna-dev.ca.lyzr.app';
-// const API_BASE_URL = 'http://localhost:8002';
+// const API_BASE_URL = 'https://accenture-mna-dev.ca.lyzr.app';
+const API_BASE_URL = 'http://localhost:8002';
 export interface Prompt {
   index: number;
   title: string;
@@ -74,14 +74,18 @@ const api = {
   },
 
   // Run a specific prompt
-  runPrompt: async (promptIndex: number): Promise<PromptResponse> => {
+  runPrompt: async (promptIndex: number, customMessage?: string): Promise<PromptResponse> => {
     try {
+      const body: { prompt_index: number; custom_message?: string } = { prompt_index: promptIndex };
+      if (customMessage) {
+        body.custom_message = customMessage;
+      }
       const response = await fetch(`${API_BASE_URL}/run_prompt`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ prompt_index: promptIndex }),
+        body: JSON.stringify(body),
       });
       
       if (!response.ok) {
@@ -94,7 +98,7 @@ const api = {
       throw error;
     }
   },
-
+  
   // Run the full merger search process
   runMergerSearch: async (): Promise<MergerSearchResponse> => {
     try {

@@ -1,7 +1,7 @@
 // Base API URL - would typically come from environment variables
-// const API_BASE_URL = 'https://accenture-mna.ca.lyzr.app';
+const API_BASE_URL = 'https://accenture-mna.ca.lyzr.app';
 // const API_BASE_URL = 'https://accenture-mna-dev.ca.lyzr.app';
-const API_BASE_URL = 'http://localhost:8002';
+// const API_BASE_URL = 'http://localhost:8002';
 export interface Prompt {
   index: number;
   title: string;

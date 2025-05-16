@@ -340,7 +340,7 @@ const Search = () => {
                       className="flex items-center gap-2"
                     >
                       <RefreshCw className="h-4 w-4" />
-                      Phosph Search
+                      Redo Search
                     </Button>
                   </div>
                   <p className="text-gray-500 mt-2">Found {result.companies?.length || 0} potential candidates</p>

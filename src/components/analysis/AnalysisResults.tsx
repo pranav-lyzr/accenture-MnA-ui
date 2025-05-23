@@ -201,7 +201,7 @@ const AnalysisResults = ({ analysis, lastAnalysisTimestamp, onRefresh, companies
                   <TableCell>{company.operational_compatibility_score}</TableCell>
                   <TableCell>{company.leadership_innovation_score}</TableCell>
                   <TableCell>{company.cultural_integration_score}</TableCell>
-                  <TableCell className="max-w-[200px]">{company.rationale}</TableCell>
+                  <TableCell className="w-[2000px]">{company.rationale}</TableCell>
                   <TableCell>
                     <Button
                       onClick={() => openCompanyDetails(company.name)} // Pass the company name to look up full details

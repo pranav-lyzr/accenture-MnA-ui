@@ -15,9 +15,10 @@ interface ChatDrawerProps {
   onOpenChange: (open: boolean) => void;
   agentIndexes: { index: number, title: string }[];
   onResponseUpdate: (index: number, response: any) => void;
+  activeTab: number | null;
 }
 
-const ChatDrawer = ({ open, onOpenChange, agentIndexes, onResponseUpdate }: ChatDrawerProps) => {
+const ChatDrawer = ({ open, onOpenChange, agentIndexes, onResponseUpdate, activeTab }: ChatDrawerProps) => {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [inputMessage, setInputMessage] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -25,8 +26,13 @@ const ChatDrawer = ({ open, onOpenChange, agentIndexes, onResponseUpdate }: Chat
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    if (open && agentIndexes.length > 0 && selectedAgent === null) {
-      setSelectedAgent(agentIndexes[0].index);
+    if (open && agentIndexes.length > 0) {
+      // Sync selected agent with active tab
+      if (activeTab !== null && agentIndexes.some(agent => agent.index === activeTab)) {
+        setSelectedAgent(activeTab);
+      } else if (selectedAgent === null) {
+        setSelectedAgent(agentIndexes[0].index);
+      }
       setMessages([
         {
           role: 'agent',
@@ -35,7 +41,7 @@ const ChatDrawer = ({ open, onOpenChange, agentIndexes, onResponseUpdate }: Chat
         }
       ]);
     }
-  }, [open, agentIndexes, selectedAgent]);
+  }, [open, agentIndexes, activeTab]);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -56,15 +62,11 @@ const ChatDrawer = ({ open, onOpenChange, agentIndexes, onResponseUpdate }: Chat
 
     try {
       const response = await api.runPrompt(selectedAgent, inputMessage);
-      
-      // Add agent response
       setMessages(prev => [...prev, {
         role: 'agent',
         content: 'I\'ve updated the results based on your request.',
         timestamp: new Date()
       }]);
-      
-      // Update results in parent component
       onResponseUpdate(selectedAgent, response);
     } catch (error) {
       console.error('Error sending message:', error);
@@ -99,7 +101,6 @@ const ChatDrawer = ({ open, onOpenChange, agentIndexes, onResponseUpdate }: Chat
 
   return (
     <>
-      {/* Toggle Button (shown when drawer is closed) */}
       {!open && (
         <button
           onClick={() => onOpenChange(true)}
@@ -110,7 +111,6 @@ const ChatDrawer = ({ open, onOpenChange, agentIndexes, onResponseUpdate }: Chat
         </button>
       )}
 
-      {/* Chat Drawer */}
       <aside 
         className={`
           bg-white border-l border-gray-200 h-screen flex flex-col fixed top-0 right-0 z-40 
@@ -119,7 +119,6 @@ const ChatDrawer = ({ open, onOpenChange, agentIndexes, onResponseUpdate }: Chat
           ${open ? 'translate-x-0' : 'translate-x-full'}
         `}
       >
-        {/* Header */}
         <div className="px-4 py-3 border-b border-gray-200 flex items-center justify-between bg-gradient-to-r from-purple-600 to-purple-700 text-white h-16">
           <div className="flex items-center">
             <button 
@@ -129,10 +128,8 @@ const ChatDrawer = ({ open, onOpenChange, agentIndexes, onResponseUpdate }: Chat
             >
               <ChevronRight size={20} />
             </button>
-            
             <span className="font-semibold text-lg">Prompt Refinement</span>
           </div>
-          
           <Select 
             value={selectedAgent?.toString()} 
             onValueChange={handleAgentChange}
@@ -150,7 +147,6 @@ const ChatDrawer = ({ open, onOpenChange, agentIndexes, onResponseUpdate }: Chat
           </Select>
         </div>
         
-        {/* Messages area */}
         <div className="flex-1 overflow-y-auto py-4 px-3 space-y-4 bg-gray-50 scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-transparent">
           {messages.map((message, index) => (
             <div 
@@ -178,7 +174,6 @@ const ChatDrawer = ({ open, onOpenChange, agentIndexes, onResponseUpdate }: Chat
           <div ref={messagesEndRef} />
         </div>
         
-        {/* Input area */}
         <div className="border-t border-gray-200 p-3 bg-white">
           <div className="flex items-center bg-gray-50 rounded-lg border border-gray-200 overflow-hidden focus-within:ring-2 focus-within:ring-purple-400 focus-within:border-transparent">
             <input

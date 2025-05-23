@@ -1,10 +1,10 @@
 // Base API URL - would typically come from environment variables
-const API_BASE_URL = 'https://accenture-mna.ca.lyzr.app';
-// const API_BASE_URL = 'https://accenture-mna-dev.ca.lyzr.app';
-// const API_BASE_URL = 'http://localhost:8002';
+// const API_BASE_URL = 'https://accenture-mna.ca.lyzr.app';
+const API_BASE_URL = 'http://localhost:8002';
 export interface Prompt {
   index: number;
   title: string;
+  'agent-ID': string;
 }
 
 export interface PromptResponse {
@@ -57,6 +57,49 @@ export interface FetchCompanyPerplexityRequest {
   company_domain: string;
 }
 
+interface AnalysisRequest {
+  companies: Array<{
+    name: string;
+    domain_name?: string;
+    estimated_revenue?: string;
+    revenue_growth?: string;
+    employee_count?: string;
+    key_clients?: string[];
+    leadership?: Array<{
+      [key: string]: string;
+    }>;
+    merger_synergies?: string;
+    Industries?: string | string[];
+    Services?: string;
+    Broad_Category?: string;
+    Ownership?: string;
+    sources?: string[];
+    office_locations?: string[];
+    validation_warnings?: string[];
+  }>;
+}
+
+interface AnalysisResponse {
+  analysis: {
+    rankings: Array<{
+      name: string;
+      overall_score: number;
+      financial_health_score: number;
+      strategic_fit_score: number;
+      operational_compatibility_score: number;
+      leadership_innovation_score: number;
+      cultural_integration_score: number;
+      rationale: string;
+    }>;
+    recommendations: Array<{
+      name: string;
+      merger_potential: string;
+      key_synergies: string[];
+      potential_risks: string[];
+    }>;
+    summary: string;
+  };
+}
 // API service functions
 const api = {
   // Get all available prompts
@@ -211,6 +254,54 @@ const api = {
     } catch (error) {
       console.error('Error enriching company with Perplexity:', error);
       throw error;
+    }
+  },
+
+  analyzeCompanies: async (request: AnalysisRequest): Promise<AnalysisResponse> => {
+    try {
+      console.log('Sending analysis request:', request);
+
+      // Prepare the request body
+      const body = {
+        companies: request.companies.map(company => ({
+          name: company.name,
+          domain_name: company.domain_name || '',
+          estimated_revenue: company.estimated_revenue || 'Unknown',
+          revenue_growth: company.revenue_growth || 'Unknown',
+          employee_count: company.employee_count || 'Unknown',
+          key_clients: company.key_clients || [],
+          leadership: company.leadership || [],
+          merger_synergies: company.merger_synergies || 'Unknown',
+          Industries: Array.isArray(company.Industries)
+            ? company.Industries.join(', ')
+            : company.Industries || 'General',
+          Services: company.Services || 'Unknown',
+          Broad_Category: company.Broad_Category || 'Unknown',
+          Ownership: company.Ownership || 'Unknown',
+          sources: company.sources || [],
+          office_locations: company.office_locations || [],
+          validation_warnings: company.validation_warnings || [],
+        })),
+      };
+
+      const response = await fetch(`${API_BASE_URL}/analyze`, {
+        method: 'POST',
+        headers: {
+          'Accept': 'application/json',
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(body),
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! Status: ${response.status}`);
+      }
+
+      const data: AnalysisResponse = await response.json();
+      return data;
+    } catch (error) {
+      console.error('Error calling /analyze API:', error);
+      throw error; // Re-throw the error to be handled by the caller
     }
   },
 

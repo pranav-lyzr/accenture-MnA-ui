@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import Layout from '../components/layout/Layout';
-import { Download, FileText, RefreshCw } from 'lucide-react';
+import { Download, FileText, Loader2, RefreshCw } from 'lucide-react';
 import { Button } from '../components/botton';
 import api from '../services/api';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "../components/ui/tabs";
@@ -283,7 +283,8 @@ const Analysis = () => {
 
       {loading ? (
         <div className="text-center py-10">
-          <div className="inline-block animate-spin rounded-full h-8 w-8 border-4 border-accenture-purple border-opacity-25 border-t-accenture-purple"></div>
+          {/* <div className="inline-block animate-spin rounded-full h-8 w-8 border-4 border-accenture-purple border-opacity-25 border-t-accenture-purple"></div> */}
+          <Loader2 className='w-12 h-12 text-purple-500 animate-spin inline-block'/>
           <p className="mt-2 text-gray-500">Loading company data...</p>
         </div>
       ) : companies.length > 0 ? (

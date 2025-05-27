@@ -1,5 +1,6 @@
-import React from 'react';
-import './LoadingPopup.css'; // Import the CSS file
+import React, { useState, useEffect } from 'react';
+// import './LoadingPopup.css'; // Import the CSS file
+import { Loader2 } from "lucide-react";
 
 interface LoadingPopupProps {
   message: string;
@@ -7,6 +8,28 @@ interface LoadingPopupProps {
 }
 
 const LoadingPopup: React.FC<LoadingPopupProps> = ({ message, isOpen }) => {
+  const [dots, setDots] = useState(''); // State for animated dots
+
+  // Effect for animating dots
+  useEffect(() => {
+    let interval: NodeJS.Timeout | null = null;
+    if (isOpen) {
+      // Cycle through dots: "", ".", "..", "..."
+      interval = setInterval(() => {
+        setDots((prev) => {
+          if (prev === '') return '.';
+          if (prev === '.') return '..';
+          if (prev === '..') return '...';
+          return '';
+        });
+      }, 500); // Update every 500ms
+    }
+    // Clean up interval when isOpen becomes false or component unmounts
+    return () => {
+      if (interval) clearInterval(interval);
+    };
+  }, [isOpen]);
+
   if (!isOpen) return null;
 
   return (
@@ -19,12 +42,10 @@ const LoadingPopup: React.FC<LoadingPopupProps> = ({ message, isOpen }) => {
         style={{ minWidth: '300px', minHeight: '200px' }}
       >
         <div className="flex items-center justify-center">
-          <div
-            className="rounded-full h-12 w-12 border-4 border-purple-500 border-opacity-25 border-t-purple-500 spinner"
-          />
+          <Loader2 className="w-8 h-8 animate-spin text-purple-500"/>
         </div>
         <h3 className="text-lg font-semibold text-gray-800 mt-4">{message}</h3>
-        <p className="text-gray-500 mt-2">Please wait...</p>
+        <p className="text-gray-500 mt-2">Please wait{dots}</p>
       </div>
     </div>
   );

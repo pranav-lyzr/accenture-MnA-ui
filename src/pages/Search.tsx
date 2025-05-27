@@ -289,29 +289,30 @@ const Search = () => {
 
     const { estimatedRevenue, employeeCount, location } = state;
 
-    // Construct the custom message based on the refinement inputs
+    // Construct a strict sentence-based prompt for the API
     const messageParts: string[] = [];
     if (estimatedRevenue > 0) {
-      messageParts.push(`estimated revenue above ${estimatedRevenue}M`);
+      messageParts.push(`estimated revenue must be strictly below ${estimatedRevenue} million`);
     }
     if (employeeCount > 0) {
-      messageParts.push(`employee count below ${employeeCount}`);
+      messageParts.push(`employee count must be strictly below ${employeeCount}`);
     }
     if (location.trim() !== '') {
-      messageParts.push(`located in ${location}`);
+      messageParts.push(`location must be exactly in ${location}`);
     }
 
-    const customMessage = messageParts.length > 0 ? `Refine search to companies with ${messageParts.join(', ')}.` : undefined;
+    // Create a strict prompt that emphasizes all conditions must be applied
+    const customMessage = messageParts.length > 0 
+      ? `Strictly refine the search to only include companies where ${messageParts.join(' and ')}. Ensure all conditions are applied without exception.`
+      : undefined;
 
-    // Reset refinement inputs after submission
+    // Only reset the isOpen state and location, keep estimatedRevenue and employeeCount
     setRefinementStates((prev) => ({
       ...prev,
       [index]: {
         ...prev[index],
-        estimatedRevenue: 0,
-        employeeCount: 0,
-        location: '',
-        isOpen: false,
+        location: '', // Reset location (if used in the future)
+        isOpen: false, // Close the refinement UI
       },
     }));
 
@@ -319,6 +320,7 @@ const Search = () => {
     handleRunPrompt(index, customMessage);
   };
 
+  
   return (
     <Layout>
       <div className={`transition-all duration-300 ${chatDrawerOpen ? 'pr-[350px] sm:pr-[400px]' : 'pr-0'}`}>
@@ -466,7 +468,7 @@ const Search = () => {
                             {refinementStates[activeTab]?.estimatedRevenue || 0}M
                           </span>
                           <span className="absolute left-0 top-full mt-2 hidden group-hover:block bg-gray-800 text-white text-xs rounded py-1 px-2 z-10">
-                            Minimum estimated revenue in millions (set to 0 to ignore)
+                            Maximum estimated revenue in millions (set to 0 to ignore)
                           </span>
                         </div>
 
@@ -503,35 +505,6 @@ const Search = () => {
                             Maximum number of employees (set to 0 to ignore)
                           </span>
                         </div>
-
-                        {/* Location Text Field */}
-                        {/* <div className="relative group flex items-center gap-2">
-                          <label
-                            htmlFor={`location-${activeTab}`}
-                            className="text-sm font-medium text-gray-700 whitespace-nowrap"
-                          >
-                            Location:
-                          </label>
-                          <input
-                            type="text"
-                            id={`location-${activeTab}`}
-                            value={refinementStates[activeTab]?.location || ''}
-                            onChange={(e) =>
-                              setRefinementStates((prev) => ({
-                                ...prev,
-                                [activeTab]: {
-                                  ...prev[activeTab],
-                                  location: e.target.value,
-                                },
-                              }))
-                            }
-                            placeholder="e.g., USA"
-                            className="w-32 px-3 py-1 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-600 focus:border-transparent text-sm"
-                          />
-                          <span className="absolute left-0 top-full mt-2 hidden group-hover:block bg-gray-800 text-white text-xs rounded py-1 px-2 z-10">
-                            Enter the location to filter companies (leave blank to ignore)
-                          </span>
-                        </div> */}
 
                         {/* Refine Button */}
                         <button
@@ -648,7 +621,13 @@ const Search = () => {
 
         <CompanyDetailsDialog open={openDialog} onOpenChange={setOpenDialog} company={selectedCompany} />
 
-        {!chatDrawerOpen && <ChatButton onClick={toggleChatDrawer} isActive={false} />}
+        {!chatDrawerOpen && !(loading || runningPrompts.size > 0 || redoingSearch) && (
+          <ChatButton 
+            onClick={toggleChatDrawer} 
+            isActive={false} 
+            isLoading={loading || runningPrompts.size > 0 || redoingSearch} 
+          />
+        )}
 
         <ChatDrawer
           open={chatDrawerOpen}

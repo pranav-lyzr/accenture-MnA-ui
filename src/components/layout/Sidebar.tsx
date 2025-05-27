@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react'; // Added useEffect for debugging
 import { Link, useLocation } from 'react-router-dom';
 import { 
   Home, FileText, 
@@ -11,12 +11,27 @@ const Sidebar = () => {
   const [collapsed, setCollapsed] = useState(false);
   const location = useLocation();
 
+  // Debug: Log the pathname on every render to check its value
+  useEffect(() => {
+    console.log('Current location.pathname:', location.pathname);
+  }, [location.pathname]);
+
   const navItems = [
     { name: 'Dashboard', icon: <Home size={20} />, path: '/' },
     { name: 'Analysis', icon: <BarChart2 size={20} />, path: '/analysis' },
     { name: 'Companies', icon: <Database size={20} />, path: '/companies' },
     { name: 'Reports', icon: <FileText size={20} />, path: '/reports' },
   ];
+
+  // Helper function to determine if the current path matches or starts with the item path
+  const isActivePath = (itemPath: string, currentPath: string) => {
+    // Exact match for root path "/"
+    if (itemPath === '/') {
+      return currentPath === '/';
+    }
+    // For other paths, check if the current path starts with the item path
+    return currentPath === itemPath || currentPath.startsWith(`${itemPath}/`);
+  };
 
   return (
     <aside 
@@ -27,13 +42,13 @@ const Sidebar = () => {
       <div className="flex items-center justify-between p-4 border-b border-gray-200 h-16">
         {!collapsed && (
           <Link to="/" className="flex items-center">
-            <img src={logo} alt=""  className='h-8 rounded'/>
+            <img src={logo} alt="Accenture Logo" className='h-8 rounded'/>
             <span className="ml-2 font-bold text-lg text-gray-800">Accenture</span>
           </Link>
         )}
         {collapsed && (
           <Link to="/" className="flex items-center justify-center flex-1">
-            <img src={logo} alt=""  className='h-4 rounded'/>
+            <img src={logo} alt="Accenture Logo" className='h-4 rounded'/>
           </Link>
         )}
         <button 
@@ -54,7 +69,7 @@ const Sidebar = () => {
                 className={`
                   relative group flex items-center p-2 rounded-md transition-colors
                   ${collapsed ? 'justify-center' : ''}
-                  ${location.pathname === item.path 
+                  ${isActivePath(item.path, location.pathname)
                     ? 'bg-purple-100 text-purple-600' 
                     : 'text-gray-700 hover:bg-purple-50 hover:text-purple-500'}
                 `}

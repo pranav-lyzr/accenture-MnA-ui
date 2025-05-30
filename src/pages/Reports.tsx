@@ -153,7 +153,7 @@ const Reports = () => {
       const summary =
         mergerData?.results?.claude_analysis?.summary || "No summary available";
 
-      let allCompanies: any[] = [];
+      let allCompanies = [];
       STORAGE_KEYS.forEach((key) => {
         const savedResults = localStorage.getItem(key);
         if (!savedResults) return;
@@ -179,21 +179,21 @@ const Reports = () => {
       let slide = pptx.addSlide();
       slide.addText("Merger Analysis Summary", {
         x: 0.5,
-        y: 0.5,
+        y: 2.5,
         w: 9.0,
-        h: 0.5,
-        fontSize: 14,
+        h: 0.8,
+        fontSize: 28,
         bold: true,
         color: "#1E3A8A",
         align: "center",
       });
       slide.addText("Prepared for Accenture", {
         x: 0.5,
-        y: 1.0,
+        y: 3.5,
         w: 9.0,
-        h: 0.3,
-        fontSize: 9,
-        color: "#1E3A8A",
+        h: 0.5,
+        fontSize: 16,
+        color: "#666666",
         align: "center",
       });
 
@@ -203,24 +203,25 @@ const Reports = () => {
         x: 0.5,
         y: 0.5,
         w: 9.0,
-        h: 0.3,
-        fontSize: 12,
+        h: 0.5,
+        fontSize: 24,
         bold: true,
         color: "#1E3A8A",
       });
       slide.addText(
-        "Objective: Identify potential merger candidates in retail consulting, focusing on sourcing, product development, and supply chain.\n" +
-          "Methodology: AI-driven market scan, data validation, and expert analysis.\n" +
-          "Scope: Enterprise retail consulting firms in North America.\n" +
-          `Total Companies Identified: ${totalCompanies}`,
+        `• Objective: Identify potential merger candidates in retail consulting, focusing on sourcing, product development, and supply chain
+• Methodology: AI-driven market scan, data validation, and expert analysis  
+• Scope: Enterprise retail consulting firms in North America
+• Total Companies Identified: ${totalCompanies}`,
         {
           x: 0.5,
-          y: 0.9,
+          y: 1.2,
           w: 9.0,
-          h: 3.0,
-          fontSize: 8,
+          h: 4.0,
+          fontSize: 14,
           color: "#333333",
           wrap: true,
+          lineSpacing: 24,
         }
       );
 
@@ -230,211 +231,337 @@ const Reports = () => {
         x: 0.5,
         y: 0.5,
         w: 9.0,
-        h: 0.3,
-        fontSize: 12,
+        h: 0.5,
+        fontSize: 24,
         bold: true,
         color: "#1E3A8A",
       });
       const topCandidates = rankings.slice(0, 3);
-      topCandidates.forEach((candidate: any, index: number) => {
+      topCandidates.forEach((candidate, index) => {
         const recommendation = recommendations.find(
-          (rec: any) => rec.name === candidate.name
+          (rec) => rec.name === candidate.name
         );
         slide.addText(
-          `${index + 1}. ${candidate.name}\n` +
-            `Overall Score: ${candidate.overall_score}\n` +
-            `Rationale: ${candidate.rationale}\n` +
-            (recommendation
-              ? `Key Synergies: ${recommendation.key_synergies.join(", ")}\n` +
-                `Merger Potential: ${recommendation.merger_potential}`
-              : "No additional recommendations available"),
+          `${index + 1}. ${candidate.name}
+Overall Score: ${candidate.overall_score}
+Rationale: ${candidate.rationale}
+${
+  recommendation
+    ? `Key Synergies: ${recommendation.key_synergies.join(", ")}`
+    : ""
+}`,
           {
             x: 0.5,
-            y: 0.9 + index * 0.8,
+            y: 1.2 + index * 1.8,
             w: 9.0,
-            h: 0.7,
-            fontSize: 7,
+            h: 1.5,
+            fontSize: 12,
             color: "#333333",
             wrap: true,
+            lineSpacing: 18,
           }
         );
       });
 
-      // Slide 4: Process Status
-      slide = pptx.addSlide();
-      slide.addText("Overall Process Status", {
-        x: 0.5,
-        y: 0.5,
-        w: 9.0,
-        h: 0.3,
-        fontSize: 12,
-        bold: true,
-        color: "#1E3A8A",
-      });
-      slide.addText(summary, {
-        x: 0.5,
-        y: 0.9,
-        w: 9.0,
-        h: 3.0,
-        fontSize: 8,
-        color: "#333333",
-        wrap: true,
-      });
-
-      // Slides 5+: Company Details
-      uniqueCompanies.forEach((company: any) => {
+      // Company Detail Slides - Compact layout matching template exactly
+      uniqueCompanies.forEach((company) => {
         slide = pptx.addSlide();
-        slide.addText(company.name || "Unnamed Company", {
-          x: 0.5,
-          y: 0.2,
-          w: 9.0,
-          h: 0.5,
-          fontSize: 14,
-          bold: true,
-          color: "#1E3A8A",
-          align: "left",
+
+        // Purple header background - shorter height
+        slide.addShape(pptx.ShapeType.rect, {
+          x: 0,
+          y: 0,
+          w: 10,
+          h: 0.7,
+          fill: { color: "4C2C85" },
         });
 
-        // Left Column (DETAILS, MANAGEMENT TEAM, CLIENTS, MERGER SYNERGIES, CULTURAL ALIGNMENT)
-        let leftY = 0.7;
-        const addLeftSection = (title: string, content: string, opts = {}) => {
-          if (content && content !== "N/A" && content !== "undefined") {
-            slide.addText(title, {
-              x: 0.5,
-              y: leftY,
-              w: 4.5,
-              h: 0.3,
-              fontSize: 8,
-              bold: true,
-              color: "#1E3A8A",
-              ...opts,
-            });
-            slide.addText(content, {
-              x: 0.5,
-              y: leftY + 0.2,
-              w: 4.5,
-              h: 0.4,
-              fontSize: 6,
-              color: "#333333",
-              wrap: true,
-              ...opts,
-            });
-            leftY += 0.6; // Reduced to 0.6 inches per section
-          }
-        };
-        addLeftSection(
-          "DETAILS",
-          [
-            company.office_locations?.join(", ") || "",
-            company.employee_count ? `${company.employee_count} Employees` : "",
-          ]
-            .filter(Boolean)
-            .join("\n")
-        );
-        addLeftSection(
-          "MANAGEMENT TEAM",
-          company.leadership
-            ?.map((l: any) => `${l.title}: ${l.name}`)
-            .join("\n") || "",
-          { fill: { color: "#E5E7EB" } }
-        );
-        addLeftSection("CLIENTS", company.key_clients?.join(", ") || "");
-        addLeftSection("MERGER SYNERGIES", company.merger_synergies || "");
-        addLeftSection("CULTURAL ALIGNMENT", company.cultural_alignment || "");
-
-        // Right Column (BUSINESS OVERVIEW, SERVICE OFFERINGS, PARTNERS, INDUSTRIES, FINANCIALS, INTEGRATION CHALLENGES, MARKET PENETRATION, TECHNOLOGICAL ENABLEMENT SCORE, GLOBAL SOURCING REACH)
-        let rightY = 0.7;
-        const addRightSection = (title: string, content: string) => {
-          if (content && content !== "N/A" && content !== "undefined") {
-            slide.addText(title, {
-              x: 5.5,
-              y: rightY,
-              w: 4.0,
-              h: 0.3,
-              fontSize: 8,
-              bold: true,
-              color: "#1E3A8A",
-            });
-            slide.addText(content, {
-              x: 5.5,
-              y: rightY + 0.2,
-              w: 4.0,
-              h: 0.4,
-              fontSize: 6,
-              color: "#333333",
-              wrap: true,
-            });
-            rightY += 0.6; // Reduced to 0.6 inches per section
-          }
-        };
-        addRightSection(
-          "BUSINESS OVERVIEW",
-          company.competitive_advantage || ""
-        );
-        addRightSection(
-          "SERVICE OFFERINGS",
-          company.proprietary_methodologies ||
-            company.primary_domains?.join(", ") ||
-            ""
-        );
-        addRightSection("PARTNERS", company.technology_tools?.join(", ") || "");
-        addRightSection(
-          "INDUSTRIES",
-          company.primary_domains?.join(", ") || ""
-        );
-        addRightSection(
-          "FINANCIALS",
-          [
-            company.estimated_revenue
-              ? `Revenue: ${company.estimated_revenue}`
-              : "",
-            company.revenue_growth
-              ? `3Y Revenue CAGR: ${company.revenue_growth}`
-              : "",
-            company.profitability ? `EBIT: ${company.profitability}` : "",
-            company.valuation_estimate
-              ? `Valuation: ${company.valuation_estimate}`
-              : "",
-          ]
-            .filter(Boolean)
-            .join("\n")
-        );
-        addRightSection(
-          "INTEGRATION CHALLENGES",
-          company.integration_challenges || ""
-        );
-        addRightSection("MARKET PENETRATION", company.market_penetration || "");
-        addRightSection(
-          "TECHNOLOGICAL ENABLEMENT SCORE",
-          company.technological_enablement_score
-            ? `Score: ${company.technological_enablement_score}`
-            : ""
-        );
-        addRightSection(
-          "GLOBAL SOURCING REACH",
-          company.global_sourcing_reach || ""
-        );
-
-        // Footer
+        // Header text - adjusted for shorter header
         slide.addText(
-          "* Information based on available sources - to be verified",
-          { x: 0.5, y: 7.3, w: 9.0, h: 0.1, fontSize: 4, color: "#666666" }
+          company["Broad Category"] ||
+            company.Broad_Category ||
+            "Retail Consulting",
+          {
+            x: 0.1,
+            y: 0.05,
+            w: 8,
+            h: 0.2,
+            fontSize: 12,
+            color: "FFFFFF",
+          }
         );
-        slide.addText("Source: Company data", {
-          x: 0.5,
-          y: 7.4,
-          w: 9.0,
-          h: 0.1,
-          fontSize: 4,
-          color: "#666666",
+
+        slide.addText(company.name || "COMPANY NAME", {
+          x: 0.1,
+          y: 0.25,
+          w: 8,
+          h: 0.4,
+          fontSize: 24,
+          color: "FFFFFF",
+          bold: true,
         });
+
+        // Helper function to clean and format leadership data
+        const formatLeadership = (leadership) => {
+          if (!Array.isArray(leadership))
+            return "Leadership information not available";
+
+          // Remove duplicates and format properly
+          const uniqueLeaders = leadership.reduce((acc, leader) => {
+            const key = `${leader.name}_${leader.title}`;
+            if (!acc.has(key)) {
+              acc.set(key, leader);
+            }
+            return acc;
+          }, new Map());
+
+          return Array.from(uniqueLeaders.values())
+            .map((l) => `${l.title || "Executive"}: ${l.name}`)
+            .join("\n");
+        };
+
+        // First row of boxes - tighter spacing
+        const firstRowBoxes = [
+          {
+            title: "DETAILS",
+            x: 0.05,
+            content: [
+              `HQ: ${
+                Array.isArray(company.office_locations)
+                  ? company.office_locations[0]
+                  : company.office_locations || "N/A"
+              }`,
+              `Ownership: ${company.Ownership || "Private"}`,
+              `Employees: ${company.employee_count || "N/A"}`,
+              `Revenue: ${company.estimated_revenue || "N/A"}`,
+              `Growth: ${company.revenue_growth || "N/A"}`,
+            ]
+              .filter((item) => item && !item.includes("N/A"))
+              .join("\n"),
+          },
+          {
+            title: "BUSINESS OVERVIEW",
+            x: 3.35,
+            content:
+              company.merger_synergies ||
+              "Specialized consulting firm focused on retail industry solutions",
+          },
+          {
+            title: "SERVICE OFFERINGS",
+            x: 6.65,
+            content: Array.isArray(company.Services)
+              ? company.Services.join(", ")
+              : company.Services || "Consulting Services",
+          },
+        ];
+
+        firstRowBoxes.forEach((box) => {
+          // Shorter purple header
+          slide.addShape(pptx.ShapeType.rect, {
+            x: box.x,
+            y: 0.8,
+            w: 3.25,
+            h: 0.25,
+            fill: { color: "4C2C85" },
+          });
+
+          slide.addText(box.title, {
+            x: box.x + 0.05,
+            y: 0.82,
+            w: 3.15,
+            h: 0.21,
+            fontSize: 11,
+            color: "FFFFFF",
+            bold: true,
+          });
+
+          // Shorter content box
+          slide.addShape(pptx.ShapeType.rect, {
+            x: box.x,
+            y: 1.05,
+            w: 3.25,
+            h: 1.1,
+            fill: { color: "FFFFFF" },
+            line: { color: "CCCCCC", width: 1 },
+          });
+
+          slide.addText(box.content, {
+            x: box.x + 0.05,
+            y: 1.1,
+            w: 3.15,
+            h: 1.0,
+            fontSize: 10,
+            color: "000000",
+            wrap: true,
+            lineSpacing: 12,
+          });
+        });
+
+        // Second row of boxes
+        const secondRowBoxes = [
+          {
+            title: "MANAGEMENT TEAM",
+            x: 0.05,
+            content: formatLeadership(company.leadership),
+          },
+          {
+            title: "WEBSITE",
+            x: 3.35,
+            content: company.domain_name
+              ? `www.${company.domain_name}`
+              : "Website not available",
+          },
+          {
+            title: "KEY CLIENTS",
+            x: 6.65,
+            content: Array.isArray(company.key_clients)
+              ? company.key_clients.join("\n")
+              : "Client information not available",
+          },
+        ];
+
+        secondRowBoxes.forEach((box) => {
+          // Shorter purple header
+          slide.addShape(pptx.ShapeType.rect, {
+            x: box.x,
+            y: 2.25,
+            w: 3.25,
+            h: 0.25,
+            fill: { color: "4C2C85" },
+          });
+
+          slide.addText(box.title, {
+            x: box.x + 0.05,
+            y: 2.27,
+            w: 3.15,
+            h: 0.21,
+            fontSize: 11,
+            color: "FFFFFF",
+            bold: true,
+          });
+
+          // Shorter content box
+          slide.addShape(pptx.ShapeType.rect, {
+            x: box.x,
+            y: 2.5,
+            w: 3.25,
+            h: 1.1,
+            fill: { color: "FFFFFF" },
+            line: { color: "CCCCCC", width: 1 },
+          });
+
+          slide.addText(box.content, {
+            x: box.x + 0.05,
+            y: 2.55,
+            w: 3.15,
+            h: 1.0,
+            fontSize: 10,
+            color: "000000",
+            wrap: true,
+            lineSpacing: 12,
+          });
+        });
+
+        // Third row of boxes
+        const thirdRowBoxes = [
+          {
+            title: "INDUSTRIES SERVED",
+            x: 0.05,
+            content: Array.isArray(company.Industries)
+              ? company.Industries.join(", ")
+              : company.Industries || "Retail, Consumer Goods",
+          },
+          {
+            title: "GEOGRAPHIC PRESENCE",
+            x: 3.35,
+            content: Array.isArray(company.office_locations)
+              ? company.office_locations.join(", ")
+              : company.office_locations || "United States",
+          },
+          {
+            title: "MERGER SYNERGIES",
+            x: 6.65,
+            content:
+              company.merger_synergies ||
+              "Strategic alignment opportunities to be evaluated",
+          },
+        ];
+
+        thirdRowBoxes.forEach((box) => {
+          // Shorter purple header
+          slide.addShape(pptx.ShapeType.rect, {
+            x: box.x,
+            y: 3.7,
+            w: 3.25,
+            h: 0.25,
+            fill: { color: "4C2C85" },
+          });
+
+          slide.addText(box.title, {
+            x: box.x + 0.05,
+            y: 3.72,
+            w: 3.15,
+            h: 0.21,
+            fontSize: 11,
+            color: "FFFFFF",
+            bold: true,
+          });
+
+          // Shorter content box
+          slide.addShape(pptx.ShapeType.rect, {
+            x: box.x,
+            y: 3.95,
+            w: 3.25,
+            h: 1.1,
+            fill: { color: "FFFFFF" },
+            line: { color: "CCCCCC", width: 1 },
+          });
+
+          slide.addText(box.content, {
+            x: box.x + 0.05,
+            y: 4.0,
+            w: 3.15,
+            h: 1.0,
+            fontSize: 10,
+            color: "000000",
+            wrap: true,
+            lineSpacing: 12,
+          });
+        });
+
+        // Compact footer
+        slide.addText(
+          "* Financial information based on publicly available sources - to be verified with management at a later stage",
+          {
+            x: 0.05,
+            y: 5.2,
+            w: 7,
+            h: 0.2,
+            fontSize: 8,
+            color: "666666",
+            italic: true,
+          }
+        );
+
+        slide.addText(
+          "Source: Company website, LinkedIn, Capital IQ, Pitchbook",
+          {
+            x: 0.05,
+            y: 5.45,
+            w: 5,
+            h: 0.2,
+            fontSize: 8,
+            color: "666666",
+          }
+        );
+
         slide.addText("Copyright © 2025 Accenture. All rights reserved.", {
-          x: 7.0,
-          y: 7.4,
-          w: 2.5,
-          h: 0.1,
-          fontSize: 4,
-          color: "#666666",
+          x: 5.5,
+          y: 5.45,
+          w: 4.45,
+          h: 0.2,
+          fontSize: 8,
+          color: "666666",
           align: "right",
         });
       });
@@ -449,7 +576,6 @@ const Reports = () => {
       });
     }
   };
-
   const handleDownload = (handler: string) => {
     if (handler === "downloadExcel") generateExcel();
     else if (handler === "downloadPPT") generatePPT();

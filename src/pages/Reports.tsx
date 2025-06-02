@@ -4,6 +4,13 @@ import { FileText, Download, File } from "lucide-react";
 import { Button } from "../components/botton";
 import * as XLSX from "xlsx";
 import PptxGenJS from "pptxgenjs";
+import { Company } from "../types/search";
+
+
+interface Leader {
+  name: string;
+  title: string;
+}
 
 const STORAGE_KEYS = ["accenture-merger-results", "accenture-search-results"];
 
@@ -62,28 +69,25 @@ const Reports = () => {
   };
 
   // Helper function to get tier based on overall_score
-  const getTier = (score: number | undefined): string => {
-    if (score === undefined) return "N/A";
-    if (score > 85) return "Tier 1";
-    if (score >= 80) return "Tier 2";
-    return "Tier 3";
-  };
+      // const getTier = (score: number | undefined): string => {
+      //   if (score === undefined) return "N/A";
+      //   if (score > 85) return "Tier 1";
+      //   if (score >= 80) return "Tier 2";
+      //   return "Tier 3";
+      // };
 
   // Excel generation
   const generateExcel = () => {
     try {
-      const allCompanies: any[] = [];
-      let rankings: any[] = [];
+      const allCompanies: Company[] = [];
       STORAGE_KEYS.forEach((key) => {
         const savedResults = localStorage.getItem(key);
         if (!savedResults) return;
         const data = JSON.parse(savedResults);
         if (key === "accenture-merger-results") {
           allCompanies.push(
-            ...(data?.results?.["Initial Target Identification"]
-              ?.raw_response || [])
+            ...(data?.results?.["Initial Target Identification"]?.raw_response || [])
           );
-          rankings = data?.results?.claude_analysis?.rankings || [];
         } else if (key === "accenture-search-results") {
           allCompanies.push(...(data?.["0"]?.response || []));
           allCompanies.push(...(data?.["1"]?.response || []));
@@ -95,30 +99,26 @@ const Reports = () => {
       const mergedCompanies = mergeCompanyData(allCompanies);
       const arrayToString = (arr: any, separator = ", ") =>
         Array.isArray(arr) ? arr.join(separator) : arr || "N/A";
-      const excelData = mergedCompanies.map((company) => {
-        // const ranking = rankings.find((r: any) => r.name === company.name);
-        return {
-          Name: company.name || "N/A",
-          DomainName: company.domain_name || "N/A",
-          EstimatedRevenue: company.estimated_revenue || "N/A",
-          RevenueGrowth: company.revenue_growth || "N/A",
-          EmployeeCount: company.employee_count || "N/A",
-          KeyClients: arrayToString(company.key_clients),
-          Leadership:
-            company.leadership
-              ?.map((l: any) => `${l.name} (${l.title})`)
-              .join(", ") || "N/A",
-          MergerSynergies: company.merger_synergies || "N/A",
-          Industries: arrayToString(company.Industries),
-          Services: arrayToString(company.Services),
-          BroadCategory:
-            company["Broad Category"] || company.Broad_Category || "N/A",
-          Ownership: company.Ownership || "N/A",
-          Sources: arrayToString(company.sources, "; "),
-          OfficeLocations: arrayToString(company.office_locations),
-          ValidationWarnings: arrayToString(company.validation_warnings, "; "),
-        };
-      });
+      const excelData = mergedCompanies.map((company) => ({
+        Name: company.name || "N/A",
+        DomainName: company.domain_name || "N/A",
+        EstimatedRevenue: company.estimated_revenue || "N/A",
+        RevenueGrowth: company.revenue_growth || "N/A",
+        EmployeeCount: company.employee_count || "N/A",
+        KeyClients: arrayToString(company.key_clients),
+        Leadership:
+          company.leadership
+            ?.map((l: Leader) => `${l.name} (${l.title})`)
+            .join(", ") || "N/A",
+        MergerSynergies: company.merger_synergies || "N/A",
+        Industries: arrayToString(company.Industries),
+        Services: arrayToString(company.Services),
+        BroadCategory: company.Broad_Category || "N/A",
+        Ownership: company.Ownership || "N/A",
+        Sources: arrayToString(company.sources, "; "),
+        OfficeLocations: arrayToString(company.office_locations),
+        ValidationWarnings: arrayToString(company.validation_warnings, "; "),
+      }));
       const ws = XLSX.utils.json_to_sheet(excelData);
       const wb = XLSX.utils.book_new();
       XLSX.utils.book_append_sheet(wb, ws, "Companies");
@@ -139,7 +139,7 @@ const Reports = () => {
       });
     }
   };
-
+  
   // PPT generation
   const generatePPT = () => {
     try {
@@ -150,10 +150,10 @@ const Reports = () => {
       const rankings = mergerData?.results?.claude_analysis?.rankings || [];
       const recommendations =
         mergerData?.results?.claude_analysis?.recommendations || [];
-      const summary =
-        mergerData?.results?.claude_analysis?.summary || "No summary available";
+      // const summary =
+      //   mergerData?.results?.claude_analysis?.summary || "No summary available";
 
-      let allCompanies = [];
+      let allCompanies: any[] = [];
       STORAGE_KEYS.forEach((key) => {
         const savedResults = localStorage.getItem(key);
         if (!savedResults) return;
@@ -237,9 +237,9 @@ const Reports = () => {
         color: "#1E3A8A",
       });
       const topCandidates = rankings.slice(0, 3);
-      topCandidates.forEach((candidate, index) => {
+      topCandidates.forEach((candidate: any, index: number) => {
         const recommendation = recommendations.find(
-          (rec) => rec.name === candidate.name
+          (rec: any) => rec.name === candidate.name
         );
         slide.addText(
           `${index + 1}. ${candidate.name}
@@ -302,7 +302,7 @@ ${
         });
 
         // Helper function to clean and format leadership data
-        const formatLeadership = (leadership) => {
+        const formatLeadership = (leadership: any) => {
           if (!Array.isArray(leadership))
             return "Leadership information not available";
 
@@ -316,7 +316,7 @@ ${
           }, new Map());
 
           return Array.from(uniqueLeaders.values())
-            .map((l) => `${l.title || "Executive"}: ${l.name}`)
+            .map((l: any) => `${l.title || "Executive"}: ${l.name}`)
             .join("\n");
         };
 

@@ -9,11 +9,10 @@ export interface Prompt {
 
 export interface PromptResponse {
   title: string;
-  raw_response: any;
-  extracted_companies: string[];
-  sources: string[];
-  document_id: string;
+  raw_response?: CompanyDetails[]; 
+  sources?: string[];
   validation_warnings?: string[];
+  document_id: string;
 }
 
 export interface CompanyDetails {

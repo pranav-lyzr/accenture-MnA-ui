@@ -1,6 +1,5 @@
-
 import { useState } from 'react';
-import { Download, RefreshCw } from 'lucide-react';
+import { Download } from 'lucide-react';
 import { Button } from '../botton';
 import {
   Table,
@@ -11,6 +10,7 @@ import {
   TableCell,
 } from '../ui/table';
 import CompanyDetailsDialog from '../companies/CompanyDetailsDialog';
+import * as XLSX from 'xlsx';
 
 interface CompanyCardProps {
   name: string;
@@ -61,7 +61,7 @@ interface AnalysisResultsProps {
   companies: CompanyCardProps[];
 }
 
-const AnalysisResults = ({ analysis, lastAnalysisTimestamp, onRefresh, companies }: AnalysisResultsProps) => {
+const AnalysisResults = ({ analysis, lastAnalysisTimestamp, companies }: AnalysisResultsProps) => {
   const [sortColumn, setSortColumn] = useState<string>('overall_score');
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc');
   const [selectedCompany, setSelectedCompany] = useState<CompanyCardProps | null>(null);
@@ -90,6 +90,41 @@ const AnalysisResults = ({ analysis, lastAnalysisTimestamp, onRefresh, companies
     }
   };
 
+  const exportToExcel = () => {
+    try {
+      const excelData = sortedRankings.map((company, index) => ({
+        Rank: index + 1,
+        'Company Name': company.name,
+        'Overall Score': company.overall_score,
+        'Financial Health': company.financial_health_score,
+        'Strategic Fit': company.strategic_fit_score,
+        'Operational Compatibility': company.operational_compatibility_score,
+        'Leadership Innovation': company.leadership_innovation_score,
+        'Cultural Integration': company.cultural_integration_score,
+        Rationale: company.rationale,
+      }));
+
+      const ws = XLSX.utils.json_to_sheet(excelData);
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, 'Rankings');
+
+      // Set column widths based on content length
+      const colWidths = Object.keys(excelData[0]).map((key) => ({
+        wch: Math.max(
+          key.length,
+          ...excelData.map((row: any) => String(row[key] || '').length)
+        ),
+      }));
+      ws['!cols'] = colWidths;
+
+      const filename = `Analysis_Rankings_${new Date().toISOString().split('T')[0]}.xlsx`;
+      XLSX.writeFile(wb, filename);
+    } catch (error) {
+      console.error('Error exporting to Excel:', error);
+      alert('Failed to export analysis to Excel. Please try again.');
+    }
+  };
+
   const SortableHeader = ({ column, title }: { column: string; title: string }) => (
     <TableHead onClick={() => handleSort(column)} className="cursor-pointer hover:bg-muted">
       <div className="flex items-center gap-1">
@@ -110,17 +145,10 @@ const AnalysisResults = ({ analysis, lastAnalysisTimestamp, onRefresh, companies
             variant="outline"
             size="sm"
             className="flex items-center gap-2"
+            onClick={exportToExcel}
           >
             <Download size={16} />
             Download Analysis
-          </Button>
-          <Button
-            onClick={onRefresh}
-            size="sm"
-            className="flex items-center gap-2"
-          >
-            <RefreshCw size={16} />
-            Refresh Analysis
           </Button>
         </div>
       </div>

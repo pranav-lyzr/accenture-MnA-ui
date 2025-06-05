@@ -165,6 +165,9 @@ const Search = () => {
         return;
       }
   
+      // Log the result for debugging
+      console.debug("runPrompt result:", { index, result });
+  
       // Convert PromptResponse to SearchResponse format
       const searchResponse: SearchResponse = {
         title: result.title,
@@ -175,17 +178,34 @@ const Search = () => {
         document_id: result.document_id,
       };
   
-      setResults((prev) => ({
-        ...prev,
-        [index]: searchResponse,
-      }));
-      setSelectedHistory((prev) => ({
-        ...prev,
-        [index]: null,
-      }));
+      // Update results state immediately with runPrompt result
+      setResults((prev) => {
+        const updated = {
+          ...prev,
+          [index]: searchResponse,
+        };
+        console.debug("Updated results state:", { index, updated });
+        return updated;
+      });
+  
+      // Reset selected history to ensure latest result is shown
+      setSelectedHistory((prev) => {
+        const updated = {
+          ...prev,
+          [index]: null,
+        };
+        console.debug("Updated selectedHistory state:", { index, updated });
+        return updated;
+      });
+  
+      // Set active tab to ensure UI switches to the correct tab
+      setActiveTab(index);
+      console.debug("Set activeTab:", { index });
+  
+      // Fetch prompt history to keep dropdown updated, but don't block UI
       const historyData = await api.getPromptHistory();
       setPromptHistory(historyData);
-      setActiveTab(index);
+      console.debug("Updated promptHistory:", { historyData });
     } catch (error: any) {
       console.error("Error running prompt:", error, { index, customMessage });
       toast({
@@ -952,11 +972,7 @@ const Search = () => {
                       </div>
                     </div>
                   )}
-                  {results[activeTab] && (!results[activeTab].response || results[activeTab].response.length === 0) && (
-                    <div className="text-center py-8 bg-white rounded-lg border border-gray-200 shadow-sm">
-                      <p className="text-gray-500">No results available for this search.</p>
-                    </div>
-                  )}
+                  
                 </div>
               )}
               {activeTab !== null && results[activeTab] && (!results[activeTab].response || results[activeTab].response.length === 0) && (

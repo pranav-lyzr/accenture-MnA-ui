@@ -1,5 +1,5 @@
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '../../components/ui/dialog';
-import { Button } from '../../components/botton';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '../ui/dialog';
+import { Button } from '../botton';
 
 interface AnalysisCompleteDialogProps {
   open: boolean;
@@ -32,7 +32,6 @@ const AnalysisCompleteDialog = ({ open, onOpenChange, isAnalyzing }: AnalysisCom
           <div className="flex justify-end">
             <Button
               onClick={() => onOpenChange(false)}
-              className="bg-purple-500 hover:bg-purple-600 text-white"
             >
               Close
             </Button>

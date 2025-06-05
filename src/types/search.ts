@@ -1,14 +1,34 @@
+// CompanyDetails interface for detailed company information
 export interface CompanyDetails {
   name: string;
   domain_name?: string;
-  estimated_revenue?: string;
-  employee_count?: string;
-  Industries?: string | string[];
-  Services?: string | string[];
-  [key: string]: any; // Allow additional properties
+  estimated_revenue?: string; // e.g., "$20M"
+  revenue_growth?: string;
+  employee_count?: string; // e.g., "60" or "2 employees"
+  key_clients?: string[];
+  leadership?: Array<{ name: string; title: string }>;
+  merger_synergies?: string;
+  Industries?: string;
+  Services?: string;
+  Broad_Category?: string;
+  Ownership?: string;
+  sources?: string[];
+  office_locations?: string[];
+  validation_warnings?: string[];
+  [key: string]: any;
 }
 
-// Update the MergerSearchResponse interface to use AnalysisData
+// Single SearchResponse interface
+export interface SearchResponse {
+  title: string;
+  response: CompanyDetails[]; // Array of company details
+  companies: string[]; // Array of company names
+  sources: string[];
+  validation_warnings?: string[];
+  document_id?: string;
+}
+
+// MergerSearchResponse interface
 export interface MergerSearchResponse {
   results: {
     [key: string]: {
@@ -19,7 +39,7 @@ export interface MergerSearchResponse {
   };
 }
 
-// AnalysisData should include both rankings and recommendations
+// AnalysisData interface (single definition)
 export interface AnalysisData {
   rankings: Array<{
     name: string;
@@ -35,8 +55,9 @@ export interface AnalysisData {
   }>;
 }
 
+// Company interface with BigInteger replaced by bigint
 export interface Company {
-  rank: BigInteger,
+  rank: bigint; // Use bigint instead of BigInteger (or number if bigint is not suitable)
   name: string;
   domain_name: string;
   estimated_revenue: string;
@@ -58,29 +79,4 @@ export interface Company {
   market_penetration: string;
   sources?: string[]; // Optional, as it may only appear in some formats
   [key: string]: any; // For flexibility with additional fields
-}
-
-export interface SearchResponse {
-  title: string;
-  response: any;
-  companies: CompanyDetails[];
-  sources: string[];
-  validation_warnings?: string[];
-}
-
-
-
-export interface AnalysisData {
-  rankings: Array<{
-    name: string;
-    rationale: string;
-    overall_score: string;
-    financial_health_score: string;
-    strategic_fit_score: string;
-  }>;
-  recommendations: Array<{
-    name: string;
-    key_synergies: string[];
-    potential_risks: string[];
-  }>;
 }

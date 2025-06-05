@@ -12,6 +12,38 @@ export interface PromptResponse {
   raw_response: any;
   extracted_companies: string[];
   sources: string[];
+  document_id: string;
+  validation_warnings?: string[];
+}
+
+export interface CompanyDetails {
+  name: string;
+  domain_name?: string;
+  estimated_revenue?: string; // String in response (e.g., "$35M")
+  revenue_growth?: string;
+  employee_count?: string; // String in response (e.g., "170 employees")
+  key_clients?: string[];
+  leadership?: Array<{ name: string; title: string }>;
+  merger_synergies?: string;
+  Industries?: string;
+  Services?: string;
+  Broad_Category?: string;
+  Ownership?: string;
+  sources?: string[];
+  office_locations?: string[];
+  validation_warnings?: string[];
+}
+
+export interface PromptHistoryItem {
+  prompt_index: number;
+  title: string;
+  custom_message: string | null;
+  prompt_content: string;
+  raw_response: CompanyDetails[];
+  extracted_companies: string[];
+  validation_warnings: string[];
+  timestamp: string;
+  document_id: string;
 }
 
 export interface CompanyData {
@@ -142,6 +174,20 @@ const api = {
     }
   },
   
+  // Get prompt history
+  getPromptHistory: async (): Promise<PromptHistoryItem[]> => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/prompt_history`);
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      return await response.json();
+    } catch (error) {
+      console.error('Error fetching prompt history:', error);
+      return [];
+    }
+  },
+
   // Run the full merger search process
   runMergerSearch: async (): Promise<MergerSearchResponse> => {
     try {
@@ -305,6 +351,20 @@ const api = {
     }
   },
 
+  // Fetch all unique companies with full data
+getCompanies: async (): Promise<CompanyData[]> => {
+  try {
+    const response = await fetch(`${API_BASE_URL}/companies`);
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+    return await response.json();
+  } catch (error) {
+    console.error('Error fetching companies:', error);
+    return [];
+  }
+},
+
   // Download CSVs and JSONs
   downloadCSV: () => {
     window.open(`${API_BASE_URL}/download_csv`, '_blank');
@@ -313,6 +373,8 @@ const api = {
   downloadJSON: () => {
     window.open(`${API_BASE_URL}/download_json`, '_blank');
   },
+
+
 };
 
 export default api;

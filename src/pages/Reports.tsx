@@ -1,132 +1,122 @@
+import { useState, useEffect } from 'react';
 import { useToast } from "../hooks/use-toast";
 import Layout from "../components/layout/Layout";
 import { FileText, Download, File } from "lucide-react";
 import { Button } from "../components/botton";
+import { Card, CardContent, CardHeader, CardTitle } from "../components/ui/card";
 import * as XLSX from "xlsx";
 import PptxGenJS from "pptxgenjs";
-import { Company } from "../types/search";
+import api from '../services/api';
 
-
-interface Leader {
+interface CompanyData {
+  _id: string;
   name: string;
-  title: string;
+  "Broad Category": string;
+  Industries: string[];
+  Ownership: string;
+  Services: string[];
+  domain_name: string;
+  employee_count: string;
+  estimated_revenue: string;
+  key_clients: string[];
+  leadership: { name: string; title: string }[];
+  merger_synergies: string;
+  office_locations: string[];
+  revenue_growth: string;
+  sources: string[];
+  validation_warnings: string[];
 }
-
-const STORAGE_KEYS = ["accenture-merger-results", "accenture-search-results"];
 
 const reportTypes = [
   {
     title: "Companies List (Excel)",
-    description: "Detailed list of all identified companies with tiering",
+    description: "Comprehensive database of all identified companies with detailed analysis",
     format: "XLSX",
-    icon: <File size={32} className="text-purple-500" />,
+    icon: <File size={32} className="text-emerald-600" />,
     handler: "downloadExcel",
+    color: "emerald",
   },
   {
     title: "Merger Analysis Summary (PPT)",
-    description:
-      "Summary of scan brief, recommended shortlist, and company details",
-    format: "PPTX",
-    icon: <FileText size={32} className="text-purple-500" />,
+    description: "Executive presentation with scan brief and detailed company profiles",
+    format: "PPTX", 
+    icon: <FileText size={32} className="text-blue-600" />,
     handler: "downloadPPT",
+    color: "blue",
   },
 ];
 
 const Reports = () => {
   const { toast } = useToast();
+  const [companies, setCompanies] = useState<CompanyData[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
 
-  // Helper function to merge company data
-  const mergeCompanyData = (companies: any[]): any[] => {
-    const companyMap = new Map<string, any>();
-    companies.forEach((company) => {
-      const key =
-        company.name?.toLowerCase() || company.domain_name?.toLowerCase();
-      if (!key) return;
-      if (!companyMap.has(key)) {
-        companyMap.set(key, { ...company });
-      } else {
-        const existing = companyMap.get(key)!;
-        Object.keys(company).forEach((field) => {
-          if (Array.isArray(company[field]) && Array.isArray(existing[field])) {
-            existing[field] = Array.from(
-              new Set([...existing[field], ...company[field]])
-            );
-          } else if (Array.isArray(company[field])) {
-            existing[field] = company[field];
-          } else if (
-            typeof company[field] === "string" &&
-            company[field] &&
-            (!existing[field] || company[field].length > existing[field].length)
-          ) {
-            existing[field] = company[field];
-          } else if (company[field] && !existing[field]) {
-            existing[field] = company[field];
-          }
+  useEffect(() => {
+    const fetchCompanies = async () => {
+      try {
+        const data = await api.getCompanies();
+        setCompanies(data as CompanyData[]);
+      } catch (error) {
+        console.error('Error fetching companies:', error);
+        toast({
+          title: "Error",
+          description: "Failed to load company data",
+          variant: "destructive",
         });
+      } finally {
+        setIsLoading(false);
       }
-    });
-    return Array.from(companyMap.values());
-  };
+    };
+    fetchCompanies();
+  }, [toast]);
 
-  // Helper function to get tier based on overall_score
-      // const getTier = (score: number | undefined): string => {
-      //   if (score === undefined) return "N/A";
-      //   if (score > 85) return "Tier 1";
-      //   if (score >= 80) return "Tier 2";
-      //   return "Tier 3";
-      // };
-
-  // Excel generation
   const generateExcel = () => {
-    try {
-      const allCompanies: Company[] = [];
-      STORAGE_KEYS.forEach((key) => {
-        const savedResults = localStorage.getItem(key);
-        if (!savedResults) return;
-        const data = JSON.parse(savedResults);
-        if (key === "accenture-merger-results") {
-          allCompanies.push(
-            ...(data?.results?.["Initial Target Identification"]?.raw_response || [])
-          );
-        } else if (key === "accenture-search-results") {
-          allCompanies.push(...(data?.["0"]?.response || []));
-          allCompanies.push(...(data?.["1"]?.response || []));
-          allCompanies.push(...(data?.["2"]?.response || []));
-        }
+    if (isLoading) {
+      toast({
+        title: "Loading",
+        description: "Please wait while data is loading",
       });
-      if (!allCompanies.length)
-        throw new Error("No company data found in localStorage");
-      const mergedCompanies = mergeCompanyData(allCompanies);
-      const arrayToString = (arr: any, separator = ", ") =>
-        Array.isArray(arr) ? arr.join(separator) : arr || "N/A";
-      const excelData = mergedCompanies.map((company) => ({
+      return;
+    }
+    if (!companies.length) {
+      toast({
+        title: "Error",
+        description: "No company data available",
+        variant: "destructive",
+      });
+      return;
+    }
+    try {
+      const excelData = companies.map(company => ({
         Name: company.name || "N/A",
         DomainName: company.domain_name || "N/A",
         EstimatedRevenue: company.estimated_revenue || "N/A",
         RevenueGrowth: company.revenue_growth || "N/A",
         EmployeeCount: company.employee_count || "N/A",
-        KeyClients: arrayToString(company.key_clients),
-        Leadership:
-          company.leadership
-            ?.map((l: Leader) => `${l.name} (${l.title})`)
-            .join(", ") || "N/A",
+        KeyClients: Array.isArray(company.key_clients) ? company.key_clients.join(", ") : "N/A",
+        Leadership: Array.isArray(company.leadership) ? company.leadership.map(l => `${l.name} (${l.title})`).join(", ") : "N/A",
         MergerSynergies: company.merger_synergies || "N/A",
-        Industries: arrayToString(company.Industries),
-        Services: arrayToString(company.Services),
-        BroadCategory: company.Broad_Category || "N/A",
+        Industries: company.Industries
+          ? (Array.isArray(company.Industries)
+            ? company.Industries.join(", ")
+            : String(company.Industries))
+          : "N/A",
+        Services: company.Services
+          ? (Array.isArray(company.Services)
+            ? company.Services.join(", ")
+            : String(company.Services))
+          : "N/A",
+        BroadCategory: company["Broad Category"] || "N/A",
         Ownership: company.Ownership || "N/A",
-        Sources: arrayToString(company.sources, "; "),
-        OfficeLocations: arrayToString(company.office_locations),
-        ValidationWarnings: arrayToString(company.validation_warnings, "; "),
+        Sources: Array.isArray(company.sources) ? company.sources.join("; ") : "N/A",
+        OfficeLocations: Array.isArray(company.office_locations) ? company.office_locations.join(", ") : "N/A",
+        ValidationWarnings: Array.isArray(company.validation_warnings) ? company.validation_warnings.join("; ") : "N/A",
       }));
       const ws = XLSX.utils.json_to_sheet(excelData);
       const wb = XLSX.utils.book_new();
       XLSX.utils.book_append_sheet(wb, ws, "Companies");
-      const colWidths = Object.keys(excelData[0]).map((key) => ({
-        wch: Math.max(
-          key.length,
-          ...excelData.map((row: any) => String(row[key]).length)
-        ),
+      const colWidths = Object.keys(excelData[0]).map(key => ({
+        wch: Math.max(key.length, ...excelData.map(row => String(row[key as keyof typeof excelData[number]]).length))
       }));
       ws["!cols"] = colWidths;
       XLSX.writeFile(wb, "Companies_List.xlsx");
@@ -139,39 +129,24 @@ const Reports = () => {
       });
     }
   };
-  
-  // PPT generation
+
   const generatePPT = () => {
-    try {
-      const mergerResults = localStorage.getItem("accenture-merger-results");
-      if (!mergerResults)
-        throw new Error("No merger results found in localStorage");
-      const mergerData = JSON.parse(mergerResults);
-      const rankings = mergerData?.results?.claude_analysis?.rankings || [];
-      const recommendations =
-        mergerData?.results?.claude_analysis?.recommendations || [];
-      // const summary =
-      //   mergerData?.results?.claude_analysis?.summary || "No summary available";
-
-      let allCompanies: any[] = [];
-      STORAGE_KEYS.forEach((key) => {
-        const savedResults = localStorage.getItem(key);
-        if (!savedResults) return;
-        const data = JSON.parse(savedResults);
-        if (key === "accenture-merger-results") {
-          allCompanies.push(
-            ...(data?.results?.["Initial Target Identification"]
-              ?.raw_response || [])
-          );
-        } else if (key === "accenture-search-results") {
-          allCompanies.push(...(data?.["0"]?.response || []));
-          allCompanies.push(...(data?.["1"]?.response || []));
-          allCompanies.push(...(data?.["2"]?.response || []));
-        }
+    if (isLoading) {
+      toast({
+        title: "Loading",
+        description: "Please wait while data is loading",
       });
-      const uniqueCompanies = mergeCompanyData(allCompanies);
-      const totalCompanies = uniqueCompanies.length;
-
+      return;
+    }
+    if (!companies.length) {
+      toast({
+        title: "Error",
+        description: "No company data available",
+        variant: "destructive",
+      });
+      return;
+    }
+    try {
       const pptx = new PptxGenJS();
       pptx.defineLayout({ name: "A4", width: 10, height: 7.5 });
 
@@ -210,9 +185,9 @@ const Reports = () => {
       });
       slide.addText(
         `• Objective: Identify potential merger candidates in retail consulting, focusing on sourcing, product development, and supply chain
-• Methodology: AI-driven market scan, data validation, and expert analysis  
+• Methodology: AI-driven market scan, data validation, and expert analysis
 • Scope: Enterprise retail consulting firms in North America
-• Total Companies Identified: ${totalCompanies}`,
+• Total Companies Identified: ${companies.length}`,
         {
           x: 0.5,
           y: 1.2,
@@ -225,49 +200,11 @@ const Reports = () => {
         }
       );
 
-      // Slide 3: Recommended Shortlist
-      slide = pptx.addSlide();
-      slide.addText("Recommended Shortlist", {
-        x: 0.5,
-        y: 0.5,
-        w: 9.0,
-        h: 0.5,
-        fontSize: 24,
-        bold: true,
-        color: "#1E3A8A",
-      });
-      const topCandidates = rankings.slice(0, 3);
-      topCandidates.forEach((candidate: any, index: number) => {
-        const recommendation = recommendations.find(
-          (rec: any) => rec.name === candidate.name
-        );
-        slide.addText(
-          `${index + 1}. ${candidate.name}
-Overall Score: ${candidate.overall_score}
-Rationale: ${candidate.rationale}
-${
-  recommendation
-    ? `Key Synergies: ${recommendation.key_synergies.join(", ")}`
-    : ""
-}`,
-          {
-            x: 0.5,
-            y: 1.2 + index * 1.8,
-            w: 9.0,
-            h: 1.5,
-            fontSize: 12,
-            color: "#333333",
-            wrap: true,
-            lineSpacing: 18,
-          }
-        );
-      });
-
-      // Company Detail Slides - Compact layout matching template exactly
-      uniqueCompanies.forEach((company) => {
+      // Company Detail Slides
+      companies.forEach(company => {
         slide = pptx.addSlide();
 
-        // Purple header background - shorter height
+        // Purple header background
         slide.addShape(pptx.ShapeType.rect, {
           x: 0,
           y: 0,
@@ -276,11 +213,9 @@ ${
           fill: { color: "4C2C85" },
         });
 
-        // Header text - adjusted for shorter header
+        // Header text
         slide.addText(
-          company["Broad Category"] ||
-            company.Broad_Category ||
-            "Retail Consulting",
+          company["Broad Category"] || "Retail Consulting",
           {
             x: 0.1,
             y: 0.05,
@@ -290,7 +225,6 @@ ${
             color: "FFFFFF",
           }
         );
-
         slide.addText(company.name || "COMPANY NAME", {
           x: 0.1,
           y: 0.25,
@@ -301,62 +235,32 @@ ${
           bold: true,
         });
 
-        // Helper function to clean and format leadership data
-        const formatLeadership = (leadership: any) => {
-          if (!Array.isArray(leadership))
-            return "Leadership information not available";
-
-          // Remove duplicates and format properly
-          const uniqueLeaders = leadership.reduce((acc, leader) => {
-            const key = `${leader.name}_${leader.title}`;
-            if (!acc.has(key)) {
-              acc.set(key, leader);
-            }
-            return acc;
-          }, new Map());
-
-          return Array.from(uniqueLeaders.values())
-            .map((l: any) => `${l.title || "Executive"}: ${l.name}`)
-            .join("\n");
-        };
-
-        // First row of boxes - tighter spacing
+        // First row of boxes
         const firstRowBoxes = [
           {
             title: "DETAILS",
             x: 0.05,
             content: [
-              `HQ: ${
-                Array.isArray(company.office_locations)
-                  ? company.office_locations[0]
-                  : company.office_locations || "N/A"
-              }`,
-              `Ownership: ${company.Ownership || "Private"}`,
+              `HQ: ${Array.isArray(company.office_locations) ? company.office_locations[0] : company.office_locations || "N/A"}`,
+              `Ownership: ${company.Ownership || "N/A"}`,
               `Employees: ${company.employee_count || "N/A"}`,
               `Revenue: ${company.estimated_revenue || "N/A"}`,
               `Growth: ${company.revenue_growth || "N/A"}`,
-            ]
-              .filter((item) => item && !item.includes("N/A"))
-              .join("\n"),
+            ].filter(item => item && !item.includes("N/A")).join("\n"),
           },
           {
             title: "BUSINESS OVERVIEW",
             x: 3.35,
-            content:
-              company.merger_synergies ||
-              "Specialized consulting firm focused on retail industry solutions",
+            content: company.merger_synergies || "Specialized consulting firm focused on retail industry solutions",
           },
           {
             title: "SERVICE OFFERINGS",
             x: 6.65,
-            content: Array.isArray(company.Services)
-              ? company.Services.join(", ")
-              : company.Services || "Consulting Services",
+            content: Array.isArray(company.Services) ? company.Services.join(", ") : company.Services || "N/A",
           },
         ];
 
-        firstRowBoxes.forEach((box) => {
-          // Shorter purple header
+        firstRowBoxes.forEach(box => {
           slide.addShape(pptx.ShapeType.rect, {
             x: box.x,
             y: 0.8,
@@ -364,7 +268,6 @@ ${
             h: 0.25,
             fill: { color: "4C2C85" },
           });
-
           slide.addText(box.title, {
             x: box.x + 0.05,
             y: 0.82,
@@ -374,8 +277,6 @@ ${
             color: "FFFFFF",
             bold: true,
           });
-
-          // Shorter content box
           slide.addShape(pptx.ShapeType.rect, {
             x: box.x,
             y: 1.05,
@@ -384,7 +285,6 @@ ${
             fill: { color: "FFFFFF" },
             line: { color: "CCCCCC", width: 1 },
           });
-
           slide.addText(box.content, {
             x: box.x + 0.05,
             y: 1.1,
@@ -402,26 +302,21 @@ ${
           {
             title: "MANAGEMENT TEAM",
             x: 0.05,
-            content: formatLeadership(company.leadership),
+            content: Array.isArray(company.leadership) ? company.leadership.map(l => `${l.title || "Executive"}: ${l.name}`).join("\n") : "Leadership information not available",
           },
           {
             title: "WEBSITE",
             x: 3.35,
-            content: company.domain_name
-              ? `www.${company.domain_name}`
-              : "Website not available",
+            content: company.domain_name ? `www.${company.domain_name}` : "Website not available",
           },
           {
             title: "KEY CLIENTS",
             x: 6.65,
-            content: Array.isArray(company.key_clients)
-              ? company.key_clients.join("\n")
-              : "Client information not available",
+            content: Array.isArray(company.key_clients) ? company.key_clients.join("\n") : "Client information not available",
           },
         ];
 
-        secondRowBoxes.forEach((box) => {
-          // Shorter purple header
+        secondRowBoxes.forEach(box => {
           slide.addShape(pptx.ShapeType.rect, {
             x: box.x,
             y: 2.25,
@@ -429,7 +324,6 @@ ${
             h: 0.25,
             fill: { color: "4C2C85" },
           });
-
           slide.addText(box.title, {
             x: box.x + 0.05,
             y: 2.27,
@@ -439,8 +333,6 @@ ${
             color: "FFFFFF",
             bold: true,
           });
-
-          // Shorter content box
           slide.addShape(pptx.ShapeType.rect, {
             x: box.x,
             y: 2.5,
@@ -449,7 +341,6 @@ ${
             fill: { color: "FFFFFF" },
             line: { color: "CCCCCC", width: 1 },
           });
-
           slide.addText(box.content, {
             x: box.x + 0.05,
             y: 2.55,
@@ -467,28 +358,21 @@ ${
           {
             title: "INDUSTRIES SERVED",
             x: 0.05,
-            content: Array.isArray(company.Industries)
-              ? company.Industries.join(", ")
-              : company.Industries || "Retail, Consumer Goods",
+            content: Array.isArray(company.Industries) ? company.Industries.join(", ") : company.Industries || "Retail, Consumer Goods",
           },
           {
             title: "GEOGRAPHIC PRESENCE",
             x: 3.35,
-            content: Array.isArray(company.office_locations)
-              ? company.office_locations.join(", ")
-              : company.office_locations || "United States",
+            content: Array.isArray(company.office_locations) ? company.office_locations.join(", ") : company.office_locations || "United States",
           },
           {
             title: "MERGER SYNERGIES",
             x: 6.65,
-            content:
-              company.merger_synergies ||
-              "Strategic alignment opportunities to be evaluated",
+            content: company.merger_synergies || "Strategic alignment opportunities to be evaluated",
           },
         ];
 
-        thirdRowBoxes.forEach((box) => {
-          // Shorter purple header
+        thirdRowBoxes.forEach(box => {
           slide.addShape(pptx.ShapeType.rect, {
             x: box.x,
             y: 3.7,
@@ -496,7 +380,6 @@ ${
             h: 0.25,
             fill: { color: "4C2C85" },
           });
-
           slide.addText(box.title, {
             x: box.x + 0.05,
             y: 3.72,
@@ -506,8 +389,6 @@ ${
             color: "FFFFFF",
             bold: true,
           });
-
-          // Shorter content box
           slide.addShape(pptx.ShapeType.rect, {
             x: box.x,
             y: 3.95,
@@ -516,7 +397,6 @@ ${
             fill: { color: "FFFFFF" },
             line: { color: "CCCCCC", width: 1 },
           });
-
           slide.addText(box.content, {
             x: box.x + 0.05,
             y: 4.0,
@@ -529,7 +409,7 @@ ${
           });
         });
 
-        // Compact footer
+        // Footer
         slide.addText(
           "* Financial information based on publicly available sources - to be verified with management at a later stage",
           {
@@ -542,7 +422,6 @@ ${
             italic: true,
           }
         );
-
         slide.addText(
           "Source: Company website, LinkedIn, Capital IQ, Pitchbook",
           {
@@ -554,7 +433,6 @@ ${
             color: "666666",
           }
         );
-
         slide.addText("Copyright © 2025 Accenture. All rights reserved.", {
           x: 5.5,
           y: 5.45,
@@ -576,51 +454,111 @@ ${
       });
     }
   };
+
   const handleDownload = (handler: string) => {
     if (handler === "downloadExcel") generateExcel();
     else if (handler === "downloadPPT") generatePPT();
     toast({
       title: "Download Started",
-      description: "Your report is being downloaded",
+      description: "Your report is being generated and will download shortly",
     });
+  };
+
+  const getColorClasses = (color: string) => {
+    const colorMap = {
+      emerald: {
+        bg: "bg-emerald-50",
+        border: "border-emerald-200",
+        button: "bg-emerald-600 hover:bg-emerald-700",
+        text: "text-emerald-700"
+      },
+      blue: {
+        bg: "bg-blue-50", 
+        border: "border-blue-200",
+        button: "bg-blue-600 hover:bg-blue-700",
+        text: "text-blue-700"
+      }
+    };
+    return colorMap[color as keyof typeof colorMap] || colorMap.emerald;
   };
 
   return (
     <Layout>
-      <div className="mb-6">
-        <h1 className="text-2xl font-bold text-gray-800">Reports</h1>
-        <p className="text-gray-500">Download and export analysis reports</p>
-      </div>
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        {reportTypes.map((report, index) => (
-          <div
-            key={index}
-            className="bg-white rounded-xl shadow-sm overflow-hidden card-hover"
-          >
-            <div className="p-6">
-              <div className="flex items-start">
-                {report.icon}
-                <div className="ml-4">
-                  <h3 className="text-lg font-bold">{report.title}</h3>
-                  <p className="text-gray-500 mt-1">{report.description}</p>
-                  <div className="mt-4 flex justify-between items-center">
-                    <span className="text-sm text-gray-500">
-                      Format: {report.format}
-                    </span>
-                    <Button
-                      onClick={() => handleDownload(report.handler)}
-                      className="bg-purple-500 hover:bg-purple-600 flex items-center space-x-2"
-                    >
-                      <Download size={16} />
-                      <span>Download</span>
-                    </Button>
-                  </div>
-                </div>
-              </div>
-            </div>
+      {/* Header Section */}
+      <div className="mb-8">
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-3xl font-bold text-gray-900 mb-2">Reports & Analytics</h1>
+            <p className="text-gray-600 text-lg">Download comprehensive analysis reports and export data</p>
           </div>
-        ))}
+          
+          {!isLoading && (
+            <div className="text-right">
+              <div className="text-2xl font-bold text-purple-600">{companies.length}</div>
+              <div className="text-sm text-gray-500 font-medium">Companies Analyzed</div>
+            </div>
+          )}
+        </div>
       </div>
+
+      {/* Loading State */}
+      {isLoading ? (
+        <div className="flex items-center justify-center py-12">
+          <div className="text-center">
+            <div className="inline-block animate-spin rounded-full h-12 w-12 border-4 border-purple-500 border-opacity-25 border-t-purple-500 mb-4"></div>
+            <p className="text-lg font-medium text-gray-700">Loading company data...</p>
+            <p className="text-gray-500">Preparing your reports</p>
+          </div>
+        </div>
+      ) : (
+        /* Report Cards */
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+          {reportTypes.map((report, index) => {
+            const colors = getColorClasses(report.color);
+            return (
+              <Card key={index} className={`transition-all duration-300 hover:shadow-xl hover:-translate-y-1 ${colors.border} overflow-hidden`}>
+                <CardHeader className={`${colors.bg} ${colors.border} border-b`}>
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center space-x-4">
+                      <div className="p-3 bg-white rounded-lg shadow-sm">
+                        {report.icon}
+                      </div>
+                      <div>
+                        <CardTitle className="text-xl font-bold text-gray-900">
+                          {report.title}
+                        </CardTitle>
+                        <div className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-semibold ${colors.bg} ${colors.text} mt-2`}>
+                          {report.format} Format
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </CardHeader>
+                
+                <CardContent className="p-6">
+                  <br />
+                  <Button
+                    onClick={() => handleDownload(report.handler)}
+                    className={`w-full ${colors.button} text-white font-semibold py-3 px-6 rounded-lg transition-all duration-200 flex items-center justify-center space-x-2 hover:shadow-lg`}
+                    disabled={isLoading || companies.length === 0}
+                  >
+                    <Download size={20} />
+                    <span>Download {report.format}</span>
+                  </Button>
+                  
+                  {companies.length === 0 && (
+                    <p className="text-xs text-gray-500 text-center mt-2">
+                      No data available for download
+                    </p>
+                  )}
+                </CardContent>
+              </Card>
+            );
+          })}
+        </div>
+      )}
+      
+      
     </Layout>
   );
 };

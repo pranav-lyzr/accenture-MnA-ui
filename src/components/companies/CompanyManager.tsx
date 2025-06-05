@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
-import { Check, X, List, FileText } from "lucide-react";
-import { Button } from "../../components/botton";
-import { Input } from "../../components/ui/input";
+import { Check, X, List, FileText, Search, Filter } from "lucide-react";
+import { Button } from "../botton";
+import { Input } from "../ui/input";
 import { ShortlistedCompany, CompanyStatus } from "../../types/company";
 import CompanyActionCard from "./CompanyActionCard";
 import CompanyDetailsDialog from "./CompanyDetailsDialog";
@@ -226,115 +226,147 @@ const CompanyManager: React.FC<CompanyManagerProps> = ({ companies, onStatusUpda
   ).length;
 
   return (
-    <div className="space-y-4">
-      <div className="flex items-center justify-between gap-4">
-        <Input
-          type="text"
-          placeholder="Search companies..."
-          className="flex-1"
-          value={searchTerm}
-          onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-            setSearchTerm(e.target.value)
-          }
-        />
+    <div className="space-y-6">
+      {/* Search and View Toggle */}
+      <div className="flex flex-col sm:flex-row gap-4">
+        <div className="relative flex-1">
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+          <Input
+            type="text"
+            placeholder="Search companies by name..."
+            className="pl-10 bg-white border-gray-200 focus:border-purple-500 focus:ring-purple-500"
+            value={searchTerm}
+            onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+              setSearchTerm(e.target.value)
+            }
+          />
+        </div>
         <div className="flex items-center gap-2">
           <Button
             variant={viewMode === "cards" ? "default" : "outline"}
             onClick={() => setViewMode("cards")}
+            className="flex items-center gap-2"
           >
             <List className="h-4 w-4" />
+            Cards
           </Button>
           <Button
             variant={viewMode === "table" ? "default" : "outline"}
             onClick={() => setViewMode("table")}
+            className="flex items-center gap-2"
           >
             <FileText className="h-4 w-4" />
+            Table
           </Button>
         </div>
       </div>
 
-      <div className="flex items-center justify-between flex-wrap gap-2">
-        <div className="flex items-center flex-wrap gap-2">
-          <Button
-            onClick={() => {
-              if (sortBy === "updated") {
-                setSortOrder(sortOrder === "asc" ? "desc" : "asc");
-              } else {
-                setSortBy("updated");
-                setSortOrder("desc");
-              }
-            }}
-            className="text-xs"
-          >
-            Updated {sortBy === "updated" && (sortOrder === "asc" ? "↑" : "↓")}
-          </Button>
-          <Button
-            onClick={() => {
-              if (sortBy === "name") {
-                setSortOrder(sortOrder === "asc" ? "desc" : "asc");
-              } else {
-                setSortBy("name");
-                setSortOrder("asc");
-              }
-            }}
-            className="text-xs"
-          >
-            Name {sortBy === "name" && (sortOrder === "asc" ? "↑" : "↓")}
-          </Button>
-          <Button
-            onClick={() => {
-              if (sortBy === "status") {
-                setSortOrder(sortOrder === "asc" ? "desc" : "asc");
-              } else {
-                setSortBy("status");
-                setSortOrder("asc");
-              }
-            }}
-            className="text-xs"
-          >
-            Status {sortBy === "status" && (sortOrder === "asc" ? "↑" : "↓")}
-          </Button>
-        </div>
+      {/* Filters and Sort */}
+      <div className="bg-gradient-to-r from-gray-50 to-slate-50 rounded-xl p-4 border border-gray-200/60">
+        <div className="flex flex-col lg:flex-row gap-4 items-start lg:items-center justify-between">
+          {/* Sort Options */}
+          <div className="flex items-center gap-2 flex-wrap">
+            <Filter className="h-4 w-4 text-gray-500" />
+            <span className="text-sm font-medium text-gray-700">Sort by:</span>
+            <Button
+              variant={sortBy === "updated" ? "default" : "outline"}
+              size="sm"
+              onClick={() => {
+                if (sortBy === "updated") {
+                  setSortOrder(sortOrder === "asc" ? "desc" : "asc");
+                } else {
+                  setSortBy("updated");
+                  setSortOrder("desc");
+                }
+              }}
+              className="text-xs"
+            >
+              Updated {sortBy === "updated" && (sortOrder === "asc" ? "↑" : "↓")}
+            </Button>
+            <Button
+              variant={sortBy === "name" ? "default" : "outline"}
+              size="sm"
+              onClick={() => {
+                if (sortBy === "name") {
+                  setSortOrder(sortOrder === "asc" ? "desc" : "asc");
+                } else {
+                  setSortBy("name");
+                  setSortOrder("asc");
+                }
+              }}
+              className="text-xs"
+            >
+              Name {sortBy === "name" && (sortOrder === "asc" ? "↑" : "↓")}
+            </Button>
+            <Button
+              variant={sortBy === "status" ? "default" : "outline"}
+              size="sm"
+              onClick={() => {
+                if (sortBy === "status") {
+                  setSortOrder(sortOrder === "asc" ? "desc" : "asc");
+                } else {
+                  setSortBy("status");
+                  setSortOrder("asc");
+                }
+              }}
+              className="text-xs"
+            >
+              Status {sortBy === "status" && (sortOrder === "asc" ? "↑" : "↓")}
+            </Button>
+          </div>
 
-        <div className="flex items-center gap-2 ml-auto">
-          <span className="text-sm">Filter:</span>
-          <Button
-            variant={statusFilter === "all" ? "default" : "outline"}
-            onClick={() => setStatusFilter("all")}
-          >
-            All ({Object.keys(companyStatus).length})
-          </Button>
-          <Button
-            variant={statusFilter === "shortlisted" ? "default" : "outline"}
-            onClick={() => setStatusFilter("shortlisted")}
-            className="bg-green-100 text-green-800 hover:bg-green-200 hover:text-green-900"
-          >
-            <Check className="mr-1 h-3 w-3" />
-            Shortlisted ({shortlistedCount})
-          </Button>
-          <Button
-            variant={statusFilter === "rejected" ? "default" : "outline"}
-            onClick={() => setStatusFilter("rejected")}
-            className="bg-red-100 text-red-800 hover:bg-red-200 hover:text-red-900"
-          >
-            <X className="mr-1 h-3 w-3" />
-            Rejected ({rejectedCount})
-          </Button>
-          <Button
-            variant={statusFilter === "pending" ? "default" : "outline"}
-            onClick={() => setStatusFilter("pending")}
-          >
-            Pending ({pendingCount})
-          </Button>
+          {/* Status Filters */}
+          <div className="flex items-center gap-2 flex-wrap">
+            <span className="text-sm font-medium text-gray-700">Filter:</span>
+            <Button
+              variant={statusFilter === "all" ? "default" : "outline"}
+              size="sm"
+              onClick={() => setStatusFilter("all")}
+              className="bg-gray-100 text-gray-800 hover:bg-gray-200 border-gray-300"
+            >
+              All ({Object.keys(companyStatus).length})
+            </Button>
+            <Button
+              variant={statusFilter === "shortlisted" ? "default" : "outline"}
+              size="sm"
+              onClick={() => setStatusFilter("shortlisted")}
+              className="bg-emerald-50 text-emerald-700 hover:bg-emerald-100 border-emerald-200"
+            >
+              <Check className="mr-1 h-3 w-3" />
+              Shortlisted ({shortlistedCount})
+            </Button>
+            <Button
+              variant={statusFilter === "rejected" ? "default" : "outline"}
+              size="sm"
+              onClick={() => setStatusFilter("rejected")}
+              className="bg-red-50 text-red-700 hover:bg-red-100 border-red-200"
+            >
+              <X className="mr-1 h-3 w-3" />
+              Rejected ({rejectedCount})
+            </Button>
+            <Button
+              variant={statusFilter === "pending" ? "default" : "outline"}
+              size="sm"
+              onClick={() => setStatusFilter("pending")}
+              className="bg-amber-50 text-amber-700 hover:bg-amber-100 border-amber-200"
+            >
+              Pending ({pendingCount})
+            </Button>
+          </div>
         </div>
       </div>
 
+      {/* Companies Display */}
       {filteredCompanies.length === 0 ? (
-        <div className="py-8 text-center bg-gray-50 rounded-lg border border-dashed">
-          <p className="text-gray-500">No companies match your filter criteria.</p>
+        <div className="bg-gradient-to-br from-gray-50 to-slate-50 rounded-xl p-12 text-center border border-gray-200/60">
+          <div className="w-16 h-16 bg-gray-100 rounded-2xl mx-auto mb-4 flex items-center justify-center">
+            <Search className="h-8 w-8 text-gray-400" />
+          </div>
+          <h3 className="text-lg font-semibold text-gray-700 mb-2">No Companies Found</h3>
+          <p className="text-gray-500">No companies match your current filter criteria.</p>
         </div>
       ) : viewMode === "cards" ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
           {filteredCompanies.map((company) => (
             <CompanyActionCard
               key={company.id}
@@ -346,75 +378,79 @@ const CompanyManager: React.FC<CompanyManagerProps> = ({ companies, onStatusUpda
           ))}
         </div>
       ) : (
-        <div className="overflow-x-auto">
-          <table className="w-full border-collapse">
-            <thead>
-              <tr className="bg-gray-50">
-                <th className="p-2 border text-left">Company</th>
-                <th className="p-2 border text-left">Status</th>
-                <th className="p-2 border text-left">Revenue</th>
-                <th className="p-2 border text-left">Notes</th>
-                <th className="p-2 border text-left">Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {filteredCompanies.map((company) => (
-                <tr key={company.id} className="hover:bg-gray-50">
-                  <td className="p-2 border">{company.name}</td>
-                  <td className="p-2 border">
-                    <span
-                      className={`px-2 py-1 rounded-full text-xs ${
-                        company.status === "shortlisted"
-                          ? "bg-green-100 text-green-800"
-                          : company.status === "rejected"
-                          ? "bg-red-100 text-red-800"
-                          : "bg-gray-100 text-gray-800"
-                      }`}
-                    >
-                      {company.status.charAt(0).toUpperCase() +
-                        company.status.slice(1)}
-                    </span>
-                  </td>
-                  <td className="p-2 border">
-                    {company.details.revenue ||
-                      company.details.estimated_revenue ||
-                      "N/A"}
-                  </td>
-                  <td className="p-2 border">
-                    {company.notes
-                      ? company.notes.length > 30
-                        ? company.notes.substring(0, 30) + "..."
-                        : company.notes
-                      : ""}
-                  </td>
-                  <td className="p-2 border whitespace-nowrap">
-                    <div className="flex gap-1">
-                      <Button
-                        variant="default2"
-                        onClick={() =>
-                          handleStatusChange(company.id, "shortlisted")
-                        }
-                      >
-                        <Check className="h-4 w-4 text-green-600" />
-                      </Button>
-                      <Button
-                        variant="default2"
-                        onClick={() => handleStatusChange(company.id, "rejected")}
-                      >
-                        <X className="h-4 w-4 text-red-600" />
-                      </Button>
-                      <Button
-                        variant="default2"
-                        onClick={() => handleViewDetails(company.details)}
-                      >
-                        <FileText className="h-4 w-4 text-black" />
-                      </Button>
-                    </div>
-                  </td>
+        <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead className="bg-gradient-to-r from-gray-50 to-slate-50 border-b border-gray-200">
+                <tr>
+                  <th className="px-6 py-4 text-left text-sm font-semibold text-gray-900">Company</th>
+                  <th className="px-6 py-4 text-left text-sm font-semibold text-gray-900">Status</th>
+                  <th className="px-6 py-4 text-left text-sm font-semibold text-gray-900">Revenue</th>
+                  <th className="px-6 py-4 text-left text-sm font-semibold text-gray-900">Notes</th>
+                  <th className="px-6 py-4 text-left text-sm font-semibold text-gray-900">Actions</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody className="divide-y divide-gray-100">
+                {filteredCompanies.map((company, index) => (
+                  <tr key={company.id} className={`hover:bg-gray-50 transition-colors ${index % 2 === 0 ? 'bg-white' : 'bg-gray-50/50'}`}>
+                    <td className="px-6 py-4">
+                      <div className="font-semibold text-gray-900">{company.name}</div>
+                      <div className="text-sm text-gray-500">{company.details.domain_name || 'N/A'}</div>
+                    </td>
+                    <td className="px-6 py-4">
+                      <span
+                        className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                          company.status === "shortlisted"
+                            ? "bg-emerald-100 text-emerald-800"
+                            : company.status === "rejected"
+                            ? "bg-red-100 text-red-800"
+                            : "bg-amber-100 text-amber-800"
+                        }`}
+                      >
+                        {company.status.charAt(0).toUpperCase() + company.status.slice(1)}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4 text-sm text-gray-900">
+                      {company.details.revenue || "N/A"}
+                    </td>
+                    <td className="px-6 py-4">
+                      <div className="text-sm text-gray-900 max-w-xs truncate">
+                        {company.notes || "No notes"}
+                      </div>
+                    </td>
+                    <td className="px-6 py-4">
+                      <div className="flex items-center gap-2">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleStatusChange(company.id, "shortlisted")}
+                          className="text-emerald-600 border-emerald-200 hover:bg-emerald-50"
+                        >
+                          <Check className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleStatusChange(company.id, "rejected")}
+                          className="text-red-600 border-red-200 hover:bg-red-50"
+                        >
+                          <X className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleViewDetails(company.details)}
+                          className="text-gray-600 border-gray-200 hover:bg-gray-50"
+                        >
+                          <FileText className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         </div>
       )}
 

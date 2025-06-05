@@ -22,66 +22,83 @@ const CandidateAnalysis = ({
   references = []
 }: CandidateProps) => {
   return (
-    <div className="bg-white rounded-xl shadow-sm overflow-hidden card-hover mb-6">
-      <div className="p-6">
-        <div className="flex items-start justify-between">
+    <div className="bg-white rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 overflow-hidden mb-8 border border-gray-100">
+      <div className="p-8">
+        <div className="flex items-start justify-between mb-8">
           <div className="flex items-center">
-            <div className="w-12 h-12 rounded-full flex items-center justify-center bg-purple-500 text-white font-bold text-xl">
+            <div className="w-16 h-16 rounded-2xl flex items-center justify-center bg-gradient-to-br from-purple-500 to-purple-600 text-white font-bold text-2xl shadow-lg">
               {rank}
             </div>
-            <div className="ml-4">
-              <h3 className="text-xl font-bold text-gray-800">{name}</h3>
-              <div className="flex items-center mt-1">
+            <div className="ml-6">
+              <h3 className="text-2xl font-bold text-gray-900 mb-2">{name}</h3>
+              <div className="flex items-center gap-1">
                 {Array(5).fill(0).map((_, i) => (
                   <Star 
                     key={i}
-                    size={16}
+                    size={20}
                     fill={i < (6 - rank) ? "#FFD700" : "none"}
-                    stroke={i < (6 - rank) ? "#FFD700" : "#CBD5E1"}
+                    stroke={i < (6 - rank) ? "#FFD700" : "#E2E8F0"}
+                    className="transition-colors duration-200"
                   />
                 ))}
+                <span className="ml-2 text-sm text-gray-500 font-medium">
+                  {6 - rank}/5 Rating
+                </span>
               </div>
             </div>
           </div>
           
-          <div className="px-4 py-2 bg-gray-100 rounded-md">
-            <p className="text-sm font-medium">Estimated Valuation</p>
-            <p className="text-lg font-bold">{valuation}</p>
+          <div className="px-6 py-4 bg-gradient-to-r from-gray-50 to-gray-100 rounded-xl border border-gray-200">
+            <p className="text-sm font-semibold text-gray-600 mb-1">Estimated Valuation</p>
+            <p className="text-2xl font-bold text-gray-900">{valuation}</p>
           </div>
         </div>
         
-        <div className="mt-6 grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div>
-            <h4 className="text-sm font-medium text-gray-500 mb-2">Why This Candidate?</h4>
-            <p className="text-base text-gray-700">{reason}</p>
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+          <div className="space-y-3">
+            <h4 className="text-sm font-bold text-purple-600 uppercase tracking-wider mb-3">
+              Why This Candidate?
+            </h4>
+            <p className="text-gray-700 leading-relaxed text-base">{reason}</p>
           </div>
           
-          <div>
-            <h4 className="text-sm font-medium text-gray-500 mb-2">Strategic Fit</h4>
-            <p className="text-base text-gray-700">{strategicFit}</p>
+          <div className="space-y-3">
+            <h4 className="text-sm font-bold text-purple-600 uppercase tracking-wider mb-3">
+              Strategic Fit
+            </h4>
+            <p className="text-gray-700 leading-relaxed text-base">{strategicFit}</p>
           </div>
           
-          <div>
-            <h4 className="text-sm font-medium text-gray-500 mb-2">Potential Synergies</h4>
-            <p className="text-base text-gray-700">{synergies}</p>
+          <div className="space-y-3">
+            <h4 className="text-sm font-bold text-purple-600 uppercase tracking-wider mb-3">
+              Potential Synergies
+            </h4>
+            <p className="text-gray-700 leading-relaxed text-base">{synergies}</p>
           </div>
           
-          <div>
-            <h4 className="text-sm font-medium text-gray-500 mb-2">Integration Challenges</h4>
-            <p className="text-base text-gray-700">{challenges}</p>
+          <div className="space-y-3">
+            <h4 className="text-sm font-bold text-purple-600 uppercase tracking-wider mb-3">
+              Integration Challenges
+            </h4>
+            <p className="text-gray-700 leading-relaxed text-base">{challenges}</p>
           </div>
         </div>
         
         {references && references.length > 0 && (
-          <div className="mt-6">
-            <h4 className="text-sm font-medium text-gray-500 mb-2">References</h4>
-            <ul className="list-disc pl-5 space-y-1">
-              {references.map((ref, index) => (
-                <li key={index} className="text-sm text-gray-600">
-                  {ref}
-                </li>
-              ))}
-            </ul>
+          <div className="mt-8 pt-8 border-t border-gray-200">
+            <h4 className="text-sm font-bold text-purple-600 uppercase tracking-wider mb-4">
+              References
+            </h4>
+            <div className="bg-gray-50 rounded-lg p-6">
+              <ul className="space-y-3">
+                {references.map((ref, index) => (
+                  <li key={index} className="flex items-start">
+                    <div className="w-2 h-2 rounded-full bg-purple-400 mt-2 mr-3 flex-shrink-0"></div>
+                    <span className="text-gray-700 text-sm leading-relaxed">{ref}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
           </div>
         )}
       </div>

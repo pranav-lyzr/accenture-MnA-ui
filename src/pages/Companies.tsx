@@ -16,152 +16,43 @@ import CompanyDetailsDialog from '../components/companies/CompanyDetailsDialog';
 import LoadingPopup from '../components/ui/LoadingPopup';
 import * as XLSX from 'xlsx';
 
+// Interface aligned with the /company API response
 interface CompanyCardProps {
-  rank: number;
+  _id: string;
   name: string;
-  domain_name?: string;
-  estimated_revenue?: string;
-  revenue_growth?: string;
-  profitability?: string;
-  valuation_estimate?: string;
-  employee_count?: string;
-  office_locations?: string[];
-  key_clients?: string[];
-  average_contract_value?: string;
-  leadership?: { name: string; title: string; experience?: string }[];
-  primary_domains?: string[];
-  proprietary_methodologies?: string;
-  technology_tools?: string[];
-  competitive_advantage?: string;
-  merger_synergies?: string;
-  cultural_alignment?: string;
-  integration_challenges?: string;
-  market_penetration?: string;
-  sources?: string[];
-  technological_enablement_score?: string;
-  global_sourcing_reach?: string;
-  Industries?: string | string[];
-  Services?: string | string[];
-  Broad_Category?: string;
-  Ownership?: string;
-  validation_warnings?: string[];
+  "Broad Category": string;
+  Industries: string;
+  Ownership: string;
+  Services: string;
+  domain_name: string;
+  employee_count: string;
+  estimated_revenue: string;
+  key_clients: string[];
+  leadership: { name: string; title: string }[];
+  merger_synergies: string;
+  office_locations: string[];
+  revenue_growth: string;
+  sources: string[];
+  validation_warnings: string[];
 }
-
-const MERGER_STORAGE_KEY = 'accenture-merger-results';
-const SEARCH_STORAGE_KEY = 'accenture-search-results';
 
 const Companies = () => {
   const [loading, setLoading] = useState(true);
   const [redoingSearch, setRedoingSearch] = useState(false);
   const [companies, setCompanies] = useState<CompanyCardProps[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
-  const [sortColumn, setSortColumn] = useState<string>('rank');
+  const [sortColumn, setSortColumn] = useState<string>('name'); // Default sort by name
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc');
   const [selectedCompany, setSelectedCompany] = useState<CompanyCardProps | null>(null);
   const [openDialog, setOpenDialog] = useState(false);
 
-  // Utility function to normalize company data from different response formats
-  const getCompaniesFromResponse = (response: any): any[] => {
-    if (Array.isArray(response)) {
-      return response;
-    }
-    if (response && typeof response === 'object' && Array.isArray(response.companies)) {
-      return response.companies;
-    }
-    return [];
-  };
-
-  // Function to create a mapping of company data
-  const createCompanyDataMapping = (mergerData: any, searchData: any) => {
-    const companyMap: { [key: string]: CompanyCardProps } = {};
-
-    const addCompanyData = (company: any) => {
-      if (!company.name) return;
-
-      companyMap[company.name] = {
-        rank: company.rank || 0,
-        name: company.name,
-        domain_name: company.domain_name,
-        estimated_revenue: company.estimated_revenue || 'Unknown',
-        revenue_growth: company.revenue_growth,
-        profitability: company.profitability,
-        valuation_estimate: company.valuation_estimate,
-        employee_count: company.employee_count,
-        office_locations: company.office_locations,
-        key_clients: company.key_clients,
-        average_contract_value: company.average_contract_value,
-        leadership: company.leadership,
-        primary_domains: company.primary_domains || ['Various consulting services'],
-        proprietary_methodologies: company.proprietary_methodologies,
-        technology_tools: company.technology_tools,
-        competitive_advantage: company.competitive_advantage || 'Specializes in consulting services for enterprise clients',
-        merger_synergies: company.merger_synergies,
-        cultural_alignment: company.cultural_alignment,
-        integration_challenges: company.integration_challenges,
-        market_penetration: company.market_penetration || 'Enterprise clients',
-        sources: Array.from(new Set([...(company.sources || [])])).filter(Boolean),
-        technological_enablement_score: company.technological_enablement_score,
-        global_sourcing_reach: company.global_sourcing_reach,
-        Industries: company.Industries,
-        Services: company.Services,
-        Broad_Category: company.Broad_Category,
-        Ownership: company.Ownership,
-        validation_warnings: company.validation_warnings,
-      };
-    };
-
-    // Process merger and search data
-    [mergerData, searchData].forEach(data => {
-      if (data) {
-        Object.values(data).forEach((section: any) => {
-          const companies = getCompaniesFromResponse(section.response || section.raw_response);
-          companies.forEach(addCompanyData);
-        });
-      }
-    });
-
-    return companyMap;
-  };
-
-  const loadCompaniesFromLocal = () => {
-    const mergerResults = JSON.parse(localStorage.getItem(MERGER_STORAGE_KEY) || '{}');
-    const searchResults = JSON.parse(localStorage.getItem(SEARCH_STORAGE_KEY) || '{}');
-    const companyMap = createCompanyDataMapping(mergerResults.results || {}, searchResults);
-    return Object.values(companyMap);
-  };
-
-  const loadCompaniesFromAPI = async () => {
-    try {
-      const results = await api.getResults();
-      if (results) {
-        localStorage.setItem(MERGER_STORAGE_KEY, JSON.stringify({ results }));
-        const companyMap = createCompanyDataMapping({ results }, {});
-        return Object.values(companyMap);
-      }
-      return [];
-    } catch (error) {
-      console.error('Error loading companies from API:', error);
-      return [];
-    }
-  };
-
+  // Fetch companies directly from the /company API on mount
   useEffect(() => {
     const loadCompanies = async () => {
       try {
         setLoading(true);
-        let loadedCompanies: CompanyCardProps[] = [];
-        try {
-          loadedCompanies = await loadCompaniesFromAPI();
-        } catch (error) {
-          console.error('Error loading from API, falling back to local storage:', error);
-        }
-        
-        if (loadedCompanies.length === 0) {
-          loadedCompanies = loadCompaniesFromLocal();
-          console.log('Loaded companies from local storage:', loadedCompanies.length);
-        }
-
-        setCompanies(loadedCompanies);
+        const companiesData = await api.getCompanies();
+        setCompanies(companiesData as CompanyCardProps[]);
       } catch (error) {
         console.error('Error loading companies:', error);
       } finally {
@@ -171,14 +62,13 @@ const Companies = () => {
     loadCompanies();
   }, []);
 
+  // Handle redo search by triggering api.redoSearch and refreshing company data
   const handleRedoAllSearch = async () => {
     try {
       setRedoingSearch(true);
-      const result = await api.redoSearch();
-      localStorage.setItem(MERGER_STORAGE_KEY, JSON.stringify({ results: result.results }));
-      const companyMap = createCompanyDataMapping({ results: result.results }, {});
-      const uniqueCompanies = Object.values(companyMap);
-      setCompanies(uniqueCompanies);
+      await api.redoSearch(); // Trigger backend search update
+      const updatedCompanies = await api.getCompanies(); // Fetch updated data
+      setCompanies(updatedCompanies as CompanyCardProps[]);
     } catch (error) {
       console.error('Error redoing search:', error);
     } finally {
@@ -186,6 +76,7 @@ const Companies = () => {
     }
   };
 
+  // Sort table columns
   const handleSort = (column: string) => {
     if (sortColumn === column) {
       setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
@@ -195,56 +86,34 @@ const Companies = () => {
     }
   };
 
+  // Open company details dialog
   const openCompanyDetails = (company: CompanyCardProps) => {
     setSelectedCompany(company);
     setOpenDialog(true);
   };
 
+  // Generate and download Excel file using API data
   const handleDownloadExcel = () => {
-    // Map filteredCompanies to a flat structure for Excel
     const excelData = filteredCompanies.map(company => ({
-      Company: company.name,
+      Company: company.name || '-',
       Domain: company.domain_name || '-',
-      Domains: Array.isArray(company.primary_domains) 
-        ? company.primary_domains.join(', ') 
-        : (company.primary_domains || '-'),
       'Estimated Revenue': company.estimated_revenue || '-',
       'Employee Count': company.employee_count || '-',
-      Industries: company.Industries 
-        ? (Array.isArray(company.Industries) 
-            ? company.Industries.join(', ') 
-            : company.Industries) 
-        : '-',
-      Services: company.Services 
-        ? (Array.isArray(company.Services) 
-            ? company.Services.join(', ') 
-            : company.Services) 
-        : '-',
+      Industries: company.Industries || '-',
+      Services: company.Services || '-',
       Ownership: company.Ownership || '-',
-      'Key Clients': company.key_clients && Array.isArray(company.key_clients) 
-        ? company.key_clients.join(', ') 
-        : (company.key_clients || '-'),
-      Leadership: company.leadership && Array.isArray(company.leadership) 
-        ? company.leadership.map(l => `${l.name} (${l.title})`).join(', ') 
-        : '-',
+      'Key Clients': Array.isArray(company.key_clients) ? company.key_clients.join(', ') : '-',
+      Leadership: Array.isArray(company.leadership) ? company.leadership.map(l => `${l.name} (${l.title})`).join(', ') : '-',
       'Merger Synergies': company.merger_synergies || '-',
-      'Office Locations': company.office_locations && Array.isArray(company.office_locations) 
-        ? company.office_locations.join(', ') 
-        : (company.office_locations || '-'),
+      'Office Locations': Array.isArray(company.office_locations) ? company.office_locations.join(', ') : '-',
       'Revenue Growth': company.revenue_growth || '-',
-      Sources: company.sources && Array.isArray(company.sources) 
-        ? company.sources.join(', ') 
-        : '-',
+      Sources: Array.isArray(company.sources) ? company.sources.join(', ') : '-',
     }));
 
-    // Create a worksheet
     const worksheet = XLSX.utils.json_to_sheet(excelData);
-    
-    // Define column widths for better readability
     worksheet['!cols'] = [
       { wch: 30 }, // Company
       { wch: 20 }, // Domain
-      { wch: 30 }, // Domains
       { wch: 20 }, // Estimated Revenue
       { wch: 15 }, // Employee Count
       { wch: 30 }, // Industries
@@ -258,45 +127,34 @@ const Companies = () => {
       { wch: 50 }, // Sources
     ];
 
-    // Create a workbook
     const workbook = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(workbook, worksheet, 'Companies');
-
-    // Download the Excel file
-    XLSX.writeFile(workbook, 'Companies.xlsx', { bookType: 'xlsx', type: 'binary' });
+    XLSX.writeFile(workbook, 'Companies.xlsx');
   };
 
+  // Sort companies based on selected column and direction
   const sortedCompanies = [...companies].sort((a, b) => {
     let valueA = (a as any)[sortColumn];
     let valueB = (b as any)[sortColumn];
-    
     if (typeof valueA === 'string' && typeof valueB === 'string') {
-      return sortDirection === 'asc' 
-        ? valueA.localeCompare(valueB) 
-        : valueB.localeCompare(valueA);
+      return sortDirection === 'asc' ? valueA.localeCompare(valueB) : valueB.localeCompare(valueA);
     }
-    
     valueA = valueA || 0;
     valueB = valueB || 0;
-    
     return sortDirection === 'asc' ? valueA - valueB : valueB - valueA;
   });
 
+  // Filter companies based on search term using available fields
   const filteredCompanies = searchTerm
     ? sortedCompanies.filter(company => 
         company.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        (company.primary_domains && Array.isArray(company.primary_domains) && 
-          company.primary_domains.some(domain => 
-            domain.toLowerCase().includes(searchTerm.toLowerCase())
-          )
-        ) ||
-        (company.competitive_advantage && 
-          company.competitive_advantage.toLowerCase().includes(searchTerm.toLowerCase())
-        )
+        (company.Industries && company.Industries.toLowerCase().includes(searchTerm.toLowerCase())) ||
+        (company.Services && company.Services.toLowerCase().includes(searchTerm.toLowerCase())) ||
+        (company.merger_synergies && company.merger_synergies.toLowerCase().includes(searchTerm.toLowerCase()))
       )
     : sortedCompanies;
 
-  // Function to get a sortable header
+  // Render sortable table header
   const SortableHeader = ({ column, title }: { column: string, title: string }) => (
     <TableHead onClick={() => handleSort(column)} className="cursor-pointer hover:bg-muted">
       <div className="flex items-center gap-1">
@@ -309,6 +167,7 @@ const Companies = () => {
     </TableHead>
   );
 
+  // Render table content
   const renderTableContent = () => {
     if (loading) {
       return (
@@ -321,7 +180,7 @@ const Companies = () => {
       return (
         <div className="bg-gray-50 rounded-xl p-8 text-center">
           <h3 className="text-lg font-medium text-gray-700">No companies found</h3>
-          <p className="text-gray-500 mt-2">Run search prompts to identify potential merger candidates</p>
+          <p className="text-gray-500 mt-2">No company data available</p>
         </div>
       );
     } else if (filteredCompanies.length === 0) {
@@ -334,13 +193,13 @@ const Companies = () => {
       );
     } else {
       return (
-        <div className="rounded-lg border bg-card overflow-x-auto">
+        <div className="rounded-lg border border-gray-200 bg-card overflow-x-auto">
           <Table>
             <TableCaption>A list of potential merger candidates ({filteredCompanies.length} companies)</TableCaption>
             <TableHeader>
               <TableRow className="bg-gray-50 hover:bg-gray-50">
                 <SortableHeader column="name" title="Company" />
-                <TableHead>Domains</TableHead>
+                <TableHead>Domain</TableHead>
                 <TableHead>Estimated Revenue</TableHead>
                 <TableHead>Employee Count</TableHead>
                 <TableHead>Industries</TableHead>
@@ -357,7 +216,7 @@ const Companies = () => {
             </TableHeader>
             <TableBody>
               {filteredCompanies.map((company) => (
-                <TableRow key={company.name} className="hover:bg-gray-50/70">
+                <TableRow key={company._id} className="hover:bg-gray-50/70">
                   <TableCell className="font-semibold text-purple-500">
                     {company.name}
                     {company.domain_name && (
@@ -373,57 +232,27 @@ const Companies = () => {
                       </div>
                     )}
                   </TableCell>
+                  <TableCell>{company.domain_name || '-'}</TableCell>
+                  <TableCell>{company.estimated_revenue || '-'}</TableCell>
+                  <TableCell>{company.employee_count || '-'}</TableCell>
+                  <TableCell className="max-w-[200px]">{company.Industries || '-'}</TableCell>
+                  <TableCell className="max-w-[200px]">{company.Services || '-'}</TableCell>
+                  <TableCell>{company.Ownership || '-'}</TableCell>
                   <TableCell className="max-w-[200px]">
-                    {Array.isArray(company.primary_domains) 
-                      ? company.primary_domains.join(', ') 
-                      : (company.primary_domains || '-')}
-                  </TableCell>
-                  <TableCell>
-                    {company.estimated_revenue || '-'}
-                  </TableCell>
-                  <TableCell>
-                    {company.employee_count || '-'}
-                  </TableCell>
-                  <TableCell className="max-w-[200px]">
-                    {company.Industries 
-                      ? (Array.isArray(company.Industries) 
-                          ? company.Industries.join(', ') 
-                          : company.Industries) 
-                      : '-'}
-                  </TableCell>
-                  <TableCell className="max-w-[200px]">
-                    {company.Services 
-                      ? (Array.isArray(company.Services) 
-                          ? company.Services.join(', ') 
-                          : company.Services) 
-                      : '-'}
-                  </TableCell>
-                  <TableCell>
-                    {company.Ownership || '-'}
-                  </TableCell>
-                  <TableCell className="max-w-[200px]">
-                    {company.key_clients && Array.isArray(company.key_clients) 
-                      ? company.key_clients.join(', ') 
-                      : (company.key_clients || '-')}
+                    {Array.isArray(company.key_clients) ? company.key_clients.join(', ') : '-'}
                   </TableCell>
                   <TableCell className="max-w-[250px]">
-                    {company.leadership && Array.isArray(company.leadership) 
+                    {Array.isArray(company.leadership) 
                       ? company.leadership.map(l => `${l.name} (${l.title})`).join(', ') 
                       : '-'}
                   </TableCell>
-                  <TableCell className="max-w-[250px]">
-                    {company.merger_synergies || '-'}
-                  </TableCell>
+                  <TableCell className="max-w-[250px]">{company.merger_synergies || '-'}</TableCell>
                   <TableCell className="max-w-[200px]">
-                    {company.office_locations && Array.isArray(company.office_locations) 
-                      ? company.office_locations.join(', ') 
-                      : (company.office_locations || '-')}
+                    {Array.isArray(company.office_locations) ? company.office_locations.join(', ') : '-'}
                   </TableCell>
+                  <TableCell>{company.revenue_growth || '-'}</TableCell>
                   <TableCell>
-                    {company.revenue_growth || '-'}
-                  </TableCell>
-                  <TableCell>
-                    {company.sources && company.sources.length > 0 ? (
+                    {Array.isArray(company.sources) && company.sources.length > 0 ? (
                       <div className="flex flex-col space-y-1">
                         {company.sources.map((source, idx) => {
                           let hostname;
@@ -502,7 +331,7 @@ const Companies = () => {
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={18} />
           <input
             type="text"
-            placeholder="Search by company name, domains, or advantage..."
+            placeholder="Search by company name, industries, services, or synergies..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"

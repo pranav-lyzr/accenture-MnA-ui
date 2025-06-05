@@ -7,9 +7,12 @@ import {
   ArrowUp,
   RefreshCw,
   Sliders,
+  TrendingUp,
+  Building2,
+  Search as SearchIcon,
 } from "lucide-react";
 import { SearchResponse, CompanyDetails } from "../types/search";
-import api, { Prompt } from "../services/api";
+import api, { Prompt, PromptHistoryItem, PromptResponse } from "../services/api";
 import LoadingPopup from "../components/ui/LoadingPopup";
 import { Button } from "../components/botton";
 import {
@@ -26,44 +29,29 @@ import * as XLSX from "xlsx";
 import CompanyDetailsDialog from "../components/companies/CompanyDetailsDialog";
 import ChatDrawer from "../components/chat/ChatDrawer";
 import ChatButton from "../components/chat/ChatButton";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "../components/ui/select";
 
 // Extend Prompt interface to include agent-ID
 interface ExtendedPrompt extends Prompt {
   "agent-ID": string;
 }
 
-const STORAGE_KEY = "accenture-search-results";
-
-interface MergerSearchResponse {
-  results: {
-    [key: string]: {
-      raw_response: any;
-      extracted_companies: CompanyDetails[];
-      validation_warnings?: string[];
-    };
-  };
-}
-
-const getCompaniesFromResponse = (response: any): CompanyDetails[] => {
-  if (Array.isArray(response)) {
-    return response as CompanyDetails[];
-  }
-  if (
-    response &&
-    typeof response === "object" &&
-    Array.isArray(response.companies)
-  ) {
-    return response.companies as CompanyDetails[];
-  }
-  return [];
-};
-
 const Search = () => {
   const [prompts, setPrompts] = useState<ExtendedPrompt[]>([]);
+  const [promptHistory, setPromptHistory] = useState<PromptHistoryItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [redoingSearch, setRedoingSearch] = useState(false);
   const [runningPrompts, setRunningPrompts] = useState<Set<number>>(new Set());
   const [results, setResults] = useState<{ [key: number]: SearchResponse }>({});
+  const [selectedHistory, setSelectedHistory] = useState<{
+    [key: number]: string | null;
+  }>({});
   const [sortConfig, setSortConfig] = useState<{
     key: string;
     direction: "asc" | "desc";
@@ -72,10 +60,7 @@ const Search = () => {
     null
   );
   const [openDialog, setOpenDialog] = useState(false);
-  const [chatDrawerOpen, setChatDrawerOpen] = useState(() => {
-    const savedState = localStorage.getItem("chatDrawerOpen");
-    return savedState === null ? false : savedState === "true";
-  });
+  const [chatDrawerOpen, setChatDrawerOpen] = useState(false);
   const [activeTab, setActiveTab] = useState<number | null>(null);
 
   // State for refinement controls (per tab)
@@ -88,59 +73,54 @@ const Search = () => {
     };
   }>({});
   const { toast } = useToast();
-  useEffect(() => {
-    localStorage.setItem("chatDrawerOpen", chatDrawerOpen.toString());
-  }, [chatDrawerOpen]);
 
   useEffect(() => {
     const fetchData = async () => {
       try {
         setLoading(true);
+        // Fetch prompts
         const promptsData = (await api.getPrompts()) as ExtendedPrompt[];
         setPrompts(promptsData);
         if (promptsData.length > 0) {
           setActiveTab(promptsData[0].index);
         }
 
-        try {
-          const savedApiResults =
-            (await api.getResults()) as MergerSearchResponse;
-          if (
-            savedApiResults &&
-            Object.keys(savedApiResults.results).length > 0
-          ) {
-            const formattedResults: { [key: number]: SearchResponse } = {};
-            promptsData.forEach((prompt: ExtendedPrompt, index: number) => {
-              if (savedApiResults.results[prompt.title]) {
-                formattedResults[index] = {
-                  title: prompt.title,
-                  response: savedApiResults.results[prompt.title].raw_response,
-                  companies:
-                    savedApiResults.results[prompt.title].extracted_companies,
-                  sources: [],
-                  validation_warnings:
-                    savedApiResults.results[prompt.title].validation_warnings ||
-                    [],
-                };
-              }
-            });
-            setResults(formattedResults);
-            localStorage.setItem(STORAGE_KEY, JSON.stringify(formattedResults));
-          } else {
-            const savedLocalResults = localStorage.getItem(STORAGE_KEY);
-            if (savedLocalResults) {
-              setResults(JSON.parse(savedLocalResults));
-            }
+        // Fetch prompt history
+        const historyData = await api.getPromptHistory();
+        setPromptHistory(historyData);
+
+        // Format results from history
+        const formattedResults: { [key: number]: SearchResponse } = {};
+        const latestHistory: { [key: number]: string } = {};
+        promptsData.forEach((prompt) => {
+          const promptHistories = historyData.filter(
+            (h) => h.prompt_index === prompt.index
+          );
+          if (promptHistories.length > 0) {
+            // Sort by timestamp descending to get the latest
+            const latest = promptHistories.sort(
+              (a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()
+            )[0];
+            formattedResults[prompt.index] = {
+              title: latest.title,
+              response: latest.raw_response,
+              companies: latest.raw_response.map((c: CompanyDetails) => c.name), // Map to company names
+              sources: latest.raw_response.flatMap((c: CompanyDetails) => c.sources || []),
+              validation_warnings: latest.validation_warnings,
+              document_id: latest.document_id,
+            };
+            latestHistory[prompt.index] = latest.timestamp;
           }
-        } catch (error) {
-          console.error("Error fetching results from API:", error);
-          const savedLocalResults = localStorage.getItem(STORAGE_KEY);
-          if (savedLocalResults) {
-            setResults(JSON.parse(savedLocalResults));
-          }
-        }
+        });
+        setResults(formattedResults);
+        setSelectedHistory(latestHistory);
       } catch (error) {
         console.error("Error fetching data:", error);
+        toast({
+          title: "Error",
+          description: "Failed to load prompts or history",
+          variant: "destructive",
+        });
       } finally {
         setLoading(false);
       }
@@ -149,13 +129,7 @@ const Search = () => {
     fetchData();
   }, []);
 
-  useEffect(() => {
-    if (Object.keys(results).length > 0) {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(results));
-    }
-  }, [results]);
-
-  // Initialize refinement state for each tab when results change
+  // Initialize refinement state for each tab when prompts change
   useEffect(() => {
     const newRefinementStates = { ...refinementStates };
     prompts.forEach((prompt) => {
@@ -169,23 +143,41 @@ const Search = () => {
       }
     });
     setRefinementStates(newRefinementStates);
-  }, [prompts, results]);
+  }, [prompts]);
 
   const handleRunPrompt = async (index: number, customMessage?: string) => {
     try {
       setRunningPrompts((prev) => new Set([...prev, index]));
-      const result = (await api.runPrompt(
-        index,
-        customMessage
-      )) as unknown as SearchResponse;
+      const result: PromptResponse = await api.runPrompt(index, customMessage);
+
+      // Convert PromptResponse to SearchResponse format
+      const searchResponse: SearchResponse = {
+        title: result.title,
+        response: result.raw_response,
+        companies: result.raw_response.map((c: CompanyDetails) => c.name),
+        sources: result.sources || result.raw_response.flatMap((c: CompanyDetails) => c.sources || []),
+        validation_warnings: result.validation_warnings || [],
+        document_id: result.document_id,
+      };
 
       setResults((prev) => ({
         ...prev,
-        [index]: result,
+        [index]: searchResponse,
       }));
+      setSelectedHistory((prev) => ({
+        ...prev,
+        [index]: null,
+      }));
+      const historyData = await api.getPromptHistory();
+      setPromptHistory(historyData);
       setActiveTab(index);
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error running prompt:", error);
+      toast({
+        title: "Error",
+        description: `Failed to run prompt: ${error.message || "Unknown error"}`,
+        variant: "destructive",
+      });
     } finally {
       setRunningPrompts((prev) => {
         const updated = new Set([...prev]);
@@ -196,48 +188,50 @@ const Search = () => {
   };
 
   const handleRedo = (index: number) => {
-    const newResults = { ...results };
-    delete newResults[index];
-    setResults(newResults);
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(newResults));
-    setActiveTab(index);
     handleRunPrompt(index);
   };
 
   const handleRedoAllSearch = async () => {
     try {
       setRedoingSearch(true);
-      const result = (await api.redoSearch()) as {
-        results: {
-          [key: string]: {
-            raw_response: any;
-            extracted_companies: CompanyDetails[];
-            validation_warnings?: string[];
-          };
-        };
-      };
-
+      await api.redoSearch();
+      // Refresh history
+      const historyData = await api.getPromptHistory();
+      setPromptHistory(historyData);
+      // Update results with latest history
       const formattedResults: { [key: number]: SearchResponse } = {};
-      prompts.forEach((prompt: ExtendedPrompt, index: number) => {
-        if (result.results[prompt.title]) {
-          formattedResults[index] = {
-            title: prompt.title,
-            response: result.results[prompt.title].raw_response,
-            companies: result.results[prompt.title].extracted_companies,
-            sources: [],
-            validation_warnings:
-              result.results[prompt.title].validation_warnings || [],
+      const latestHistory: { [key: number]: string } = {};
+      prompts.forEach((prompt) => {
+        const promptHistories = historyData.filter(
+          (h) => h.prompt_index === prompt.index
+        );
+        if (promptHistories.length > 0) {
+          const latest = promptHistories.sort(
+            (a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()
+          )[0];
+          formattedResults[prompt.index] = {
+            title: latest.title,
+            response: latest.raw_response,
+            companies: latest.raw_response.map((c: CompanyDetails) => c.name),
+            sources: latest.raw_response.flatMap((c: CompanyDetails) => c.sources || []),
+            validation_warnings: latest.validation_warnings,
+            document_id: latest.document_id,
           };
+          latestHistory[prompt.index] = latest.timestamp;
         }
       });
-
       setResults(formattedResults);
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(formattedResults));
+      setSelectedHistory(latestHistory);
       if (prompts.length > 0) {
         setActiveTab(prompts[0].index);
       }
     } catch (error) {
       console.error("Error redoing search:", error);
+      toast({
+        title: "Error",
+        description: "Failed to redo all searches",
+        variant: "destructive",
+      });
     } finally {
       setRedoingSearch(false);
     }
@@ -254,16 +248,20 @@ const Search = () => {
   ) => {
     setResults((prev) => ({
       ...prev,
-      [index]: response,
+      [index]: {
+        ...response,
+        companies: response.response.map((c: CompanyDetails) => c.name), // Ensure companies is string[]
+      },
     }));
-    localStorage.setItem(
-      STORAGE_KEY,
-      JSON.stringify({
-        ...results,
-        [index]: response,
-      })
-    );
+    setSelectedHistory((prev) => ({
+      ...prev,
+      [index]: null,
+    }));
     setActiveTab(index);
+    // Refresh history
+    api.getPromptHistory().then((historyData) => {
+      setPromptHistory(historyData);
+    });
   };
 
   const handleSort = (key: string) => {
@@ -278,6 +276,19 @@ const Search = () => {
     setSortConfig({ key, direction });
   };
 
+  const parseRevenue = (revenue: string | undefined): number => {
+    if (!revenue) return 0;
+    // Remove '$' and 'M', parse to number (assuming revenue is in millions)
+    return parseFloat(revenue.replace(/[^0-9.]/g, "")) || 0;
+  };
+
+  const parseEmployeeCount = (count: string | undefined): number => {
+    if (!count) return 0;
+    // Handle both "60" and "2 employees" formats
+    const cleaned = count.replace(/[^0-9]/g, "");
+    return parseInt(cleaned) || 0;
+  };
+
   const getSortedCompanies = (companies: CompanyDetails[]) => {
     if (!sortConfig) return companies;
     return [...companies].sort((a, b) => {
@@ -285,8 +296,17 @@ const Search = () => {
       if (!a[sortConfig.key]) return 1;
       if (!b[sortConfig.key]) return -1;
 
-      const aValue = a[sortConfig.key];
-      const bValue = b[sortConfig.key];
+      let aValue = a[sortConfig.key];
+      let bValue = b[sortConfig.key];
+
+      // Handle specific fields for sorting
+      if (sortConfig.key === "estimated_revenue") {
+        aValue = parseRevenue(aValue as string);
+        bValue = parseRevenue(bValue as string);
+      } else if (sortConfig.key === "employee_count") {
+        aValue = parseEmployeeCount(aValue as string);
+        bValue = parseEmployeeCount(bValue as string);
+      }
 
       if (typeof aValue === "string" && typeof bValue === "string") {
         return sortConfig.direction === "asc"
@@ -307,9 +327,9 @@ const Search = () => {
   const renderSortIcon = (key: string) => {
     if (!sortConfig || sortConfig.key !== key) return null;
     return sortConfig.direction === "asc" ? (
-      <ArrowUp className="h-4 w-4 inline ml-1" />
+      <ArrowUp className="h-4 w-4 inline ml-1 text-indigo-600" />
     ) : (
-      <ArrowDown className="h-4 w-4 inline ml-1" />
+      <ArrowDown className="h-4 w-4 inline ml-1 text-indigo-600" />
     );
   };
 
@@ -350,14 +370,10 @@ const Search = () => {
     // Construct a strict sentence-based prompt for the API
     const messageParts: string[] = [];
     if (estimatedRevenue > 0) {
-      messageParts.push(
-        `estimated revenue must be strictly below ${estimatedRevenue} million`
-      );
+      messageParts.push(`estimated revenue must be strictly below $${estimatedRevenue}M`);
     }
     if (employeeCount > 0) {
-      messageParts.push(
-        `employee count must be strictly below ${employeeCount}`
-      );
+      messageParts.push(`employee count must be strictly below ${employeeCount}`);
     }
     if (location.trim() !== "") {
       messageParts.push(`location must be exactly in ${location}`);
@@ -371,26 +387,58 @@ const Search = () => {
           )}. Ensure all conditions are applied without exception.`
         : undefined;
 
-    // Only reset the isOpen state and location, keep estimatedRevenue and employeeCount
+    // Reset refinement UI
     setRefinementStates((prev) => ({
       ...prev,
       [index]: {
         ...prev[index],
-        location: "", // Reset location (if used in the future)
-        isOpen: false, // Close the refinement UI
+        location: "",
+        isOpen: false,
       },
     }));
 
     // Call the API with the custom message
     handleRunPrompt(index, customMessage);
   };
+
+  // Update handleHistorySelect
+  const handleHistorySelect = (index: number, timestamp: string | null) => {
+    if (!timestamp || timestamp === "latest") {
+      setSelectedHistory((prev) => ({
+        ...prev,
+        [index]: null,
+      }));
+      return;
+    }
+    const historyItem = promptHistory.find(
+      (h) => h.prompt_index === index && h.timestamp === timestamp
+    );
+    if (historyItem) {
+      setResults((prev) => ({
+        ...prev,
+        [index]: {
+          title: historyItem.title,
+          response: historyItem.raw_response,
+          companies: historyItem.raw_response.map((c: CompanyDetails) => c.name),
+          sources: historyItem.raw_response.flatMap((c: CompanyDetails) => c.sources || []),
+          validation_warnings: historyItem.validation_warnings,
+          document_id: historyItem.document_id,
+        },
+      }));
+      setSelectedHistory((prev) => ({
+        ...prev,
+        [index]: timestamp,
+      }));
+    }
+  };
+
   // Excel export function for individual tab
   const exportTabToExcel = (tabIndex: number) => {
     try {
       if (
         !results[tabIndex] ||
-        !results[tabIndex].companies ||
-        results[tabIndex].companies.length === 0
+        !results[tabIndex].response ||
+        results[tabIndex].response.length === 0
       ) {
         toast({
           title: "No Data",
@@ -400,21 +448,18 @@ const Search = () => {
         return;
       }
 
-      const companies = getCompaniesFromResponse(results[tabIndex].response);
+      const companies = results[tabIndex].response;
       const sortedCompanies = getSortedCompanies(companies);
       const headers = getTableHeaders(companies);
 
-      // Helper function to format cell values consistently with table display
       const formatCellValue = (company: CompanyDetails, key: string) => {
         const value = company[key];
-
         if (key === "leadership") {
           if (!value || !Array.isArray(value)) return "N/A";
           return value
             .map((leader: any) => `${leader.name} (${leader.title || "N/A"})`)
             .join(", ");
         } else if (key === "sources" && Array.isArray(value)) {
-          // return `${value.length} sources`; // Display number of sources
           return value.join(", ") || "N/A";
         } else if (Array.isArray(value)) {
           return value.join(", ") || "N/A";
@@ -427,11 +472,9 @@ const Search = () => {
         }
       };
 
-      // Create Excel data with proper headers and formatted values
       const excelData = sortedCompanies.map((company) => {
         const row: { [key: string]: any } = {};
         headers.forEach((header) => {
-          // Convert header to display format (same as table)
           const displayHeader =
             header.replace(/_/g, " ").charAt(0).toUpperCase() +
             header.replace(/_/g, " ").slice(1);
@@ -440,11 +483,8 @@ const Search = () => {
         return row;
       });
 
-      // Create workbook and worksheet
       const ws = XLSX.utils.json_to_sheet(excelData);
       const wb = XLSX.utils.book_new();
-
-      // Get tab title for sheet name and filename
       const tabTitle = results[tabIndex].title || `Tab_${tabIndex}`;
       let sanitizedTitle = tabTitle.replace(/[^a-zA-Z0-9]/g, "_");
       if (sanitizedTitle.length > 31) {
@@ -452,7 +492,6 @@ const Search = () => {
       }
       XLSX.utils.book_append_sheet(wb, ws, sanitizedTitle);
 
-      // Auto-adjust column widths
       if (excelData.length > 0) {
         const colWidths = Object.keys(excelData[0]).map((key) => ({
           wch: Math.max(
@@ -463,9 +502,7 @@ const Search = () => {
         ws["!cols"] = colWidths;
       }
 
-      // Generate filename with tab title and timestamp
       const filename = `${sanitizedTitle}.xlsx`;
-
       XLSX.writeFile(wb, filename);
 
       toast({
@@ -481,6 +518,12 @@ const Search = () => {
       });
     }
   };
+
+  const totalResults = Object.values(results).reduce(
+    (total, result) => total + (result.response?.length || 0),
+    0
+  );
+
   return (
     <Layout>
       <div
@@ -499,47 +542,89 @@ const Search = () => {
           }
         />
 
-        <div className="mb-6 flex justify-between items-center">
-          <div>
-            <h1 className="text-2xl font-bold text-gray-800">Search Agents</h1>
-            <p className="text-gray-500">
-              Execute search Agents to identify potential merger candidates
-            </p>
+        {/* Hero Section */}
+        <div className="mb-8">
+          <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
+            <div className="space-y-2">
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-xl">
+                  <SearchIcon className="h-6 w-6 text-white" />
+                </div>
+                <div>
+                  <h1 className="text-3xl font-bold bg-gradient-to-r from-gray-900 to-gray-700 bg-clip-text text-transparent">
+                    Search Agents
+                  </h1>
+                  <p className="text-gray-600 mt-1">
+                    AI-powered discovery of potential merger candidates
+                  </p>
+                </div>
+              </div>
+
+              {/* Stats Overview */}
+              {totalResults > 0 && (
+                <div className="flex items-center gap-6 mt-4">
+                  <div className="flex items-center gap-2 text-sm">
+                    <TrendingUp className="h-4 w-4 text-green-600" />
+                    <span className="font-medium text-gray-900">
+                      {Object.keys(results).length}
+                    </span>
+                    <span className="text-gray-600">active searches</span>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            <Button
+              onClick={handleRedoAllSearch}
+              disabled={redoingSearch}
+              className="flex items-center gap-3 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white px-6 py-3 rounded-xl shadow-lg hover:shadow-xl transition-all duration-200 font-medium"
+            >
+              <RefreshCw
+                size={18}
+                className={redoingSearch ? "animate-spin" : ""}
+              />
+              Redo All Searches
+            </Button>
           </div>
-          <Button
-            onClick={handleRedoAllSearch}
-            disabled={redoingSearch}
-            className="flex items-center gap-2 bg-purple-600 hover:bg-purple-700 text-white"
-          >
-            <RefreshCw
-              size={16}
-              className={redoingSearch ? "animate-spin" : ""}
-            />
-            Redo All Searches
-          </Button>
         </div>
 
-        <div className="mb-6 bg-blue-50 border border-blue-100 rounded-lg p-4 flex items-start">
-          <div className="text-blue-500 mr-3 mt-1 flex-shrink-0">
-            <AlertCircle size={20} />
-          </div>
-          <div>
-            <h3 className="text-sm font-medium text-blue-800">
-              Running Search Agents
-            </h3>
-            <p className="text-sm text-blue-600 mt-1">
-              Run individual Agents to explore specific criteria or use the Redo
-              All button to regenerate a comprehensive merger candidate report.
-            </p>
+        {/* Info Banner */}
+        <div className="mb-8 bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-xl p-6 shadow-sm">
+          <div className="flex items-start gap-4">
+            <div className="p-2 bg-blue-100 rounded-lg">
+              <AlertCircle className="h-5 w-5 text-blue-600" />
+            </div>
+            <div className="flex-1">
+              <h3 className="text-lg font-semibold text-blue-900 mb-2">
+                AI-Powered Search Intelligence
+              </h3>
+              <p className="text-blue-700 leading-relaxed">
+                Execute individual search agents to explore specific criteria, or
+                use the "Redo All" button to regenerate a comprehensive merger
+                candidate report using the latest market intelligence.
+              </p>
+            </div>
           </div>
         </div>
 
+        {/* Search Agents Grid */}
         {loading ? null : prompts.length === 0 ? (
-          <div className="text-center py-10">
-            <p className="text-gray-500">No search Agents available.</p>
+          <div className="text-center py-16 bg-white rounded-xl shadow-sm border border-gray-100">
+            <div className="max-w-md mx-auto">
+              <div className="p-4 bg-gray-100 rounded-full w-16 h-16 mx-auto mb-4 flex items-center justify-center">
+                <SearchIcon className="h-8 w-8 text-gray-400" />
+              </div>
+              <h3 className="text-lg font-medium text-gray-900 mb-2">
+                No Search Agents Available
+              </h3>
+              <p className="text-gray-500">
+                Configure your search agents to start discovering merger
+                candidates.
+              </p>
+            </div>
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6 mb-8">
             {prompts.map((prompt) => (
               <PromptCard
                 key={prompt.index}
@@ -554,73 +639,132 @@ const Search = () => {
           </div>
         )}
 
+        {/* Results Section */}
         {Object.keys(results).length > 0 && (
-          <div className="mt-8">
-            <h2 className="text-xl font-bold text-gray-800 mb-4">
-              Search Results
-            </h2>
-            <div className="border-b border-gray-200 overflow-x-auto">
-              <nav className="flex space-x-1 whitespace-nowrap">
-                {prompts.map((prompt) => (
-                  <button
-                    key={prompt.index}
-                    onClick={() => setActiveTab(prompt.index)}
-                    className={`
-                      px-3 py-2 text-sm font-medium transition-colors duration-200 border-b-2
-                      ${
-                        activeTab === prompt.index
-                          ? "border-purple-600 text-purple-600"
-                          : "border-transparent text-gray-500 hover:text-purple-600 hover:border-purple-400"
-                      }
-                      ${
-                        results[prompt.index]
-                          ? ""
-                          : "opacity-50 cursor-not-allowed"
-                      }
-                    `}
-                    disabled={!results[prompt.index]}
-                  >
-                    {prompt.title}
-                  </button>
-                ))}
-              </nav>
+          <div className="space-y-8">
+            <div className="flex items-center gap-3">
+              <div className="p-2 bg-gradient-to-br from-green-500 to-emerald-600 rounded-lg">
+                <TrendingUp className="h-5 w-5 text-white" />
+              </div>
+              <h2 className="text-2xl font-bold text-gray-900">Search Results</h2>
             </div>
 
-            {activeTab !== null && results[activeTab] && (
-              <div className="mt-6 bg-white rounded-xl shadow-sm overflow-hidden">
-                <div className="p-6 border-b border-gray-100">
-                  <div className="flex justify-between items-center">
-                    <h3 className="text-lg font-bold text-gray-800">
-                      {results[activeTab].title}
-                    </h3>
-                    <div className="flex items-center gap-2">
+            {/* Tab Navigation */}
+            <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+              <div className="border-b border-gray-100 bg-gray-50/50">
+                <nav className="flex space-x-1 p-1 overflow-x-auto">
+                  {prompts.map((prompt) => (
+                    <button
+                      key={prompt.index}
+                      onClick={() => setActiveTab(prompt.index)}
+                      className={`
+                        px-4 py-3 text-sm font-medium transition-all duration-200 rounded-lg whitespace-nowrap
+                        ${
+                          activeTab === prompt.index
+                            ? "bg-white text-indigo-600 shadow-sm border border-indigo-100"
+                            : "text-gray-600 hover:text-indigo-600 hover:bg-white/50"
+                        }
+                        ${results[prompt.index] ? "" : "opacity-50 cursor-not-allowed"}
+                      `}
+                      disabled={!results[prompt.index]}
+                    >
+                      {prompt.title}
+                      {results[prompt.index] && (
+                        <span className="ml-2 inline-flex items-center px-2 py-0.5 rounded-full text-xs bg-indigo-100 text-indigo-800">
+                          {results[prompt.index].response?.length || 0}
+                        </span>
+                      )}
+                    </button>
+                  ))}
+                </nav>
+              </div>
+
+              {/* Active Tab Content */}
+              {activeTab !== null && results[activeTab] && (
+                <div className="p-6">
+                  {/* Tab Header */}
+                  <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 mb-6">
+                    <div>
+                      <h3 className="text-xl font-bold text-gray-900 mb-2">
+                        {results[activeTab].title}
+                      </h3>
+                      <div className="flex items-center gap-4 text-sm text-gray-600">
+                        <span className="flex items-center gap-2">
+                          <Building2 className="h-4 w-4" />
+                          {results[activeTab].response?.length || 0} companies
+                          found
+                        </span>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-3">
+                      <Select
+                        value={selectedHistory[activeTab] || "latest"}
+                        onValueChange={(value) =>
+                          handleHistorySelect(
+                            activeTab,
+                            value === "latest" ? null : value
+                          )
+                        }
+                      >
+                        <SelectTrigger className="w-[220px] bg-white border-gray-200 hover:border-indigo-300 focus:border-indigo-500">
+                          <SelectValue placeholder="Select history" />
+                        </SelectTrigger>
+                        <SelectContent className="bg-white border border-gray-200 shadow-lg">
+                          <SelectItem value="latest" className="font-medium">
+                            Latest Result
+                          </SelectItem>
+                          {promptHistory
+                            .filter((h) => h.prompt_index === activeTab)
+                            .sort(
+                              (a, b) =>
+                                new Date(b.timestamp).getTime() -
+                                new Date(a.timestamp).getTime()
+                            )
+                            .map((history) => (
+                              <SelectItem
+                                key={history.timestamp}
+                                value={history.timestamp}
+                                className="text-sm"
+                              >
+                                {new Date(history.timestamp).toLocaleString()}{" "}
+                                {history.custom_message && (
+                                  <span
+                                    className="text-gray-500 ml-2"
+                                    title={history.custom_message}
+                                  >
+                                    - {history.custom_message.substring(0, 30)}...
+                                  </span>
+                                )}
+                              </SelectItem>
+                            ))}
+                        </SelectContent>
+                      </Select>
+
                       <Button
                         onClick={() => exportTabToExcel(activeTab)}
-                        className="flex items-center gap-2 bg-purple-600 hover:bg-purple-700 text-white"
+                        className="flex items-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-lg transition-colors duration-200"
                         disabled={
-                          !results[activeTab].companies ||
-                          results[activeTab].companies.length === 0
+                          !results[activeTab].response ||
+                          results[activeTab].response.length === 0
                         }
                       >
                         <Download className="h-4 w-4" />
-                        Export Excel
+                        Export
                       </Button>
+
                       <Button
                         onClick={() => handleRedo(activeTab)}
-                        className="flex items-center gap-2 bg-purple-600 hover:bg-purple-700 text-white"
+                        className="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg transition-colors duration-200"
                       >
                         <RefreshCw className="h-4 w-4" />
-                        Redo Search
+                        Redo
                       </Button>
                     </div>
                   </div>
-                  <p className="text-gray-500 mt-2">
-                    Found {results[activeTab].companies?.length || 0} potential
-                    candidates
-                  </p>
 
-                  {/* Refinement UI */}
-                  <div className="mt-4 bg-green-50 border border-green-100 rounded-lg p-4">
+                  {/* Refinement Controls */}
+                  <div className="mb-6 bg-gradient-to-r from-emerald-50 to-green-50 border border-emerald-200 rounded-xl p-4">
                     <button
                       onClick={() =>
                         setRefinementStates((prev) => ({
@@ -631,242 +775,303 @@ const Search = () => {
                           },
                         }))
                       }
-                      className="flex items-center gap-2 text-green-800 font-medium text-sm mb-1 focus:outline-none"
+                      className="flex items-center gap-3 text-emerald-800 font-medium mb-3 focus:outline-none group"
                     >
-                      <Sliders size={20} />
-                      Refine Search Parameters
+                      <div className="p-1.5 bg-emerald-100 rounded-lg group-hover:bg-emerald-200 transition-colors duration-200">
+                        <Sliders size={18} />
+                      </div>
+                      <span>Refine Search Parameters</span>
+                      <ArrowDown
+                        className={`h-4 w-4 transition-transform duration-200 ${
+                          refinementStates[activeTab]?.isOpen ? "rotate-180" : ""
+                        }`}
+                      />
                     </button>
 
                     {refinementStates[activeTab]?.isOpen && (
-                      <div className="flex flex-wrap items-center gap-4">
-                        {/* Estimated Revenue Slider */}
-                        <div className="relative group flex items-center gap-2">
-                          <label
-                            htmlFor={`estimated-revenue-${activeTab}`}
-                            className="text-sm font-medium text-gray-700 whitespace-nowrap"
-                          >
-                            Revenue (M):
+                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 p-4 bg-white rounded-lg border border-emerald-100">
+                        <div className="space-y-2">
+                          <label className="text-sm font-medium text-gray-700 flex items-center gap-2">
+                            <TrendingUp className="h-4 w-4 text-emerald-600" />
+                            Max Revenue (M)
                           </label>
-                          <input
-                            type="range"
-                            id={`estimated-revenue-${activeTab}`}
-                            min="0"
-                            max="500"
-                            step="10"
-                            value={
-                              refinementStates[activeTab]?.estimatedRevenue || 0
-                            }
-                            onChange={(e) =>
-                              setRefinementStates((prev) => ({
-                                ...prev,
-                                [activeTab]: {
-                                  ...prev[activeTab],
-                                  estimatedRevenue: Number(e.target.value),
-                                },
-                              }))
-                            }
-                            className="w-32 h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-green-600"
-                          />
-                          <span className="text-sm text-gray-600">
-                            {refinementStates[activeTab]?.estimatedRevenue || 0}
-                            M
-                          </span>
-                          <span className="absolute left-0 top-full mt-2 hidden group-hover:block bg-gray-800 text-white text-xs rounded py-1 px-2 z-10">
-                            Maximum estimated revenue in millions (set to 0 to
-                            ignore)
-                          </span>
+                          <div className="flex items-center gap-3">
+                            <input
+                              type="range"
+                              min="0"
+                              max="500"
+                              step="10"
+                              value={refinementStates[activeTab]?.estimatedRevenue || 0}
+                              onChange={(e) =>
+                                setRefinementStates((prev) => ({
+                                  ...prev,
+                                  [activeTab]: {
+                                    ...prev[activeTab],
+                                    estimatedRevenue: Number(e.target.value),
+                                  },
+                                }))
+                              }
+                              className="flex-1 h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-emerald-600"
+                            />
+                            <span className="text-sm font-medium text-gray-900 min-w-[3rem]">
+                              {refinementStates[activeTab]?.estimatedRevenue || 0}M
+                            </span>
+                          </div>
                         </div>
 
-                        {/* Employee Count Slider */}
-                        <div className="relative group flex items-center gap-2">
-                          <label
-                            htmlFor={`employee-count-${activeTab}`}
-                            className="text-sm font-medium text-gray-700 whitespace-nowrap"
-                          >
-                            Max Employees:
+                        <div className="space-y-2">
+                          <label className="text-sm font-medium text-gray-700 flex items-center gap-2">
+                            <Building2 className="h-4 w-4 text-emerald-600" />
+                            Max Employees
                           </label>
-                          <input
-                            type="range"
-                            id={`employee-count-${activeTab}`}
-                            min="0"
-                            max="1000"
-                            step="10"
-                            value={
-                              refinementStates[activeTab]?.employeeCount || 0
-                            }
-                            onChange={(e) =>
-                              setRefinementStates((prev) => ({
-                                ...prev,
-                                [activeTab]: {
-                                  ...prev[activeTab],
-                                  employeeCount: Number(e.target.value),
-                                },
-                              }))
-                            }
-                            className="w-32 h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-green-600"
-                          />
-                          <span className="text-sm text-gray-600">
-                            {refinementStates[activeTab]?.employeeCount || 0}
-                          </span>
-                          <span className="absolute left-0 top-full mt-2 hidden group-hover:block bg-gray-800 text-white text-xs rounded py-1 px-2 z-10">
-                            Maximum number of employees (set to 0 to ignore)
-                          </span>
+                          <div className="flex items-center gap-3">
+                            <input
+                              type="range"
+                              min="0"
+                              max="1000"
+                              step="10"
+                              value={refinementStates[activeTab]?.employeeCount || 0}
+                              onChange={(e) =>
+                                setRefinementStates((prev) => ({
+                                  ...prev,
+                                  [activeTab]: {
+                                    ...prev[activeTab],
+                                    employeeCount: Number(e.target.value),
+                                  },
+                                }))
+                              }
+                              className="flex-1 h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-emerald-600"
+                            />
+                            <span className="text-sm font-medium text-gray-900 min-w-[3rem]">
+                              {refinementStates[activeTab]?.employeeCount || 0}
+                            </span>
+                          </div>
                         </div>
 
-                        {/* Refine Button */}
-                        <button
-                          onClick={() => handleRefine(activeTab)}
-                          className="bg-green-600 hover:bg-green-700 text-white text-sm py-1 px-4 rounded-md"
-                        >
-                          Refine
-                        </button>
+                        <div className="flex items-end">
+                          <button
+                            onClick={() => handleRefine(activeTab)}
+                            className="w-full bg-gradient-to-r from-emerald-600 to-green-600 hover:from-emerald-700 hover:to-green-700 text-white text-sm py-2.5 px-4 rounded-lg font-medium transition-all duration-200 shadow-sm hover:shadow-md"
+                          >
+                            Apply Refinements
+                          </button>
+                        </div>
                       </div>
                     )}
                   </div>
-                </div>
 
-                {results[activeTab].companies &&
-                  results[activeTab].companies.length > 0 && (
-                    <div className="overflow-x-auto">
-                      <Table>
-                        <TableHeader>
-                          <TableRow>
-                            {getTableHeaders(
-                              getCompaniesFromResponse(
-                                results[activeTab].response
-                              )
-                            ).map((header) => (
-                              <TableHead
-                                key={header}
-                                onClick={() => handleSort(header)}
-                                className="whitespace-nowrap cursor-pointer hover:bg-gray-100"
-                              >
-                                {header
-                                  .replace(/_/g, " ")
-                                  .charAt(0)
-                                  .toUpperCase() +
-                                  header.replace(/_/g, " ").slice(1)}
-                                {renderSortIcon(header)}
-                              </TableHead>
-                            ))}
-                            <TableHead>Actions</TableHead>
-                          </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                          {getSortedCompanies(
-                            getCompaniesFromResponse(
-                              results[activeTab].response
-                            )
-                          ).map((company, i) => (
-                            <TableRow
-                              key={i}
-                              className="border-b hover:bg-gray-50"
-                            >
-                              {getTableHeaders(
-                                getCompaniesFromResponse(
-                                  results[activeTab].response
+                  {/* Results Table */}
+                  {results[activeTab].response &&
+                    results[activeTab].response.length > 0 && (
+                      <div className="bg-white rounded-lg border border-gray-200 overflow-hidden shadow-sm">
+                        <div className="overflow-x-auto">
+                          <Table>
+                            <TableHeader className="bg-gray-50">
+                              <TableRow>
+                                {getTableHeaders(results[activeTab].response).map(
+                                  (header) => (
+                                    <TableHead
+                                      key={header}
+                                      onClick={() => handleSort(header)}
+                                      className="whitespace-nowrap cursor-pointer hover:bg-gray-100 transition-colors duration-150 font-semibold text-gray-900 py-4"
+                                    >
+                                      <div className="flex items-center gap-1">
+                                        {header
+                                          .replace(/_/g, " ")
+                                          .charAt(0)
+                                          .toUpperCase() +
+                                          header.replace(/_/g, " ").slice(1)}
+                                        {renderSortIcon(header)}
+                                      </div>
+                                    </TableHead>
+                                  )
+                                )}
+                                <TableHead className="font-semibold text-gray-900">
+                                  Actions
+                                </TableHead>
+                              </TableRow>
+                            </TableHeader>
+                            <TableBody>
+                              {getSortedCompanies(results[activeTab].response).map(
+                                (company, i) => (
+                                  <TableRow
+                                    key={i}
+                                    className="border-b hover:bg-gray-50 transition-colors duration-150"
+                                  >
+                                    {getTableHeaders(
+                                      results[activeTab].response
+                                    ).map((key) => (
+                                      <TableCell
+                                        key={key}
+                                        className="align-top py-4 text-sm"
+                                      >
+                                        {(() => {
+                                          const value = company[key];
+                                          if (key === "name") {
+                                            return (
+                                              <span className="font-semibold text-gray-900">
+                                                {value || "N/A"}
+                                              </span>
+                                            );
+                                          } else if (
+                                            key === "domain_name" &&
+                                            value
+                                          ) {
+                                            return (
+                                              <a
+                                                href={`${value}`}
+                                                target="_blank"
+                                                rel="noopener noreferrer"
+                                                className="text-indigo-600 hover:text-indigo-800 hover:underline font-medium"
+                                              >
+                                                {value}
+                                              </a>
+                                            );
+                                          } else if (key === "leadership") {
+                                            if (!value || !Array.isArray(value))
+                                              return (
+                                                <span className="text-gray-400">
+                                                  N/A
+                                                </span>
+                                              );
+                                            return (
+                                              <div className="space-y-1">
+                                                {value
+                                                  .slice(0, 2)
+                                                  .map((leader: any, idx: number) => (
+                                                    <div
+                                                      key={idx}
+                                                      className="text-sm"
+                                                    >
+                                                      <span className="font-medium">
+                                                        {leader.name}
+                                                      </span>
+                                                      {leader.title && (
+                                                        <span className="text-gray-500 ml-1">
+                                                          ({leader.title})
+                                                        </span>
+                                                      )}
+                                                    </div>
+                                                  ))}
+                                                {value.length > 2 && (
+                                                  <span className="text-xs text-gray-400">
+                                                    +{value.length - 2} more
+                                                  </span>
+                                                )}
+                                              </div>
+                                            );
+                                          } else if (
+                                            key === "sources" &&
+                                            Array.isArray(value)
+                                          ) {
+                                            return (
+                                              <span className="inline-flex items-center px-2 py-1 rounded-full text-xs text-blue-800">
+                                                {value.length} sources
+                                              </span>
+                                            );
+                                          } else if (Array.isArray(value)) {
+                                            return value.length > 0 ? (
+                                              <div className="flex flex-wrap gap-1">
+                                                {value
+                                                  .slice(0, 3)
+                                                  .map((item, idx) => (
+                                                    <span
+                                                      key={idx}
+                                                      className="inline-flex items-center px-2 py-1 rounded-full text-xs text-gray-700"
+                                                    >
+                                                      {item}
+                                                    </span>
+                                                  ))}
+                                                {value.length > 3 && (
+                                                  <span className="text-xs text-gray-400">
+                                                    +{value.length - 3} more
+                                                  </span>
+                                                )}
+                                              </div>
+                                            ) : (
+                                              <span className="text-gray-400">
+                                                N/A
+                                              </span>
+                                            );
+                                          } else if (
+                                            value === undefined ||
+                                            value === null
+                                          ) {
+                                            return (
+                                              <span className="text-gray-400">
+                                                N/A
+                                              </span>
+                                            );
+                                          } else if (typeof value === "object") {
+                                            return (
+                                              <span className="text-xs text-gray-500">
+                                                {JSON.stringify(value)}
+                                              </span>
+                                            );
+                                          } else {
+                                            return (
+                                              <span className="text-gray-900">
+                                                {value.toString()}
+                                              </span>
+                                            );
+                                          }
+                                        })()}
+                                      </TableCell>
+                                    ))}
+                                    <TableCell className="py-4">
+                                      <Button
+                                        onClick={() => openCompanyDetails(company)}
+                                        className="text-indigo-600 hover:text-indigo-800 hover:bg-indigo-50 text-sm px-3 py-1.5 rounded-lg transition-colors duration-150 font-medium"
+                                      >
+                                        View Details
+                                      </Button>
+                                    </TableCell>
+                                  </TableRow>
                                 )
-                              ).map((key) => (
-                                <TableCell key={key} className="align-top py-3">
-                                  {(() => {
-                                    const value = company[key];
-                                    if (key === "name") {
-                                      return (
-                                        <span className="font-semibold text-gray-900">
-                                          {value || "N/A"}
-                                        </span>
-                                      );
-                                    } else if (key === "domain_name" && value) {
-                                      return (
-                                        <a
-                                          href={`https://${value}`}
-                                          target="_blank"
-                                          rel="noopener noreferrer"
-                                          className="text-blue-600 hover:underline"
-                                        >
-                                          {value}
-                                        </a>
-                                      );
-                                    } else if (key === "leadership") {
-                                      if (!value || !Array.isArray(value))
-                                        return "N/A";
-                                      return value
-                                        .map(
-                                          (leader: any) =>
-                                            `${leader.name} (${
-                                              leader.title || "N/A"
-                                            })`
-                                        )
-                                        .join(", ");
-                                    } else if (
-                                      key === "sources" &&
-                                      Array.isArray(value)
-                                    ) {
-                                      return `${value.length} sources`;
-                                    } else if (Array.isArray(value)) {
-                                      return value.join(", ") || "N/A";
-                                    } else if (
-                                      value === undefined ||
-                                      value === null
-                                    ) {
-                                      return "N/A";
-                                    } else if (typeof value === "object") {
-                                      return JSON.stringify(value);
-                                    } else {
-                                      return value.toString();
-                                    }
-                                  })()}
-                                </TableCell>
-                              ))}
-                              <TableCell>
-                                <Button
-                                  onClick={() => openCompanyDetails(company)}
-                                  className="text-blue-600 hover:bg-blue-50"
-                                >
-                                  View Details
-                                </Button>
-                              </TableCell>
-                            </TableRow>
-                          ))}
-                        </TableBody>
-                      </Table>
-                    </div>
-                  )}
-
-                {results[activeTab].sources &&
-                  results[activeTab].sources.length > 0 && (
-                    <div className="p-4 bg-gray-50 border-t border-gray-100">
-                      <h4 className="text-sm font-medium text-gray-700 mb-2">
-                        Research Sources:
-                      </h4>
-                      <div className="flex flex-wrap gap-2">
-                        {results[activeTab].sources.map((source, i) => {
-                          let hostname;
-                          try {
-                            hostname = new URL(source).hostname.replace(
-                              "www.",
-                              ""
-                            );
-                          } catch (e) {
-                            hostname = source;
-                          }
-                          return (
-                            <a
-                              key={i}
-                              href={source}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="text-xs bg-gray-100 text-gray-600 px-2 py-1 rounded hover:bg-gray-200"
-                            >
-                              {hostname}
-                            </a>
-                          );
-                        })}
+                              )}
+                            </TableBody>
+                          </Table>
+                        </div>
                       </div>
-                    </div>
-                  )}
-              </div>
-            )}
+                    )}
+
+                  {/* Sources Section */}
+                  {results[activeTab].sources &&
+                    results[activeTab].sources.length > 0 && (
+                      <div className="mt-6 p-6 bg-gradient-to-r from-gray-50 to-slate-50 rounded-xl border border-gray-200">
+                        <h4 className="text-sm font-semibold text-gray-800 mb-4 flex items-center gap-2">
+                          <SearchIcon className="h-4 w-4 text-gray-600" />
+                          Research Sources ({results[activeTab].sources.length})
+                        </h4>
+                        <div className="flex flex-wrap gap-2">
+                          {results[activeTab].sources.map((source, i) => {
+                            let hostname;
+                            try {
+                              hostname = new URL(source).hostname.replace(
+                                "www.",
+                                ""
+                              );
+                            } catch (e) {
+                              hostname = source;
+                            }
+                            return (
+                              <a
+                                key={i}
+                                href={source}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="inline-flex items-center px-3 py-1.5 text-xs bg-white text-gray-700 border border-gray-200 rounded-lg hover:bg-gray-50 hover:border-gray-300 transition-colors"
+                              >
+                                {hostname}
+                              </a>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    )}
+                </div>
+              )}
+            </div>
           </div>
         )}
 

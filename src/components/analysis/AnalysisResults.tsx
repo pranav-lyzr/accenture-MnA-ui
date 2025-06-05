@@ -1,7 +1,7 @@
-// components/analysis/AnalysisResults.tsx
+
 import { useState } from 'react';
 import { Download, RefreshCw } from 'lucide-react';
-import { Button } from '../../components/botton';
+import { Button } from '../botton';
 import {
   Table,
   TableHeader,
@@ -9,9 +9,8 @@ import {
   TableRow,
   TableHead,
   TableCell,
-} from '../../components/ui/table';
+} from '../ui/table';
 import CompanyDetailsDialog from '../companies/CompanyDetailsDialog';
-import * as XLSX from 'xlsx';
 
 interface CompanyCardProps {
   name: string;
@@ -59,7 +58,7 @@ interface AnalysisResultsProps {
   analysis: AnalysisResult;
   lastAnalysisTimestamp: string;
   onRefresh: () => void;
-  companies: CompanyCardProps[]; // Added to access full company details
+  companies: CompanyCardProps[];
 }
 
 const AnalysisResults = ({ analysis, lastAnalysisTimestamp, onRefresh, companies }: AnalysisResultsProps) => {
@@ -91,47 +90,6 @@ const AnalysisResults = ({ analysis, lastAnalysisTimestamp, onRefresh, companies
     }
   };
 
-  const handleDownloadAnalysis = () => {
-    // Prepare data for Excel
-    // Sheet 1: Rankings
-    const rankingsSheetData = sortedRankings.map((company, index) => ({
-      Rank: index + 1,
-      'Company Name': company.name,
-      'Overall Score': company.overall_score,
-      'Financial Health': company.financial_health_score,
-      'Strategic Fit': company.strategic_fit_score,
-      'Operational Compatibility': company.operational_compatibility_score,
-      'Leadership Innovation': company.leadership_innovation_score,
-      'Cultural Integration': company.cultural_integration_score,
-      Rationale: company.rationale,
-    }));
-
-    // Sheet 2: Recommendations
-    const recommendationsSheetData = analysis.recommendations.map(rec => ({
-      'Company Name': rec.name,
-      'Merger Potential': rec.merger_potential,
-      'Key Synergies': rec.key_synergies.join('; '),
-      'Potential Risks': rec.potential_risks.join('; '),
-    }));
-
-    // Sheet 3: Summary
-    const summarySheetData = [{ Summary: analysis.summary }];
-
-    // Create workbook and worksheets
-    const workbook = XLSX.utils.book_new();
-    const rankingsWorksheet = XLSX.utils.json_to_sheet(rankingsSheetData);
-    const recommendationsWorksheet = XLSX.utils.json_to_sheet(recommendationsSheetData);
-    const summaryWorksheet = XLSX.utils.json_to_sheet(summarySheetData);
-
-    // Append worksheets to workbook
-    XLSX.utils.book_append_sheet(workbook, rankingsWorksheet, 'Rankings');
-    XLSX.utils.book_append_sheet(workbook, recommendationsWorksheet, 'Recommendations');
-    XLSX.utils.book_append_sheet(workbook, summaryWorksheet, 'Summary');
-
-    // Generate Excel file and trigger download
-    XLSX.writeFile(workbook, `analysis-results-${new Date().toISOString()}.xlsx`);
-  };
-
   const SortableHeader = ({ column, title }: { column: string; title: string }) => (
     <TableHead onClick={() => handleSort(column)} className="cursor-pointer hover:bg-muted">
       <div className="flex items-center gap-1">
@@ -149,15 +107,17 @@ const AnalysisResults = ({ analysis, lastAnalysisTimestamp, onRefresh, companies
         <div className="flex items-center gap-2">
           <p className="text-gray-500 text-sm">Last Analysis: {lastAnalysisTimestamp}</p>
           <Button
-            onClick={handleDownloadAnalysis}
-            className="flex items-center gap-2 border border-gray-300 text-gray-700 hover:bg-gray-100"
+            variant="outline"
+            size="sm"
+            className="flex items-center gap-2"
           >
             <Download size={16} />
             Download Analysis
           </Button>
           <Button
             onClick={onRefresh}
-            className="flex items-center gap-2 bg-purple-500 hover:bg-purple-600 text-white"
+            size="sm"
+            className="flex items-center gap-2"
           >
             <RefreshCw size={16} />
             Refresh Analysis
@@ -201,11 +161,12 @@ const AnalysisResults = ({ analysis, lastAnalysisTimestamp, onRefresh, companies
                   <TableCell>{company.operational_compatibility_score}</TableCell>
                   <TableCell>{company.leadership_innovation_score}</TableCell>
                   <TableCell>{company.cultural_integration_score}</TableCell>
-                  <TableCell className="w-[2000px]">{company.rationale}</TableCell>
+                  <TableCell className="max-w-xs truncate">{company.rationale}</TableCell>
                   <TableCell>
                     <Button
-                      onClick={() => openCompanyDetails(company.name)} // Pass the company name to look up full details
-                      className="text-blue-600 hover:bg-blue-50"
+                      onClick={() => openCompanyDetails(company.name)}
+                      variant="link"
+                      size="sm"
                     >
                       View Details
                     </Button>

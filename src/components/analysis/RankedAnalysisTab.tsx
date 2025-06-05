@@ -1,6 +1,7 @@
-// components/analysis/RankedAnalysisTab.tsx
+
 import { useState, useEffect } from 'react';
-import { Button } from '../../components/botton';
+import { Button } from '../botton';
+import { BarChart, Users, TrendingUp, AlertTriangle } from 'lucide-react';
 import CompanyFilters from './CompanyFilters';
 import CompanySelection from './CompanySelection';
 import AnalysisResults from './AnalysisResults';
@@ -30,7 +31,7 @@ interface CompanyCardProps {
 }
 
 interface Filters {
-  office_locations: string[]; // Changed to string[]
+  office_locations: string[];
   revenue: string;
   industry: string;
 }
@@ -64,7 +65,7 @@ const RANKED_ANALYSIS_STORAGE_KEY = 'accenture-ranked-analysis';
 
 const RankedAnalysisTab = ({ companies, categorizeRevenue }: RankedAnalysisTabProps) => {
   const [filters, setFilters] = useState<Filters>({
-    office_locations: [], // Changed to empty array
+    office_locations: [],
     revenue: 'All',
     industry: 'All',
   });
@@ -90,7 +91,7 @@ const RankedAnalysisTab = ({ companies, categorizeRevenue }: RankedAnalysisTabPr
 
     setIsAnalyzing(true);
     setError(null);
-    setShowDialog(true); // Show dialog when analysis starts
+    setShowDialog(true);
 
     try {
       // Prepare data for /analyze API
@@ -134,7 +135,7 @@ const RankedAnalysisTab = ({ companies, categorizeRevenue }: RankedAnalysisTabPr
       );
     } catch (err) {
       setError('Failed to analyze companies. Please try again.');
-      setShowDialog(false); // Close dialog on error
+      setShowDialog(false);
       console.error('Error running analysis:', err);
     } finally {
       setIsAnalyzing(false);
@@ -142,48 +143,112 @@ const RankedAnalysisTab = ({ companies, categorizeRevenue }: RankedAnalysisTabPr
   };
 
   return (
-    <div className="space-y-6">
-      <div>
-        <h2 className="text-xl font-bold text-gray-800">Ranked Analysis</h2>
-        <p className="text-gray-500">Select companies to analyze and view AI-driven rankings for merger candidacy</p>
+    <div className="space-y-8">
+      {/* Header */}
+      <div className="relative bg-gradient-to-br from-indigo-500 to-purple-500 rounded-2xl shadow-xl overflow-hidden">
+        <div className="absolute inset-0 bg-gradient-to-r from-white/10 to-transparent"></div>
+        <div className="relative px-8 py-10">
+          <div className="flex items-center space-x-4 mb-4">
+            <div className="w-12 h-12 bg-white/20 backdrop-blur-sm rounded-xl flex items-center justify-center">
+              <BarChart className="h-6 w-6 text-white" />
+            </div>
+            <div>
+              <h2 className="text-2xl font-bold text-white">Ranked Analysis</h2>
+              <p className="text-indigo-100">Select companies to analyze and view AI-driven rankings for merger candidacy</p>
+            </div>
+          </div>
+          
+          {/* Stats */}
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mt-6">
+            <div className="bg-white/10 backdrop-blur-sm rounded-xl p-4 border border-white/20">
+              <div className="flex items-center space-x-3">
+                <Users className="h-5 w-5 text-white" />
+                <div>
+                  <p className="text-white/80 text-sm">Available Companies</p>
+                  <p className="text-white text-lg font-semibold">{companies.length}</p>
+                </div>
+              </div>
+            </div>
+            <div className="bg-white/10 backdrop-blur-sm rounded-xl p-4 border border-white/20">
+              <div className="flex items-center space-x-3">
+                <TrendingUp className="h-5 w-5 text-white" />
+                <div>
+                  <p className="text-white/80 text-sm">Selected for Analysis</p>
+                  <p className="text-white text-lg font-semibold">{selectedCompanies.length}</p>
+                </div>
+              </div>
+            </div>
+            <div className="bg-white/10 backdrop-blur-sm rounded-xl p-4 border border-white/20">
+              <div className="flex items-center space-x-3">
+                <BarChart className="h-5 w-5 text-white" />
+                <div>
+                  <p className="text-white/80 text-sm">Analysis Status</p>
+                  <p className="text-white text-lg font-semibold">
+                    {analysis ? 'Complete' : 'Pending'}
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
 
       {/* Filters and Selection */}
-      <CompanyFilters
-        companies={companies}
-        onFilterChange={setFilters}
-        categorizeRevenue={categorizeRevenue}
-      />
-      <CompanySelection
-        companies={companies}
-        filters={filters}
-        selectedCompanies={selectedCompanies}
-        onSelectCompanies={setSelectedCompanies}
-        categorizeRevenue={categorizeRevenue}
-      />
-
-      {/* Run Analysis Button */}
-      <div className="flex justify-end">
-        <Button
-          onClick={handleRunAnalysis}
-          disabled={selectedCompanies.length === 0 || isAnalyzing}
-          className="bg-purple-500 hover:bg-purple-600 text-white flex items-center gap-2"
-        >
-          {isAnalyzing ? (
-            <>
-              <span className="animate-spin">⟳</span>
-              Analyzing companies...
-            </>
-          ) : (
-            'Run Analysis'
-          )}
-        </Button>
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <div className="lg:col-span-1">
+          <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+            <h3 className="text-lg font-semibold text-gray-900 mb-4">Filter Companies</h3>
+            <CompanyFilters
+              companies={companies}
+              onFilterChange={setFilters}
+              categorizeRevenue={categorizeRevenue}
+            />
+          </div>
+        </div>
+        
+        <div className="lg:col-span-2">
+          <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+            <div className="flex items-center justify-between mb-6">
+              <h3 className="text-lg font-semibold text-gray-900">Select Companies for Analysis</h3>
+              <Button
+                onClick={handleRunAnalysis}
+                disabled={selectedCompanies.length === 0 || isAnalyzing}
+                className="bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white shadow-lg"
+              >
+                {isAnalyzing ? (
+                  <>
+                    <div className="animate-spin mr-2 h-4 w-4 border-2 border-white border-t-transparent rounded-full"></div>
+                    Analyzing...
+                  </>
+                ) : (
+                  <>
+                    <BarChart className="h-4 w-4 mr-2" />
+                    Run AI Analysis
+                  </>
+                )}
+              </Button>
+            </div>
+            <CompanySelection
+              companies={companies}
+              filters={filters}
+              selectedCompanies={selectedCompanies}
+              onSelectCompanies={setSelectedCompanies}
+              categorizeRevenue={categorizeRevenue}
+            />
+          </div>
+        </div>
       </div>
 
       {/* Error Message */}
       {error && (
-        <div className="bg-red-50 border border-red-200 rounded-lg p-4 text-red-700">
-          {error}
+        <div className="bg-gradient-to-r from-red-50 to-pink-50 border border-red-200 rounded-xl p-6">
+          <div className="flex items-center space-x-3">
+            <AlertTriangle className="h-6 w-6 text-red-600" />
+            <div>
+              <h4 className="text-red-900 font-semibold">Analysis Error</h4>
+              <p className="text-red-700">{error}</p>
+            </div>
+          </div>
         </div>
       )}
 
@@ -193,11 +258,11 @@ const RankedAnalysisTab = ({ companies, categorizeRevenue }: RankedAnalysisTabPr
           analysis={analysis}
           lastAnalysisTimestamp={lastAnalysisTimestamp}
           onRefresh={handleRunAnalysis}
-          companies={companies} // Pass companies for detailed view
+          companies={companies}
         />
       )}
 
-      {/* Analysis Dialog (shown during processing and after completion) */}
+      {/* Analysis Dialog */}
       <AnalysisCompleteDialog
         open={showDialog}
         onOpenChange={setShowDialog}

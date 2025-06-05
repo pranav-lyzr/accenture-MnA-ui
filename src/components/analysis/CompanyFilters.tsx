@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Button } from '../../components/botton';
+import { Button } from '../botton';
 
 interface CompanyCardProps {
   name: string;

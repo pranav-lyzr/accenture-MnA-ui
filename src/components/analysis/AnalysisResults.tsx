@@ -189,7 +189,7 @@ const AnalysisResults = ({ analysis, lastAnalysisTimestamp, companies }: Analysi
                   <TableCell>{company.operational_compatibility_score}</TableCell>
                   <TableCell>{company.leadership_innovation_score}</TableCell>
                   <TableCell>{company.cultural_integration_score}</TableCell>
-                  <TableCell className="max-w-xs truncate">{company.rationale}</TableCell>
+                  <TableCell className="max-w-xs truncate" title={company.rationale}>{company.rationale}</TableCell>
                   <TableCell>
                     <Button
                       onClick={() => openCompanyDetails(company.name)}

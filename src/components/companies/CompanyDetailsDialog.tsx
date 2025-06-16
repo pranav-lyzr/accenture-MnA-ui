@@ -1,4 +1,6 @@
 import { useState, useEffect } from "react";
+import { Tabs, TabList, Tab, TabPanel } from 'react-tabs';
+import 'react-tabs/style/react-tabs.css';
 import DetailDialog from "../../components/ui/DetailDialog";
 import { Button } from "../../components/botton";
 import {
@@ -55,6 +57,7 @@ const CompanyDetailsDialog = ({
     fetchCompanyResearchData();
     return ()=>{
       setResearchData(null);
+      setApolloData(null);
     }
   }, [company?.name]);
 
@@ -140,17 +143,60 @@ const CompanyDetailsDialog = ({
   );
 
   const renderApolloData = () => {
-    if (!apolloData) return null;
+    if (!apolloData) {
+      return (
+        <div className="bg-gradient-to-br from-blue-50 to-blue-100 border border-blue-200 rounded-xl p-8 mb-6 shadow-sm text-center">
+          <div className="bg-blue-600 p-3 rounded-lg mx-auto mb-4 w-fit">
+            <Database className="h-6 w-6 text-white" />
+          </div>
+          <h3 className="text-xl font-bold text-blue-900 mb-4">
+            Apollo Intelligence
+          </h3>
+          <p className="text-blue-700 mb-6">
+            Get enriched company data from Apollo's database
+          </p>
+          <Button
+            variant="outline"
+            onClick={fetchApolloData}
+            disabled={loadingApollo || !company.domain_name}
+            className="flex items-center space-x-2 border-blue-300 text-blue-700 hover:bg-blue-50 hover:border-blue-400 mx-auto"
+          >
+            {loadingApollo ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : (
+              <Database className="h-4 w-4" />
+            )}
+            <span>Fetch Apollo Data</span>
+          </Button>
+        </div>
+      );
+    }
 
     return (
       <div className="bg-gradient-to-br from-blue-50 to-blue-100 border border-blue-200 rounded-xl p-6 mb-6 shadow-sm">
-        <div className="flex items-center mb-4">
-          <div className="bg-blue-600 p-2 rounded-lg mr-3">
-            <Database className="h-5 w-5 text-white" />
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center">
+            <div className="bg-blue-600 p-2 rounded-lg mr-3">
+              <Database className="h-5 w-5 text-white" />
+            </div>
+            <h3 className="text-xl font-bold text-blue-900">
+              Apollo Intelligence
+            </h3>
           </div>
-          <h3 className="text-xl font-bold text-blue-900">
-            Apollo Intelligence
-          </h3>
+          <Button
+            variant="outline"
+            onClick={fetchApolloData}
+            disabled={loadingApollo || !company.domain_name}
+            size="sm"
+            className="flex items-center space-x-2 border-blue-300 text-blue-700 hover:bg-blue-50 hover:border-blue-400"
+          >
+            {loadingApollo ? (
+              <Loader2 className="h-3 w-3 animate-spin" />
+            ) : (
+              <Database className="h-3 w-3" />
+            )}
+            <span>Refresh</span>
+          </Button>
         </div>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {Object.entries(apolloData).map(([key, value]) => (
@@ -174,7 +220,34 @@ const CompanyDetailsDialog = ({
   };
 
   const renderResearchData = () => {
-    if (!researchData) return null;
+    if (!researchData) {
+      return (
+        <div className="bg-gradient-to-br from-emerald-50 to-emerald-100 border border-emerald-200 rounded-xl p-8 shadow-sm text-center">
+          <div className="bg-emerald-600 p-3 rounded-lg mx-auto mb-4 w-fit">
+            <Search className="h-6 w-6 text-white" />
+          </div>
+          <h3 className="text-2xl font-bold text-emerald-900 mb-4">
+            Market Intelligence
+          </h3>
+          <p className="text-emerald-700 mb-6">
+            Get comprehensive market research and intelligence data
+          </p>
+          <Button
+            variant="outline"
+            onClick={fetchPerplexityData}
+            disabled={loadingPerplexity || !company.domain_name || !company.name}
+            className="flex items-center space-x-2 border-emerald-300 text-emerald-700 hover:bg-emerald-50 hover:border-emerald-400 mx-auto"
+          >
+            {loadingPerplexity ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : (
+              <Search className="h-4 w-4" />
+            )}
+            <span>Research</span>
+          </Button>
+        </div>
+      );
+    }
 
     const {
       company_name,
@@ -203,13 +276,29 @@ const CompanyDetailsDialog = ({
         id="research-data-section"
         className="bg-gradient-to-br from-emerald-50 to-emerald-100 border border-emerald-200 rounded-xl p-6 shadow-sm"
       >
-        <div className="flex items-center mb-6">
-          <div className="bg-emerald-600 p-3 rounded-lg mr-3">
-            <Search className="h-6 w-6 text-white" />
+        <div className="flex items-center justify-between mb-6">
+          <div className="flex items-center">
+            <div className="bg-emerald-600 p-3 rounded-lg mr-3">
+              <Search className="h-6 w-6 text-white" />
+            </div>
+            <h3 className="text-2xl font-bold text-emerald-900">
+              Market Intelligence
+            </h3>
           </div>
-          <h3 className="text-2xl font-bold text-emerald-900">
-            Market Intelligence
-          </h3>
+          <Button
+            variant="outline"
+            onClick={fetchPerplexityData}
+            disabled={loadingPerplexity || !company.domain_name || !company.name}
+            size="sm"
+            className="flex items-center space-x-2 border-emerald-300 text-emerald-700 hover:bg-emerald-50 hover:border-emerald-400"
+          >
+            {loadingPerplexity ? (
+              <Loader2 className="h-3 w-3 animate-spin" />
+            ) : (
+              <Search className="h-3 w-3" />
+            )}
+            <span>Refresh</span>
+          </Button>
         </div>
 
         {/* Company Overview Card */}
@@ -492,40 +581,38 @@ const CompanyDetailsDialog = ({
         )
       }
     >
-      <div className="flex gap-3 mb-6">
-        <Button
-          variant="outline"
-          onClick={fetchApolloData}
-          disabled={loadingApollo || !company.domain_name}
-          className="flex items-center space-x-2 border-blue-300 text-blue-700 hover:bg-blue-50 hover:border-blue-400"
-        >
-          {loadingApollo ? (
-            <Loader2 className="h-4 w-4 animate-spin" />
-          ) : (
-            <Database className="h-4 w-4" />
-          )}
-          <span>Fetch Apollo Data</span>
-        </Button>
+      <div className="w-full">
+        <Tabs className="w-full">
+          <TabList className="flex space-x-1 bg-gray-100 p-1 rounded-lg mb-6">
+            <Tab className="flex-1 px-4 py-2 text-sm font-medium text-gray-700 rounded-md hover:bg-white hover:text-gray-900 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2 react-tabs__tab--selected:bg-white react-tabs__tab--selected:text-purple-900 react-tabs__tab--selected:shadow-sm cursor-pointer transition-all duration-200">
+              Basic Info
+            </Tab>
+            <Tab className="flex-1 px-4 py-2 text-sm font-medium text-gray-700 rounded-md hover:bg-white hover:text-gray-900 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2 react-tabs__tab--selected:bg-white react-tabs__tab--selected:text-blue-900 react-tabs__tab--selected:shadow-sm cursor-pointer transition-all duration-200">
+              Apollo Data
+            </Tab>
+            <Tab className="flex-1 px-4 py-2 text-sm font-medium text-gray-700 rounded-md hover:bg-white hover:text-gray-900 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2 react-tabs__tab--selected:bg-white react-tabs__tab--selected:text-emerald-900 react-tabs__tab--selected:shadow-sm cursor-pointer transition-all duration-200">
+              Research Data
+            </Tab>
+          </TabList>
 
-        <Button
-          variant="outline"
-          onClick={fetchPerplexityData}
-          disabled={loadingPerplexity || !company.domain_name || !company.name}
-          className="flex items-center space-x-2 border-emerald-300 text-emerald-700 hover:bg-emerald-50 hover:border-emerald-400"
-        >
-          {loadingPerplexity ? (
-            <Loader2 className="h-4 w-4 animate-spin" />
-          ) : (
-            <Search className="h-4 w-4" />
-          )}
-          <span>Research</span>
-        </Button>
-      </div>
+          <TabPanel>
+            <div className="space-y-6">
+              {renderBasicInfo()}
+            </div>
+          </TabPanel>
 
-      <div className="space-y-6">
-        {renderBasicInfo()}
-        {renderApolloData()}
-        {renderResearchData()}
+          <TabPanel>
+            <div className="space-y-6">
+              {renderApolloData()}
+            </div>
+          </TabPanel>
+
+          <TabPanel>
+            <div className="space-y-6">
+              {renderResearchData()}
+            </div>
+          </TabPanel>
+        </Tabs>
       </div>
     </DetailDialog>
   );

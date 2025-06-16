@@ -335,6 +335,25 @@ const api = {
       throw error;
     }
   },
+  researchDataByCompanyName: async (companyName: string): Promise<any> => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/research/${companyName}`, {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      return await response.json();
+    } catch (error) {
+      console.error("Error enriching company with Perplexity:", error);
+      throw error;
+    }
+  },
 
   analyzeCompanies: async (
     request: AnalysisRequest

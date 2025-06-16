@@ -1,19 +1,19 @@
 import { useState, useEffect } from "react";
 import DetailDialog from "../../components/ui/DetailDialog";
 import { Button } from "../../components/botton";
-import { 
-  Loader2, 
-  Database, 
-  Search, 
-  Building2, 
-  Users, 
-  DollarSign, 
-  MapPin, 
+import {
+  Loader2,
+  Database,
+  Search,
+  Building2,
+  Users,
+  DollarSign,
+  MapPin,
   Calendar,
   Globe,
   Briefcase,
   Target,
-  ExternalLink
+  ExternalLink,
 } from "lucide-react";
 import api from "../../services/api";
 
@@ -30,28 +30,48 @@ const CompanyDetailsDialog = ({
 }: CompanyDetailsProps) => {
   const [loadingApollo, setLoadingApollo] = useState(false);
   const [loadingPerplexity, setLoadingPerplexity] = useState(false);
-  const [apolloData, setApolloData] = useState<Record<string, any> | null>(null);
-  const [researchData, setResearchData] = useState<Record<string, any> | null>(null);
+  const [apolloData, setApolloData] = useState<Record<string, any> | null>(
+    null
+  );
+  const [researchData, setResearchData] = useState<Record<string, any> | null>(
+    null
+  );
 
+  const fetchCompanyResearchData = async () => {
+    try {
+      console.log("Fetching research data for:", company?.name);
+      const companyResearchData = await api.researchDataByCompanyName(
+        company?.name
+      );
+      console.log(companyResearchData, "companyResearchData");
+      setResearchData(companyResearchData);
+    } catch (err) {
+      console.log(err, "Error");
+    }
+  };
 
-
-
+  useEffect(() => {
+    if (!company?.name) return;
+    fetchCompanyResearchData();
+    return ()=>{
+      setResearchData(null);
+    }
+  }, [company?.name]);
 
   // Auto-scroll to research data when it loads
   useEffect(() => {
     if (researchData) {
-      const researchSection = document.getElementById('research-data-section');
+      const researchSection = document.getElementById("research-data-section");
       if (researchSection) {
-        researchSection.scrollIntoView({ 
-          behavior: 'smooth', 
-          block: 'start' 
+        researchSection.scrollIntoView({
+          behavior: "smooth",
+          block: "start",
         });
       }
     }
   }, [researchData]);
-  
-  if (!company) return null;
 
+  if (!company) return null;
 
   const fetchApolloData = async () => {
     if (!company.domain_name) return;
@@ -107,7 +127,9 @@ const CompanyDetailsDialog = ({
                   {formatFieldName(key)}
                 </span>
                 <span className="text-slate-900 font-medium text-lg">
-                  {Array.isArray(value) ? value.join(", ") : value?.toString() || "N/A"}
+                  {Array.isArray(value)
+                    ? value.join(", ")
+                    : value?.toString() || "N/A"}
                 </span>
               </div>
             </div>
@@ -126,16 +148,23 @@ const CompanyDetailsDialog = ({
           <div className="bg-blue-600 p-2 rounded-lg mr-3">
             <Database className="h-5 w-5 text-white" />
           </div>
-          <h3 className="text-xl font-bold text-blue-900">Apollo Intelligence</h3>
+          <h3 className="text-xl font-bold text-blue-900">
+            Apollo Intelligence
+          </h3>
         </div>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {Object.entries(apolloData).map(([key, value]) => (
-            <div key={key} className="bg-white rounded-lg p-4 border border-blue-200 hover:border-blue-400 transition-colors">
+            <div
+              key={key}
+              className="bg-white rounded-lg p-4 border border-blue-200 hover:border-blue-400 transition-colors"
+            >
               <span className="text-sm font-semibold text-blue-700 uppercase tracking-wide block mb-2">
                 {formatFieldName(key)}
               </span>
               <span className="text-blue-950 font-medium">
-                {Array.isArray(value) ? value.join(", ") : value?.toString() || "N/A"}
+                {Array.isArray(value)
+                  ? value.join(", ")
+                  : value?.toString() || "N/A"}
               </span>
             </div>
           ))}
@@ -166,39 +195,60 @@ const CompanyDetailsDialog = ({
       office_locations,
       revenue_geographic_mix,
       sources,
-      data_availability_notes
+      data_availability_notes,
     } = researchData;
 
     return (
-      <div id="research-data-section" className="bg-gradient-to-br from-emerald-50 to-emerald-100 border border-emerald-200 rounded-xl p-6 shadow-sm">
+      <div
+        id="research-data-section"
+        className="bg-gradient-to-br from-emerald-50 to-emerald-100 border border-emerald-200 rounded-xl p-6 shadow-sm"
+      >
         <div className="flex items-center mb-6">
           <div className="bg-emerald-600 p-3 rounded-lg mr-3">
             <Search className="h-6 w-6 text-white" />
           </div>
-          <h3 className="text-2xl font-bold text-emerald-900">Market Intelligence</h3>
+          <h3 className="text-2xl font-bold text-emerald-900">
+            Market Intelligence
+          </h3>
         </div>
 
         {/* Company Overview Card */}
         <div className="bg-white rounded-xl p-6 mb-6 border border-emerald-200 shadow-sm">
           <div className="flex items-center mb-4">
             <Building2 className="h-5 w-5 text-emerald-600 mr-2" />
-            <h4 className="text-lg font-bold text-emerald-900">Company Foundation</h4>
+            <h4 className="text-lg font-bold text-emerald-900">
+              Company Foundation
+            </h4>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
             <div className="bg-emerald-50 rounded-lg p-3 border border-emerald-100">
-              <span className="text-xs font-semibold text-emerald-700 uppercase tracking-wide block mb-1">Headquarters</span>
-              <p className="text-emerald-900 font-medium">{company_hq_location || "N/A"}</p>
+              <span className="text-xs font-semibold text-emerald-700 uppercase tracking-wide block mb-1">
+                Headquarters
+              </span>
+              <p className="text-emerald-900 font-medium">
+                {company_hq_location || "N/A"}
+              </p>
             </div>
             <div className="bg-emerald-50 rounded-lg p-3 border border-emerald-100">
-              <span className="text-xs font-semibold text-emerald-700 uppercase tracking-wide block mb-1">Founded</span>
-              <p className="text-emerald-900 font-medium">{year_founded || "N/A"}</p>
+              <span className="text-xs font-semibold text-emerald-700 uppercase tracking-wide block mb-1">
+                Founded
+              </span>
+              <p className="text-emerald-900 font-medium">
+                {year_founded || "N/A"}
+              </p>
             </div>
             <div className="bg-emerald-50 rounded-lg p-3 border border-emerald-100">
-              <span className="text-xs font-semibold text-emerald-700 uppercase tracking-wide block mb-1">Ownership</span>
-              <p className="text-emerald-900 font-medium">{ownership_status || "N/A"}</p>
+              <span className="text-xs font-semibold text-emerald-700 uppercase tracking-wide block mb-1">
+                Ownership
+              </span>
+              <p className="text-emerald-900 font-medium">
+                {ownership_status || "N/A"}
+              </p>
             </div>
             <div className="bg-emerald-50 rounded-lg p-3 border border-emerald-100">
-              <span className="text-xs font-semibold text-emerald-700 uppercase tracking-wide block mb-1">Website</span>
+              <span className="text-xs font-semibold text-emerald-700 uppercase tracking-wide block mb-1">
+                Website
+              </span>
               {website && (
                 <a
                   href={website}
@@ -206,7 +256,9 @@ const CompanyDetailsDialog = ({
                   rel="noopener noreferrer"
                   className="text-emerald-600 hover:text-emerald-800 font-medium flex items-center hover:underline"
                 >
-                  <span className="truncate">{website.replace(/^https?:\/\//, '')}</span>
+                  <span className="truncate">
+                    {website.replace(/^https?:\/\//, "")}
+                  </span>
                   <ExternalLink className="h-3 w-3 ml-1 flex-shrink-0" />
                 </a>
               )}
@@ -214,8 +266,12 @@ const CompanyDetailsDialog = ({
           </div>
           {company_overview?.description && (
             <div className="bg-emerald-50 rounded-lg p-4 border border-emerald-100">
-              <span className="text-sm font-semibold text-emerald-700 uppercase tracking-wide block mb-2">Company Description</span>
-              <p className="text-emerald-900 leading-relaxed">{company_overview.description}</p>
+              <span className="text-sm font-semibold text-emerald-700 uppercase tracking-wide block mb-2">
+                Company Description
+              </span>
+              <p className="text-emerald-900 leading-relaxed">
+                {company_overview.description}
+              </p>
             </div>
           )}
         </div>
@@ -226,16 +282,26 @@ const CompanyDetailsDialog = ({
             <div className="bg-white rounded-xl p-6 border border-emerald-200 shadow-sm">
               <div className="flex items-center mb-4">
                 <Users className="h-5 w-5 text-emerald-600 mr-2" />
-                <h4 className="text-lg font-bold text-emerald-900">Workforce</h4>
+                <h4 className="text-lg font-bold text-emerald-900">
+                  Workforce
+                </h4>
               </div>
               <div className="space-y-3">
                 <div className="bg-emerald-50 rounded-lg p-3 border border-emerald-100">
-                  <span className="text-xs font-semibold text-emerald-700 uppercase tracking-wide block mb-1">Total Headcount</span>
-                  <p className="text-emerald-900 font-bold text-xl">{employee_metrics.total_headcount || "N/A"}</p>
+                  <span className="text-xs font-semibold text-emerald-700 uppercase tracking-wide block mb-1">
+                    Total Headcount
+                  </span>
+                  <p className="text-emerald-900 font-bold text-xl">
+                    {employee_metrics.total_headcount || "N/A"}
+                  </p>
                 </div>
                 <div className="bg-emerald-50 rounded-lg p-3 border border-emerald-100">
-                  <span className="text-xs font-semibold text-emerald-700 uppercase tracking-wide block mb-1">Revenue per Employee</span>
-                  <p className="text-emerald-900 font-bold text-xl">{employee_metrics.revenue_per_employee || "N/A"}</p>
+                  <span className="text-xs font-semibold text-emerald-700 uppercase tracking-wide block mb-1">
+                    Revenue per Employee
+                  </span>
+                  <p className="text-emerald-900 font-bold text-xl">
+                    {employee_metrics.revenue_per_employee || "N/A"}
+                  </p>
                 </div>
               </div>
             </div>
@@ -245,11 +311,18 @@ const CompanyDetailsDialog = ({
             <div className="bg-white rounded-xl p-6 border border-emerald-200 shadow-sm">
               <div className="flex items-center mb-4">
                 <DollarSign className="h-5 w-5 text-emerald-600 mr-2" />
-                <h4 className="text-lg font-bold text-emerald-900">Financial Overview</h4>
+                <h4 className="text-lg font-bold text-emerald-900">
+                  Financial Overview
+                </h4>
               </div>
               <div className="bg-emerald-50 rounded-lg p-3 border border-emerald-100">
-                <span className="text-xs font-semibold text-emerald-700 uppercase tracking-wide block mb-1">Revenue Data</span>
-                <p className="text-emerald-900 font-medium">{financial_information.revenue_history?.[0]?.revenue || "Not Available"}</p>
+                <span className="text-xs font-semibold text-emerald-700 uppercase tracking-wide block mb-1">
+                  Revenue Data
+                </span>
+                <p className="text-emerald-900 font-medium">
+                  {financial_information.revenue_history?.[0]?.revenue ||
+                    "Not Available"}
+                </p>
               </div>
             </div>
           )}
@@ -261,7 +334,9 @@ const CompanyDetailsDialog = ({
             <div className="bg-white rounded-xl p-6 border border-emerald-200 shadow-sm">
               <div className="flex items-center mb-4">
                 <Briefcase className="h-5 w-5 text-emerald-600 mr-2" />
-                <h4 className="text-lg font-bold text-emerald-900">Service Portfolio</h4>
+                <h4 className="text-lg font-bold text-emerald-900">
+                  Service Portfolio
+                </h4>
               </div>
               <div className="flex flex-wrap gap-2">
                 {service_offerings.map((service: string, i: number) => (
@@ -280,7 +355,9 @@ const CompanyDetailsDialog = ({
             <div className="bg-white rounded-xl p-6 border border-emerald-200 shadow-sm">
               <div className="flex items-center mb-4">
                 <Target className="h-5 w-5 text-emerald-600 mr-2" />
-                <h4 className="text-lg font-bold text-emerald-900">Target Industries</h4>
+                <h4 className="text-lg font-bold text-emerald-900">
+                  Target Industries
+                </h4>
               </div>
               <div className="flex flex-wrap gap-2">
                 {industries_served.map((industry: string, i: number) => (
@@ -299,7 +376,9 @@ const CompanyDetailsDialog = ({
         {/* Key Clients */}
         {key_clients && key_clients.length > 0 && (
           <div className="bg-white rounded-xl p-6 mb-6 border border-emerald-200 shadow-sm">
-            <h4 className="text-lg font-bold text-emerald-900 mb-4">Strategic Clients</h4>
+            <h4 className="text-lg font-bold text-emerald-900 mb-4">
+              Strategic Clients
+            </h4>
             <div className="flex flex-wrap gap-3">
               {key_clients.map((client: string, i: number) => (
                 <span
@@ -318,7 +397,9 @@ const CompanyDetailsDialog = ({
           <div className="bg-white rounded-xl p-6 mb-6 border border-emerald-200 shadow-sm">
             <div className="flex items-center mb-4">
               <MapPin className="h-5 w-5 text-emerald-600 mr-2" />
-              <h4 className="text-lg font-bold text-emerald-900">Global Presence</h4>
+              <h4 className="text-lg font-bold text-emerald-900">
+                Global Presence
+              </h4>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
               {office_locations.map((location: any, i: number) => (
@@ -340,11 +421,16 @@ const CompanyDetailsDialog = ({
           <div className="bg-white rounded-xl p-6 mb-6 border border-emerald-200 shadow-sm">
             <div className="flex items-center mb-4">
               <Globe className="h-5 w-5 text-emerald-600 mr-2" />
-              <h4 className="text-lg font-bold text-emerald-900">Data Sources</h4>
+              <h4 className="text-lg font-bold text-emerald-900">
+                Data Sources
+              </h4>
             </div>
             <div className="space-y-3">
               {sources.map((source: any, i: number) => (
-                <div key={i} className="bg-emerald-50 rounded-lg p-3 border border-emerald-200">
+                <div
+                  key={i}
+                  className="bg-emerald-50 rounded-lg p-3 border border-emerald-200"
+                >
                   <span className="text-sm font-semibold text-emerald-700 block mb-1">
                     {source.information_type}
                   </span>
@@ -354,7 +440,8 @@ const CompanyDetailsDialog = ({
                     rel="noopener noreferrer"
                     className="text-emerald-600 hover:text-emerald-800 font-medium flex items-center hover:underline"
                   >
-                    {source.source_name} <ExternalLink className="h-3 w-3 ml-1" />
+                    {source.source_name}{" "}
+                    <ExternalLink className="h-3 w-3 ml-1" />
                   </a>
                 </div>
               ))}
@@ -370,14 +457,16 @@ const CompanyDetailsDialog = ({
               The following data points were not publicly available:
             </p>
             <div className="flex flex-wrap gap-2">
-              {data_availability_notes.unavailable_data_points.map((item: string, i: number) => (
-                <span
-                  key={i}
-                  className="px-3 py-1 bg-amber-100 text-amber-800 text-xs font-medium rounded-full border border-amber-200"
-                >
-                  {item}
-                </span>
-              ))}
+              {data_availability_notes.unavailable_data_points.map(
+                (item: string, i: number) => (
+                  <span
+                    key={i}
+                    className="px-3 py-1 bg-amber-100 text-amber-800 text-xs font-medium rounded-full border border-amber-200"
+                  >
+                    {item}
+                  </span>
+                )
+              )}
             </div>
           </div>
         )}

@@ -1,12 +1,17 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect } from "react";
 import { useToast } from "../hooks/use-toast";
 import Layout from "../components/layout/Layout";
 import { FileText, Download, File } from "lucide-react";
 import { Button } from "../components/botton";
-import { Card, CardContent, CardHeader, CardTitle } from "../components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+} from "../components/ui/card";
 import * as XLSX from "xlsx";
 import PptxGenJS from "pptxgenjs";
-import api from '../services/api';
+import api from "../services/api";
 
 interface CompanyData {
   _id: string;
@@ -30,7 +35,8 @@ interface CompanyData {
 const reportTypes = [
   {
     title: "Companies List (Excel)",
-    description: "Comprehensive database of all identified companies with detailed analysis",
+    description:
+      "Comprehensive database of all identified companies with detailed analysis",
     format: "XLSX",
     icon: <File size={32} className="text-emerald-600" />,
     handler: "downloadExcel",
@@ -38,8 +44,9 @@ const reportTypes = [
   },
   {
     title: "Merger Analysis Summary (PPT)",
-    description: "Executive presentation with scan brief and detailed company profiles",
-    format: "PPTX", 
+    description:
+      "Executive presentation with scan brief and detailed company profiles",
+    format: "PPTX",
     icon: <FileText size={32} className="text-blue-600" />,
     handler: "downloadPPT",
     color: "blue",
@@ -49,15 +56,29 @@ const reportTypes = [
 const Reports = () => {
   const { toast } = useToast();
   const [companies, setCompanies] = useState<CompanyData[]>([]);
+  const [comanyResearchData, setCompanyResearchData] = useState<[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
+
+  const fetchCompaniesResearchData=async()=>{
+    try {
+      const researchData=await api.getCompaniesResearchData()
+      console.log("researchData",researchData)
+      setCompanyResearchData(researchData)
+    } catch(err){
+      console.log("Error",err)
+    }
+  }
+
   useEffect(() => {
+
+    fetchCompaniesResearchData()
     const fetchCompanies = async () => {
       try {
         const data = await api.getCompanies();
         setCompanies(data as CompanyData[]);
       } catch (error) {
-        console.error('Error fetching companies:', error);
+        console.error("Error fetching companies:", error);
         toast({
           title: "Error",
           description: "Failed to load company data",
@@ -87,36 +108,51 @@ const Reports = () => {
       return;
     }
     try {
-      const excelData = companies.map(company => ({
+      const excelData = companies.map((company) => ({
         Name: company.name || "N/A",
         DomainName: company.domain_name || "N/A",
         EstimatedRevenue: company.estimated_revenue || "N/A",
         RevenueGrowth: company.revenue_growth || "N/A",
         EmployeeCount: company.employee_count || "N/A",
-        KeyClients: Array.isArray(company.key_clients) ? company.key_clients.join(", ") : "N/A",
-        Leadership: Array.isArray(company.leadership) ? company.leadership.map(l => `${l.name} (${l.title})`).join(", ") : "N/A",
+        KeyClients: Array.isArray(company.key_clients)
+          ? company.key_clients.join(", ")
+          : "N/A",
+        Leadership: Array.isArray(company.leadership)
+          ? company.leadership.map((l) => `${l.name} (${l.title})`).join(", ")
+          : "N/A",
         MergerSynergies: company.merger_synergies || "N/A",
         Industries: company.Industries
-          ? (Array.isArray(company.Industries)
+          ? Array.isArray(company.Industries)
             ? company.Industries.join(", ")
-            : String(company.Industries))
+            : String(company.Industries)
           : "N/A",
         Services: company.Services
-          ? (Array.isArray(company.Services)
+          ? Array.isArray(company.Services)
             ? company.Services.join(", ")
-            : String(company.Services))
+            : String(company.Services)
           : "N/A",
         BroadCategory: company["Broad Category"] || "N/A",
         Ownership: company.Ownership || "N/A",
-        Sources: Array.isArray(company.sources) ? company.sources.join("; ") : "N/A",
-        OfficeLocations: Array.isArray(company.office_locations) ? company.office_locations.join(", ") : "N/A",
-        ValidationWarnings: Array.isArray(company.validation_warnings) ? company.validation_warnings.join("; ") : "N/A",
+        Sources: Array.isArray(company.sources)
+          ? company.sources.join("; ")
+          : "N/A",
+        OfficeLocations: Array.isArray(company.office_locations)
+          ? company.office_locations.join(", ")
+          : "N/A",
+        ValidationWarnings: Array.isArray(company.validation_warnings)
+          ? company.validation_warnings.join("; ")
+          : "N/A",
       }));
       const ws = XLSX.utils.json_to_sheet(excelData);
       const wb = XLSX.utils.book_new();
       XLSX.utils.book_append_sheet(wb, ws, "Companies");
-      const colWidths = Object.keys(excelData[0]).map(key => ({
-        wch: Math.max(key.length, ...excelData.map(row => String(row[key as keyof typeof excelData[number]]).length))
+      const colWidths = Object.keys(excelData[0]).map((key) => ({
+        wch: Math.max(
+          key.length,
+          ...excelData.map(
+            (row) => String(row[key as keyof (typeof excelData)[number]]).length
+          )
+        ),
       }));
       ws["!cols"] = colWidths;
       XLSX.writeFile(wb, "Companies_List.xlsx");
@@ -201,7 +237,7 @@ const Reports = () => {
       );
 
       // Company Detail Slides
-      companies.forEach(company => {
+      companies.forEach((company) => {
         slide = pptx.addSlide();
 
         // Purple header background
@@ -214,17 +250,14 @@ const Reports = () => {
         });
 
         // Header text
-        slide.addText(
-          company["Broad Category"] || "Retail Consulting",
-          {
-            x: 0.1,
-            y: 0.05,
-            w: 8,
-            h: 0.2,
-            fontSize: 12,
-            color: "FFFFFF",
-          }
-        );
+        slide.addText(company["Broad Category"] || "Retail Consulting", {
+          x: 0.1,
+          y: 0.05,
+          w: 8,
+          h: 0.2,
+          fontSize: 12,
+          color: "FFFFFF",
+        });
         slide.addText(company.name || "COMPANY NAME", {
           x: 0.1,
           y: 0.25,
@@ -241,26 +274,36 @@ const Reports = () => {
             title: "DETAILS",
             x: 0.05,
             content: [
-              `HQ: ${Array.isArray(company.office_locations) ? company.office_locations[0] : company.office_locations || "N/A"}`,
+              `HQ: ${
+                Array.isArray(company.office_locations)
+                  ? company.office_locations[0]
+                  : company.office_locations || "N/A"
+              }`,
               `Ownership: ${company.Ownership || "N/A"}`,
               `Employees: ${company.employee_count || "N/A"}`,
               `Revenue: ${company.estimated_revenue || "N/A"}`,
               `Growth: ${company.revenue_growth || "N/A"}`,
-            ].filter(item => item && !item.includes("N/A")).join("\n"),
+            ]
+              .filter((item) => item && !item.includes("N/A"))
+              .join("\n"),
           },
           {
             title: "BUSINESS OVERVIEW",
             x: 3.35,
-            content: company.merger_synergies || "Specialized consulting firm focused on retail industry solutions",
+            content:
+              company.merger_synergies ||
+              "Specialized consulting firm focused on retail industry solutions",
           },
           {
             title: "SERVICE OFFERINGS",
             x: 6.65,
-            content: Array.isArray(company.Services) ? company.Services.join(", ") : company.Services || "N/A",
+            content: Array.isArray(company.Services)
+              ? company.Services.join(", ")
+              : company.Services || "N/A",
           },
         ];
 
-        firstRowBoxes.forEach(box => {
+        firstRowBoxes.forEach((box) => {
           slide.addShape(pptx.ShapeType.rect, {
             x: box.x,
             y: 0.8,
@@ -302,21 +345,29 @@ const Reports = () => {
           {
             title: "MANAGEMENT TEAM",
             x: 0.05,
-            content: Array.isArray(company.leadership) ? company.leadership.map(l => `${l.title || "Executive"}: ${l.name}`).join("\n") : "Leadership information not available",
+            content: Array.isArray(company.leadership)
+              ? company.leadership
+                  .map((l) => `${l.title || "Executive"}: ${l.name}`)
+                  .join("\n")
+              : "Leadership information not available",
           },
           {
             title: "WEBSITE",
             x: 3.35,
-            content: company.domain_name ? `www.${company.domain_name}` : "Website not available",
+            content: company.domain_name
+              ? `www.${company.domain_name}`
+              : "Website not available",
           },
           {
             title: "KEY CLIENTS",
             x: 6.65,
-            content: Array.isArray(company.key_clients) ? company.key_clients.join("\n") : "Client information not available",
+            content: Array.isArray(company.key_clients)
+              ? company.key_clients.join("\n")
+              : "Client information not available",
           },
         ];
 
-        secondRowBoxes.forEach(box => {
+        secondRowBoxes.forEach((box) => {
           slide.addShape(pptx.ShapeType.rect, {
             x: box.x,
             y: 2.25,
@@ -358,21 +409,27 @@ const Reports = () => {
           {
             title: "INDUSTRIES SERVED",
             x: 0.05,
-            content: Array.isArray(company.Industries) ? company.Industries.join(", ") : company.Industries || "Retail, Consumer Goods",
+            content: Array.isArray(company.Industries)
+              ? company.Industries.join(", ")
+              : company.Industries || "Retail, Consumer Goods",
           },
           {
             title: "GEOGRAPHIC PRESENCE",
             x: 3.35,
-            content: Array.isArray(company.office_locations) ? company.office_locations.join(", ") : company.office_locations || "United States",
+            content: Array.isArray(company.office_locations)
+              ? company.office_locations.join(", ")
+              : company.office_locations || "United States",
           },
           {
             title: "MERGER SYNERGIES",
             x: 6.65,
-            content: company.merger_synergies || "Strategic alignment opportunities to be evaluated",
+            content:
+              company.merger_synergies ||
+              "Strategic alignment opportunities to be evaluated",
           },
         ];
 
-        thirdRowBoxes.forEach(box => {
+        thirdRowBoxes.forEach((box) => {
           slide.addShape(pptx.ShapeType.rect, {
             x: box.x,
             y: 3.7,
@@ -470,14 +527,14 @@ const Reports = () => {
         bg: "bg-emerald-50",
         border: "border-emerald-200",
         button: "bg-emerald-600 hover:bg-emerald-700",
-        text: "text-emerald-700"
+        text: "text-emerald-700",
       },
       blue: {
-        bg: "bg-blue-50", 
+        bg: "bg-blue-50",
         border: "border-blue-200",
         button: "bg-blue-600 hover:bg-blue-700",
-        text: "text-blue-700"
-      }
+        text: "text-blue-700",
+      },
     };
     return colorMap[color as keyof typeof colorMap] || colorMap.emerald;
   };
@@ -488,14 +545,22 @@ const Reports = () => {
       <div className="mb-8">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-3xl font-bold text-gray-900 mb-2">Reports & Analytics</h1>
-            <p className="text-gray-600 text-lg">Download comprehensive analysis reports and export data</p>
+            <h1 className="text-3xl font-bold text-gray-900 mb-2">
+              Reports & Analytics
+            </h1>
+            <p className="text-gray-600 text-lg">
+              Download comprehensive analysis reports and export data
+            </p>
           </div>
-          
+
           {!isLoading && (
             <div className="text-right">
-              <div className="text-2xl font-bold text-purple-600">{companies.length}</div>
-              <div className="text-sm text-gray-500 font-medium">Companies Analyzed</div>
+              <div className="text-2xl font-bold text-purple-600">
+                {companies.length}
+              </div>
+              <div className="text-sm text-gray-500 font-medium">
+                Companies Analyzed
+              </div>
             </div>
           )}
         </div>
@@ -506,7 +571,9 @@ const Reports = () => {
         <div className="flex items-center justify-center py-12">
           <div className="text-center">
             <div className="inline-block animate-spin rounded-full h-12 w-12 border-4 border-purple-500 border-opacity-25 border-t-purple-500 mb-4"></div>
-            <p className="text-lg font-medium text-gray-700">Loading company data...</p>
+            <p className="text-lg font-medium text-gray-700">
+              Loading company data...
+            </p>
             <p className="text-gray-500">Preparing your reports</p>
           </div>
         </div>
@@ -516,8 +583,13 @@ const Reports = () => {
           {reportTypes.map((report, index) => {
             const colors = getColorClasses(report.color);
             return (
-              <Card key={index} className={`transition-all duration-300 hover:shadow-xl hover:-translate-y-1 ${colors.border} overflow-hidden`}>
-                <CardHeader className={`${colors.bg} ${colors.border} border-b`}>
+              <Card
+                key={index}
+                className={`transition-all duration-300 hover:shadow-xl hover:-translate-y-1 ${colors.border} overflow-hidden`}
+              >
+                <CardHeader
+                  className={`${colors.bg} ${colors.border} border-b`}
+                >
                   <div className="flex items-center justify-between">
                     <div className="flex items-center space-x-4">
                       <div className="p-3 bg-white rounded-lg shadow-sm">
@@ -527,14 +599,16 @@ const Reports = () => {
                         <CardTitle className="text-xl font-bold text-gray-900">
                           {report.title}
                         </CardTitle>
-                        <div className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-semibold ${colors.bg} ${colors.text} mt-2`}>
+                        <div
+                          className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-semibold ${colors.bg} ${colors.text} mt-2`}
+                        >
                           {report.format} Format
                         </div>
                       </div>
                     </div>
                   </div>
                 </CardHeader>
-                
+
                 <CardContent className="p-6">
                   <br />
                   <Button
@@ -545,7 +619,7 @@ const Reports = () => {
                     <Download size={20} />
                     <span>Download {report.format}</span>
                   </Button>
-                  
+
                   {companies.length === 0 && (
                     <p className="text-xs text-gray-500 text-center mt-2">
                       No data available for download
@@ -557,8 +631,6 @@ const Reports = () => {
           })}
         </div>
       )}
-      
-      
     </Layout>
   );
 };

@@ -1,6 +1,6 @@
 // Base API URL - would typically come from environment variables
-const API_BASE_URL = 'https://accenture-mna.ca.lyzr.app';
-// const API_BASE_URL = "http://localhost:8002";
+// const API_BASE_URL = 'https://accenture-mna.ca.lyzr.app';
+const API_BASE_URL = "http://localhost:8002";
 export interface Prompt {
   index: number;
   title: string;
@@ -415,6 +415,19 @@ const api = {
       return await response.json();
     } catch (error) {
       console.error("Error fetching companies:", error);
+      return [];
+    }
+  },
+
+  getCompaniesResearchData: async (): Promise<[]> => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/research`);
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      return await response.json();
+    } catch (error) {
+      console.error("Error fetching research data:", error);
       return [];
     }
   },

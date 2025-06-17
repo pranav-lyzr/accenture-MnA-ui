@@ -1,15 +1,15 @@
 // Base API URL - would typically come from environment variables
 const API_BASE_URL = 'https://accenture-mna.ca.lyzr.app';
-// const API_BASE_URL = 'http://localhost:8002';
+// const API_BASE_URL = "http://localhost:8002";
 export interface Prompt {
   index: number;
   title: string;
-  'agent-ID': string;
+  "agent-ID": string;
 }
 
 export interface PromptResponse {
   title: string;
-  raw_response?: CompanyDetails[]; 
+  raw_response?: CompanyDetails[];
   sources?: string[];
   validation_warnings?: string[];
   document_id: string;
@@ -142,37 +142,42 @@ const api = {
       }
       return await response.json();
     } catch (error) {
-      console.error('Error fetching prompts:', error);
+      console.error("Error fetching prompts:", error);
       return [];
     }
   },
 
   // Run a specific prompt
-  runPrompt: async (promptIndex: number, customMessage?: string): Promise<PromptResponse> => {
+  runPrompt: async (
+    promptIndex: number,
+    customMessage?: string
+  ): Promise<PromptResponse> => {
     try {
-      const body: { prompt_index: number; custom_message?: string } = { prompt_index: promptIndex };
+      const body: { prompt_index: number; custom_message?: string } = {
+        prompt_index: promptIndex,
+      };
       if (customMessage) {
         body.custom_message = customMessage;
       }
       const response = await fetch(`${API_BASE_URL}/run_prompt`, {
-        method: 'POST',
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
         },
         body: JSON.stringify(body),
       });
-      
+
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
-      
+
       return await response.json();
     } catch (error) {
       console.error(`Error running prompt ${promptIndex}:`, error);
       throw error;
     }
   },
-  
+
   // Get prompt history
   getPromptHistory: async (): Promise<PromptHistoryItem[]> => {
     try {
@@ -182,7 +187,7 @@ const api = {
       }
       return await response.json();
     } catch (error) {
-      console.error('Error fetching prompt history:', error);
+      console.error("Error fetching prompt history:", error);
       return [];
     }
   },
@@ -191,16 +196,16 @@ const api = {
   runMergerSearch: async (): Promise<MergerSearchResponse> => {
     try {
       const response = await fetch(`${API_BASE_URL}/run_merger_search`, {
-        method: 'POST',
+        method: "POST",
       });
-      
+
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
-      
+
       return await response.json();
     } catch (error) {
-      console.error('Error running merger search:', error);
+      console.error("Error running merger search:", error);
       throw error;
     }
   },
@@ -209,14 +214,14 @@ const api = {
   getResults: async (): Promise<MergerSearchResponse> => {
     try {
       const response = await fetch(`${API_BASE_URL}/results`);
-      
+
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
-      
+
       return await response.json();
     } catch (error) {
-      console.error('Error fetching results:', error);
+      console.error("Error fetching results:", error);
       throw error;
     }
   },
@@ -225,16 +230,16 @@ const api = {
   redoSearch: async (): Promise<MergerSearchResponse> => {
     try {
       const response = await fetch(`${API_BASE_URL}/redo_search`, {
-        method: 'POST',
+        method: "POST",
       });
-      
+
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
-      
+
       return await response.json();
     } catch (error) {
-      console.error('Error redoing search:', error);
+      console.error("Error redoing search:", error);
       throw error;
     }
   },
@@ -243,14 +248,14 @@ const api = {
   fetchExistingItems: async (): Promise<{ results: any; message: string }> => {
     try {
       const response = await fetch(`${API_BASE_URL}/fetch_existing_items`);
-      
+
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
-      
+
       return await response.json();
     } catch (error) {
-      console.error('Error fetching existing items:', error);
+      console.error("Error fetching existing items:", error);
       throw error;
     }
   },
@@ -259,70 +264,120 @@ const api = {
   enrichCompanyApollo: async (companyDomain: string): Promise<any> => {
     try {
       const response = await fetch(`${API_BASE_URL}/fetch_company_apollo`, {
-        method: 'POST',
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
         },
         body: JSON.stringify({ company_domain: companyDomain }),
       });
-      
+
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
-      
+
       return await response.json();
     } catch (error) {
-      console.error('Error enriching company with Apollo:', error);
+      console.error("Error enriching company with Apollo:", error);
       throw error;
     }
   },
 
   // Enrich company with Perplexity API
-  enrichCompanyPerplexity: async (companyName: string, companyDomain: string): Promise<any> => {
+  enrichCompanyPerplexity: async (
+    companyName: string,
+    companyDomain: string
+  ): Promise<any> => {
     try {
       const response = await fetch(`${API_BASE_URL}/fetch_company_perplexity`, {
-        method: 'POST',
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
         },
-        body: JSON.stringify({ 
+        body: JSON.stringify({
           company_name: companyName,
-          company_domain: companyDomain 
+          company_domain: companyDomain,
         }),
       });
-      
+
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
-      
+
       return await response.json();
     } catch (error) {
-      console.error('Error enriching company with Perplexity:', error);
+      console.error("Error enriching company with Perplexity:", error);
+      throw error;
+    }
+  },
+  companyResearch: async (
+    companyName: string,
+    companyDomain: string
+  ): Promise<any> => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/research-company`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          name: companyName,
+          url: companyDomain,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      return await response.json();
+    } catch (error) {
+      console.error("Error enriching company with Perplexity:", error);
+      throw error;
+    }
+  },
+  researchDataByCompanyName: async (companyName: string): Promise<any> => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/research/${companyName}`, {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      return await response.json();
+    } catch (error) {
+      console.error("Error enriching company with Perplexity:", error);
       throw error;
     }
   },
 
-  analyzeCompanies: async (request: AnalysisRequest): Promise<AnalysisResponse> => {
+  analyzeCompanies: async (
+    request: AnalysisRequest
+  ): Promise<AnalysisResponse> => {
     try {
-      console.log('Sending analysis request:', request);
+      console.log("Sending analysis request:", request);
 
       // Prepare the request body
       const body = {
-        companies: request.companies.map(company => ({
+        companies: request.companies.map((company) => ({
           name: company.name,
-          domain_name: company.domain_name || '',
-          estimated_revenue: company.estimated_revenue || 'Unknown',
-          revenue_growth: company.revenue_growth || 'Unknown',
-          employee_count: company.employee_count || 'Unknown',
+          domain_name: company.domain_name || "",
+          estimated_revenue: company.estimated_revenue || "Unknown",
+          revenue_growth: company.revenue_growth || "Unknown",
+          employee_count: company.employee_count || "Unknown",
           key_clients: company.key_clients || [],
           leadership: company.leadership || [],
-          merger_synergies: company.merger_synergies || 'Unknown',
+          merger_synergies: company.merger_synergies || "Unknown",
           Industries: Array.isArray(company.Industries)
-            ? company.Industries.join(', ')
-            : company.Industries || 'General',
-          Services: company.Services || 'Unknown',
-          Broad_Category: company.Broad_Category || 'Unknown',
-          Ownership: company.Ownership || 'Unknown',
+            ? company.Industries.join(", ")
+            : company.Industries || "General",
+          Services: company.Services || "Unknown",
+          Broad_Category: company.Broad_Category || "Unknown",
+          Ownership: company.Ownership || "Unknown",
           sources: company.sources || [],
           office_locations: company.office_locations || [],
           validation_warnings: company.validation_warnings || [],
@@ -330,10 +385,10 @@ const api = {
       };
 
       const response = await fetch(`${API_BASE_URL}/analyze`, {
-        method: 'POST',
+        method: "POST",
         headers: {
-          'Accept': 'application/json',
-          'Content-Type': 'application/json',
+          Accept: "application/json",
+          "Content-Type": "application/json",
         },
         body: JSON.stringify(body),
       });
@@ -345,35 +400,33 @@ const api = {
       const data: AnalysisResponse = await response.json();
       return data;
     } catch (error) {
-      console.error('Error calling /analyze API:', error);
+      console.error("Error calling /analyze API:", error);
       throw error; // Re-throw the error to be handled by the caller
     }
   },
 
   // Fetch all unique companies with full data
-getCompanies: async (): Promise<CompanyData[]> => {
-  try {
-    const response = await fetch(`${API_BASE_URL}/companies`);
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
+  getCompanies: async (): Promise<CompanyData[]> => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/companies`);
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      return await response.json();
+    } catch (error) {
+      console.error("Error fetching companies:", error);
+      return [];
     }
-    return await response.json();
-  } catch (error) {
-    console.error('Error fetching companies:', error);
-    return [];
-  }
-},
+  },
 
   // Download CSVs and JSONs
   downloadCSV: () => {
-    window.open(`${API_BASE_URL}/download_csv`, '_blank');
+    window.open(`${API_BASE_URL}/download_csv`, "_blank");
   },
 
   downloadJSON: () => {
-    window.open(`${API_BASE_URL}/download_json`, '_blank');
+    window.open(`${API_BASE_URL}/download_json`, "_blank");
   },
-
-
 };
 
 export default api;

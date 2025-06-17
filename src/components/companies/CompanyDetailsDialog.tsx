@@ -11,7 +11,6 @@ import {
   Users,
   DollarSign,
   MapPin,
-  Calendar,
   Globe,
   Briefcase,
   Target,
@@ -39,7 +38,11 @@ const CompanyDetailsDialog = ({
     null
   );
 
-  const [err, setErr] = useState({
+  const [err, setErr] = useState<{
+    apollo: string | null;
+    perplexity: string | null;
+    research: string | null;
+  }>({
     apollo: null,
     perplexity: null,
     research: null,
@@ -98,9 +101,10 @@ const CompanyDetailsDialog = ({
       setApolloData(result.company);
     } catch (error) {
       console.error("Error fetching Apollo data:", error);
-      setErr({
+      setErr((prevErr) => ({
+        ...prevErr,
         apollo: "Some error occurred",
-      });
+      }));
     } finally {
       setLoadingApollo(false);
     }
@@ -132,7 +136,7 @@ const CompanyDetailsDialog = ({
 
   const renderBasicInfo = () => {
     // Helper function to render complex values
-    const renderValue = (value, key) => {
+    const renderValue = (value: unknown, key: string) => {
       if (value === null || value === undefined) {
         return "N/A";
       }
@@ -155,7 +159,7 @@ const CompanyDetailsDialog = ({
                         {formatFieldName(k)}:
                       </span>
                       <span className="text-slate-900 font-medium">
-                        {v || "N/A"}
+                        {(v as React.ReactNode) || "N/A"}
                       </span>
                     </div>
                   ))}
@@ -289,7 +293,7 @@ const CompanyDetailsDialog = ({
 
   const renderApolloData = () => {
     // Helper function to render complex values
-    const renderValue = (value) => {
+    const renderValue = (value: unknown) => {
       if (value === null || value === undefined) {
         return "N/A";
       }
@@ -306,7 +310,7 @@ const CompanyDetailsDialog = ({
                   {Object.entries(item).map(([k, v]) => (
                     <div key={k} className="flex justify-between">
                       <span className="font-medium">{formatFieldName(k)}:</span>
-                      <span>{v || "N/A"}</span>
+                      <span>{ (v as React.ReactNode) || "N/A"}</span>
                     </div>
                   ))}
                 </div>
@@ -507,23 +511,23 @@ const CompanyDetailsDialog = ({
     }
 
     const {
-      company_name,
+      // company_name,
       company_hq_location,
       year_founded,
       ownership_status,
-      ownership_details,
+      // ownership_details,
       financial_information,
       employee_metrics,
       company_overview,
       service_offerings,
-      products,
+      // products,
       key_clients,
-      management_team,
+      // management_team,
       website,
-      partnerships_alliances,
+      // partnerships_alliances,
       industries_served,
       office_locations,
-      revenue_geographic_mix,
+      // revenue_geographic_mix,
       sources,
       data_availability_notes,
     } = researchData;

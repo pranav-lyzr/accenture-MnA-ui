@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
-import { Tabs, TabList, Tab, TabPanel } from 'react-tabs';
-import 'react-tabs/style/react-tabs.css';
+import { Tabs, TabList, Tab, TabPanel } from "react-tabs";
+import "react-tabs/style/react-tabs.css";
 import DetailDialog from "../../components/ui/DetailDialog";
 import { Button } from "../../components/botton";
 import {
@@ -55,10 +55,10 @@ const CompanyDetailsDialog = ({
   useEffect(() => {
     if (!company?.name) return;
     fetchCompanyResearchData();
-    return ()=>{
+    return () => {
       setResearchData(null);
       setApolloData(null);
-    }
+    };
   }, [company?.name]);
 
   // Auto-scroll to research data when it loads
@@ -82,6 +82,8 @@ const CompanyDetailsDialog = ({
     try {
       setLoadingApollo(true);
       const result = await api.enrichCompanyApollo(company.domain_name);
+
+      console.log(result.company, "result appolo");
       setApolloData(result.company);
     } catch (error) {
       console.error("Error fetching Apollo data:", error);
@@ -114,44 +116,243 @@ const CompanyDetailsDialog = ({
       .join(" ");
   };
 
-  const renderBasicInfo = () => (
-    <div className="bg-gradient-to-br from-slate-50 to-slate-100 border border-slate-200 rounded-xl p-6 mb-6 shadow-sm">
-      <div className="flex items-center mb-4">
-        <div className="w-2 h-8 bg-purple-600 rounded-full mr-3"></div>
-        <h3 className="text-xl font-bold text-slate-800">Company Overview</h3>
-      </div>
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        {Object.entries(company).map(([key, value]) => {
-          if (key === "name" || key === "domain_name") return null;
+
+
+  const renderBasicInfo = () => {
+    // Helper function to render complex values
+    const renderValue = (value, key) => {
+      if (value === null || value === undefined) {
+        return "N/A";
+      }
+      
+      if (Array.isArray(value)) {
+        if (value.length === 0) return "N/A";
+        
+        // Handle array of objects (like leadership)
+        if (typeof value[0] === 'object' && value[0] !== null) {
           return (
-            <div key={key} className="group">
-              <div className="bg-white rounded-lg p-4 border border-slate-200 hover:border-purple-300 transition-all duration-200 hover:shadow-md">
-                <span className="text-sm font-semibold text-purple-700 uppercase tracking-wide block mb-2">
-                  {formatFieldName(key)}
-                </span>
-                <span className="text-slate-900 font-medium text-lg">
-                  {Array.isArray(value)
-                    ? value.join(", ")
-                    : value?.toString() || "N/A"}
-                </span>
-              </div>
+            <div className="space-y-2">
+              {value.map((item, index) => (
+                <div key={index} className="bg-purple-50 rounded p-3 border border-purple-100">
+                  {Object.entries(item).map(([k, v]) => (
+                    <div key={k} className="flex justify-between items-center">
+                      <span className="font-medium text-purple-700">{formatFieldName(k)}:</span>
+                      <span className="text-slate-900 font-medium">{v || "N/A"}</span>
+                    </div>
+                  ))}
+                </div>
+              ))}
             </div>
           );
-        })}
+        }
+        
+        // Handle array of strings/primitives with special formatting for Services field
+        if (key === 'Services' && typeof value[0] === 'string') {
+          // Split services string by commas and create individual badges
+          const services = value[0].split(',').map(service => service.trim());
+          return (
+            <div className="flex flex-wrap gap-2">
+              {services.map((service, serviceIndex) => (
+                <span key={serviceIndex} className="bg-purple-100 text-purple-800 px-2 py-1 rounded text-xs font-medium">
+                  {service}
+                </span>
+              ))}
+            </div>
+          );
+        }
+        
+        // Handle sources with clickable links (no background)
+        if (key === 'sources') {
+          return (
+            <div className="space-y-1">
+              {value.map((url, index) => (
+                <div key={index}>
+                  <a 
+                    href={url} 
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                    className="text-purple-600 hover:text-purple-800 underline break-all text-sm"
+                  >
+                    {url}
+                  </a>
+                </div>
+              ))}
+            </div>
+          );
+        }
+        
+        // Handle regular array of strings/primitives (like key_clients, office_locations)
+        return (
+          <div className="flex flex-wrap gap-2">
+            {value.map((item, index) => (
+              <span key={index} className="bg-purple-100 text-purple-800 px-3 py-1 rounded-full text-sm font-medium">
+                {item}
+              </span>
+            ))}
+          </div>
+        );
+      }
+      
+      if (typeof value === 'object') {
+        // Handle nested objects
+        return (
+          <div className="space-y-2">
+            {Object.entries(value).map(([key, val]) => (
+              <div key={key} className="flex justify-between items-center">
+                <span className="font-medium text-purple-700">{formatFieldName(key)}:</span>
+                <span className="text-slate-900 font-medium text-right max-w-[60%] break-words">
+                  {Array.isArray(val) ? val.join(", ") : val?.toString() || "N/A"}
+                </span>
+              </div>
+            ))}
+          </div>
+        );
+      }
+      
+      // Handle URLs in sources
+      if (typeof value === 'string' && value.startsWith('http')) {
+        return (
+          <a 
+            href={value} 
+            target="_blank" 
+            rel="noopener noreferrer"
+            className="text-purple-600 hover:text-purple-800 underline break-all"
+          >
+            {value}
+          </a>
+        );
+      }
+      
+      // Handle regular strings
+      return (
+        <span className="text-slate-900 font-medium text-lg">
+          {value.toString()}
+        </span>
+      );
+    };
+  
+    // Skip certain fields that are not useful for display or already shown elsewhere
+    const skipFields = ['name', 'domain_name', 'validation_warnings'];
+    
+    return (
+      <div className="bg-gradient-to-br from-slate-50 to-slate-100 border border-slate-200 rounded-xl p-6 mb-6 shadow-sm">
+        <div className="flex items-center mb-4">
+          <div className="w-2 h-8 bg-purple-600 rounded-full mr-3"></div>
+          <h3 className="text-xl font-bold text-slate-800">Company Overview</h3>
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          {Object.entries(company)
+            .filter(([key]) => !skipFields.includes(key))
+            .map(([key, value]) => (
+              <div key={key} className="group">
+                <div className="bg-white rounded-lg p-4 border border-slate-200 hover:border-purple-300 transition-all duration-200 hover:shadow-md">
+                  <span className="text-sm font-semibold text-purple-700 uppercase tracking-wide block mb-3">
+                    {formatFieldName(key)}
+                  </span>
+                  <div>
+                    {renderValue(value, key)}
+                  </div>
+                </div>
+              </div>
+            ))}
+        </div>
       </div>
-    </div>
-  );
-
+    );
+  };
+  
   const renderApolloData = () => {
+    // Helper function to render complex values
+    const renderValue = (value) => {
+      if (value === null || value === undefined) {
+        return "N/A";
+      }
+      
+      if (Array.isArray(value)) {
+        if (value.length === 0) return "N/A";
+        
+        // Handle array of objects (like current_technologies)
+        if (typeof value[0] === 'object' && value[0] !== null) {
+          return (
+            <div className="space-y-2">
+              {value.slice(0, 5).map((item, index) => (
+                <div key={index} className="bg-blue-50 rounded p-2 text-xs">
+                  {Object.entries(item).map(([k, v]) => (
+                    <div key={k} className="flex justify-between">
+                      <span className="font-medium">{formatFieldName(k)}:</span>
+                      <span>{v || "N/A"}</span>
+                    </div>
+                  ))}
+                </div>
+              ))}
+              {value.length > 5 && (
+                <div className="text-xs text-blue-600 italic">
+                  +{value.length - 5} more items
+                </div>
+              )}
+            </div>
+          );
+        }
+        
+        // Handle array of strings/primitives
+        return (
+          <div className="flex flex-wrap gap-1">
+            {value.slice(0, 10).map((item, index) => (
+              <span key={index} className="bg-blue-100 text-blue-800 px-2 py-1 rounded text-xs">
+                {item}
+              </span>
+            ))}
+            {value.length > 10 && (
+              <span className="text-xs text-blue-600 italic">
+                +{value.length - 10} more
+              </span>
+            )}
+          </div>
+        );
+      }
+      
+      if (typeof value === 'object') {
+        // Handle nested objects (like primary_phone, industry_tag_hash, etc.)
+        return (
+          <div className="space-y-1">
+            {Object.entries(value).map(([key, val]) => (
+              <div key={key} className="flex justify-between text-xs">
+                <span className="font-medium text-blue-600">{formatFieldName(key)}:</span>
+                <span className="text-right max-w-[60%] break-words">
+                  {Array.isArray(val) ? val.join(", ") : val?.toString() || "N/A"}
+                </span>
+              </div>
+            ))}
+          </div>
+        );
+      }
+      
+      // Handle primitives
+      if (typeof value === 'string' && value.startsWith('http')) {
+        return (
+          <a 
+            href={value} 
+            target="_blank" 
+            rel="noopener noreferrer"
+            className="text-blue-600 hover:text-blue-800 underline break-all"
+          >
+            {value}
+          </a>
+        );
+      }
+      
+      return value.toString();
+    };
+  
+    // Skip certain fields that are not useful for display
+    const skipFields = ['id', 'snippets_loaded', 'org_chart_root_people_ids', 'org_chart_removed', 'org_chart_show_department_filter', 'generic_org_insights'];
+    
     if (!apolloData) {
       return (
         <div className="bg-gradient-to-br from-blue-50 to-blue-100 border border-blue-200 rounded-xl p-8 mb-6 shadow-sm text-center">
           <div className="bg-blue-600 p-3 rounded-lg mx-auto mb-4 w-fit">
             <Database className="h-6 w-6 text-white" />
           </div>
-          <h3 className="text-xl font-bold text-blue-900 mb-4">
-            Apollo Intelligence
-          </h3>
+          <h3 className="text-xl font-bold text-blue-900 mb-4">Apollo</h3>
           <p className="text-blue-700 mb-6">
             Get enriched company data from Apollo's database
           </p>
@@ -171,7 +372,7 @@ const CompanyDetailsDialog = ({
         </div>
       );
     }
-
+  
     return (
       <div className="bg-gradient-to-br from-blue-50 to-blue-100 border border-blue-200 rounded-xl p-6 mb-6 shadow-sm">
         <div className="flex items-center justify-between mb-4">
@@ -179,9 +380,7 @@ const CompanyDetailsDialog = ({
             <div className="bg-blue-600 p-2 rounded-lg mr-3">
               <Database className="h-5 w-5 text-white" />
             </div>
-            <h3 className="text-xl font-bold text-blue-900">
-              Apollo Intelligence
-            </h3>
+            <h3 className="text-xl font-bold text-blue-900">Apollo</h3>
           </div>
           <Button
             variant="outline"
@@ -198,22 +397,23 @@ const CompanyDetailsDialog = ({
             <span>Refresh</span>
           </Button>
         </div>
+        
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {Object.entries(apolloData).map(([key, value]) => (
-            <div
-              key={key}
-              className="bg-white rounded-lg p-4 border border-blue-200 hover:border-blue-400 transition-colors"
-            >
-              <span className="text-sm font-semibold text-blue-700 uppercase tracking-wide block mb-2">
-                {formatFieldName(key)}
-              </span>
-              <span className="text-blue-950 font-medium">
-                {Array.isArray(value)
-                  ? value.join(", ")
-                  : value?.toString() || "N/A"}
-              </span>
-            </div>
-          ))}
+          {Object.entries(apolloData)
+            .filter(([key]) => !skipFields.includes(key))
+            .map(([key, value]) => (
+              <div
+                key={key}
+                className="bg-white rounded-lg p-4 border border-blue-200 hover:border-blue-400 transition-colors"
+              >
+                <span className="text-sm font-semibold text-blue-700 uppercase tracking-wide block mb-2">
+                  {formatFieldName(key)}
+                </span>
+                <div className="text-blue-950">
+                  {renderValue(value)}
+                </div>
+              </div>
+            ))}
         </div>
       </div>
     );
@@ -227,7 +427,7 @@ const CompanyDetailsDialog = ({
             <Search className="h-6 w-6 text-white" />
           </div>
           <h3 className="text-2xl font-bold text-emerald-900 mb-4">
-            Market Intelligence
+            Research Agent
           </h3>
           <p className="text-emerald-700 mb-6">
             Get comprehensive market research and intelligence data
@@ -235,7 +435,9 @@ const CompanyDetailsDialog = ({
           <Button
             variant="outline"
             onClick={fetchPerplexityData}
-            disabled={loadingPerplexity || !company.domain_name || !company.name}
+            disabled={
+              loadingPerplexity || !company.domain_name || !company.name
+            }
             className="flex items-center space-x-2 border-emerald-300 text-emerald-700 hover:bg-emerald-50 hover:border-emerald-400 mx-auto"
           >
             {loadingPerplexity ? (
@@ -282,13 +484,15 @@ const CompanyDetailsDialog = ({
               <Search className="h-6 w-6 text-white" />
             </div>
             <h3 className="text-2xl font-bold text-emerald-900">
-              Market Intelligence
+              Research Agent
             </h3>
           </div>
           <Button
             variant="outline"
             onClick={fetchPerplexityData}
-            disabled={loadingPerplexity || !company.domain_name || !company.name}
+            disabled={
+              loadingPerplexity || !company.domain_name || !company.name
+            }
             size="sm"
             className="flex items-center space-x-2 border-emerald-300 text-emerald-700 hover:bg-emerald-50 hover:border-emerald-400"
           >
@@ -584,33 +788,27 @@ const CompanyDetailsDialog = ({
       <div className="w-full">
         <Tabs className="w-full">
           <TabList className="flex space-x-1 bg-gray-100 p-1 rounded-lg mb-6">
-            <Tab className="flex-1 px-4 py-2 text-sm font-medium text-gray-700 rounded-md hover:bg-white hover:text-gray-900 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2 react-tabs__tab--selected:bg-white react-tabs__tab--selected:text-purple-900 react-tabs__tab--selected:shadow-sm cursor-pointer transition-all duration-200">
+            <Tab className="flex-1 px-4 py-2 text-sm font-medium text-gray-700  hover:bg-white hover:text-gray-900 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2 react-tabs__tab--selected:bg-white react-tabs__tab--selected:text-purple-900 react-tabs__tab--selected:shadow-sm cursor-pointer transition-all duration-200">
               Basic Info
             </Tab>
-            <Tab className="flex-1 px-4 py-2 text-sm font-medium text-gray-700 rounded-md hover:bg-white hover:text-gray-900 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2 react-tabs__tab--selected:bg-white react-tabs__tab--selected:text-blue-900 react-tabs__tab--selected:shadow-sm cursor-pointer transition-all duration-200">
+            <Tab className="flex-1 px-4 py-2 text-sm font-medium text-gray-700  hover:bg-white hover:text-gray-900 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2 react-tabs__tab--selected:bg-white react-tabs__tab--selected:text-blue-900 react-tabs__tab--selected:shadow-sm cursor-pointer transition-all duration-200">
               Apollo Data
             </Tab>
-            <Tab className="flex-1 px-4 py-2 text-sm font-medium text-gray-700 rounded-md hover:bg-white hover:text-gray-900 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2 react-tabs__tab--selected:bg-white react-tabs__tab--selected:text-emerald-900 react-tabs__tab--selected:shadow-sm cursor-pointer transition-all duration-200">
+            <Tab className="flex-1 px-4 py-2 text-sm font-medium text-gray-700  hover:bg-white hover:text-gray-900 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2 react-tabs__tab--selected:bg-white react-tabs__tab--selected:text-emerald-900 react-tabs__tab--selected:shadow-sm cursor-pointer transition-all duration-200">
               Research Data
             </Tab>
           </TabList>
 
           <TabPanel>
-            <div className="space-y-6">
-              {renderBasicInfo()}
-            </div>
+            <div className="space-y-6">{renderBasicInfo()}</div>
           </TabPanel>
 
           <TabPanel>
-            <div className="space-y-6">
-              {renderApolloData()}
-            </div>
+            <div className="space-y-6">{renderApolloData()}</div>
           </TabPanel>
 
           <TabPanel>
-            <div className="space-y-6">
-              {renderResearchData()}
-            </div>
+            <div className="space-y-6">{renderResearchData()}</div>
           </TabPanel>
         </Tabs>
       </div>

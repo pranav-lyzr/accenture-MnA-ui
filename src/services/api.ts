@@ -1,6 +1,6 @@
 // Base API URL - would typically come from environment variables
-const API_BASE_URL = 'https://accenture-mna.ca.lyzr.app';
-// const API_BASE_URL = "http://localhost:8002";
+// const API_BASE_URL = 'https://accenture-mna.ca.lyzr.app';
+const API_BASE_URL = "http://localhost:8002";
 export interface Prompt {
   index: number;
   title: string;
@@ -427,6 +427,45 @@ const api = {
   downloadJSON: () => {
     window.open(`${API_BASE_URL}/download_json`, "_blank");
   },
+
+  fetchCompanyLinkedIn: async (companyDomain: string): Promise<any> => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/fetch_company_linkedin`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ company_domain: companyDomain }),
+      });
+      const json_response = await response.json();
+      console.log(json_response.company, "json_response");
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      return json_response.company;
+    } catch (error) {
+      console.error("Error fetching LinkedIn data:", error);
+      throw error;
+    }
+  },
+
+
+  fetchAvailableCompanyLinkedIn: async (companyDomain: string): Promise<any> => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/linkedin_company?domain=${companyDomain}`, {
+        method: "GET",
+        headers: { "accept": "application/json" },
+      });
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      return await response.json();
+    } catch (error) {
+      console.error("Error fetching LinkedIn GET data:", error);
+      throw error;
+    }
+  },
+
 };
 
 export default api;

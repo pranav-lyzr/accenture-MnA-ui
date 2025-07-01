@@ -31,12 +31,15 @@ const CompanyDetailsDialog = ({
 }: CompanyDetailsProps) => {
   const [loadingApollo, setLoadingApollo] = useState(false);
   const [loadingPerplexity, setLoadingPerplexity] = useState(false);
+  const [loadingLinkedIn, setLoadingLinkedIn] = useState(false);
   const [apolloData, setApolloData] = useState<Record<string, any> | null>(
     null
   );
   const [researchData, setResearchData] = useState<Record<string, any> | null>(
     null
   );
+  const [linkedInData, setLinkedInData] = useState<any>(null);
+  const [linkedInError, setLinkedInError] = useState<string | null>(null);
 
   const [err, setErr] = useState<{
     apollo: string | null;
@@ -59,6 +62,16 @@ const CompanyDetailsDialog = ({
     } catch (err) {
       console.log(err, "Error");
     }
+    try {
+      console.log("Fetching research data for:", company?.domain_name);
+      const companyResearchData = await api.fetchAvailableCompanyLinkedIn(
+        company?.domain_name
+      );
+      console.log(companyResearchData, "companyResearchData");
+      setLinkedInData(companyResearchData);
+    } catch (err) {
+      console.log(err, "Error");
+    }
   };
 
   useEffect(() => {
@@ -66,6 +79,7 @@ const CompanyDetailsDialog = ({
     fetchCompanyResearchData();
     return () => {
       setResearchData(null);
+      setLinkedInData(null);
       setApolloData(null);
       setErr({
         apollo: null,
@@ -74,6 +88,13 @@ const CompanyDetailsDialog = ({
       });
     };
   }, [company?.name]);
+
+  useEffect(() => {
+    if (!open) {
+      setLinkedInData(null);
+      setLinkedInError(null);
+    }
+  }, [open]);
 
   // Auto-scroll to research data when it loads
   useEffect(() => {
@@ -124,6 +145,20 @@ const CompanyDetailsDialog = ({
       console.error("Error fetching Perplexity data:", error);
     } finally {
       setLoadingPerplexity(false);
+    }
+  };
+
+  const fetchLinkedInData = async () => {
+    if (!company.domain_name) return;
+    try {
+      setLoadingLinkedIn(true);
+      setLinkedInError(null);
+      const result = await api.fetchCompanyLinkedIn(company.domain_name);
+      setLinkedInData(result);
+    } catch (error) {
+      setLinkedInError("Failed to fetch LinkedIn data.");
+    } finally {
+      setLoadingLinkedIn(false);
     }
   };
 
@@ -856,6 +891,9 @@ const CompanyDetailsDialog = ({
             <Tab className="flex-1 px-4 py-2 text-sm font-medium text-gray-700  hover:bg-white hover:text-gray-900 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2 react-tabs__tab--selected:bg-white react-tabs__tab--selected:text-emerald-900 react-tabs__tab--selected:shadow-sm cursor-pointer transition-all duration-200">
               Research Data
             </Tab>
+            <Tab className="flex-1 px-4 py-2 text-sm font-medium text-gray-700  hover:bg-white hover:text-gray-900 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2 react-tabs__tab--selected:bg-white react-tabs__tab--selected:text-emerald-900 react-tabs__tab--selected:shadow-sm cursor-pointer transition-all duration-200">
+              LinkedIn Data
+            </Tab>
           </TabList>
 
           <TabPanel>
@@ -868,6 +906,294 @@ const CompanyDetailsDialog = ({
 
           <TabPanel>
             <div className="space-y-6">{renderResearchData()}</div>
+          </TabPanel>
+
+          <TabPanel>
+            <div className="space-y-6">
+              {!linkedInData ? (
+                <div className="bg-gradient-to-br from-blue-50 to-blue-100 border border-blue-200 rounded-xl p-8 mb-6 shadow-sm text-center">
+                  <div className="bg-blue-600 p-3 rounded-lg mx-auto mb-4 w-fit">
+                    <Database className="h-6 w-6 text-white" />
+                  </div>
+                  <h3 className="text-xl font-bold text-blue-900 mb-4">LinkedIn</h3>
+                  <p className="text-blue-700 mb-6">
+                    Fetch company data from LinkedIn
+                  </p>
+                  <Button
+                    variant="outline"
+                    onClick={fetchLinkedInData}
+                    disabled={loadingLinkedIn || !company.domain_name}
+                    className="flex items-center space-x-2 border-blue-300 text-blue-700 hover:bg-blue-50 hover:border-blue-400 mx-auto"
+                  >
+                    {loadingLinkedIn ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : (
+                      <Database className="h-4 w-4" />
+                    )}
+                    <span>Fetch LinkedIn Data</span>
+                  </Button>
+                </div>
+              ) : linkedInError ? (
+                <div className="bg-gradient-to-br from-red-50 to-red-100 border border-red-200 rounded-xl p-8 mb-6 shadow-sm text-center">
+                  <div className="bg-red-600 p-3 rounded-lg mx-auto mb-4 w-fit">
+                    <Database className="h-6 w-6 text-white" />
+                  </div>
+                  <h3 className="text-xl font-bold text-red-900 mb-4">LinkedIn</h3>
+                  <p className="text-red-700 mb-6">{linkedInError}</p>
+                  <Button
+                    variant="outline"
+                    onClick={fetchLinkedInData}
+                    disabled={loadingLinkedIn || !company.domain_name}
+                    className="flex items-center space-x-2 border-red-300 text-red-700 hover:bg-red-50 hover:border-red-400 mx-auto"
+                  >
+                    {loadingLinkedIn ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : (
+                      <Database className="h-4 w-4" />
+                    )}
+                    <span>Retry Fetch</span>
+                  </Button>
+                </div>
+              ) : linkedInData && !linkedInData.company_name ? (
+                <div className="bg-gradient-to-br from-yellow-50 to-yellow-100 border border-yellow-200 rounded-xl p-8 mb-6 shadow-sm text-center">
+                  <div className="bg-yellow-600 p-3 rounded-lg mx-auto mb-4 w-fit">
+                    <Database className="h-6 w-6 text-white" />
+                  </div>
+                  <h3 className="text-xl font-bold text-yellow-900 mb-4">LinkedIn</h3>
+                  <p className="text-yellow-700 mb-6">
+                    {linkedInData.message || "No LinkedIn data found for this company"}
+                  </p>
+                  <Button
+                    variant="outline"
+                    onClick={fetchLinkedInData}
+                    disabled={loadingLinkedIn || !company.domain_name}
+                    className="flex items-center space-x-2 border-yellow-300 text-yellow-700 hover:bg-yellow-50 hover:border-yellow-400 mx-auto"
+                  >
+                    {loadingLinkedIn ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : (
+                      <Database className="h-4 w-4" />
+                    )}
+                    <span>Fetch LinkedIn Data</span>
+                  </Button>
+                </div>
+              ) : (
+                <div className="bg-gradient-to-br from-blue-50 to-blue-100 border border-blue-200 rounded-xl p-6 shadow-sm">
+                  <div className="flex items-center justify-between mb-6">
+                    <div className="flex items-center">
+                      <div className="bg-blue-600 p-3 rounded-lg mr-3">
+                        <Database className="h-6 w-6 text-white" />
+                      </div>
+                      <h3 className="text-2xl font-bold text-blue-900">LinkedIn</h3>
+                    </div>
+                    <Button
+                      variant="outline"
+                      onClick={fetchLinkedInData}
+                      disabled={loadingLinkedIn || !company.domain_name}
+                      size="sm"
+                      className="flex items-center space-x-2 border-blue-300 text-blue-700 hover:bg-blue-50 hover:border-blue-400"
+                    >
+                      {loadingLinkedIn ? (
+                        <Loader2 className="h-3 w-3 animate-spin" />
+                      ) : (
+                        <Database className="h-3 w-3" />
+                      )}
+                      <span>Refresh</span>
+                    </Button>
+                  </div>
+
+                  {/* Company Header */}
+                  <div className="bg-white rounded-xl p-6 mb-6 border border-blue-200 shadow-sm">
+                    <div className="flex items-center mb-4">
+                      {linkedInData.logo_url && (
+                        <img 
+                          src={linkedInData.logo_url} 
+                          alt="Company Logo" 
+                          className="h-16 w-16 rounded-lg object-contain mr-4 border border-blue-200" 
+                        />
+                      )}
+                      <div className="flex-1">
+                        <h4 className="text-2xl font-bold text-blue-900 mb-2">
+                          {linkedInData.company_name}
+                        </h4>
+                        <p className="text-blue-700 font-medium mb-2">
+                          {linkedInData.tagline}
+                        </p>
+                        <a
+                          href={linkedInData.linkedin_url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-blue-600 hover:text-blue-800 font-medium flex items-center hover:underline"
+                        >
+                          View LinkedIn Profile
+                          <ExternalLink className="h-4 w-4 ml-1" />
+                        </a>
+                      </div>
+                    </div>
+                    
+                    {linkedInData.description && (
+                      <div className="bg-blue-50 rounded-lg p-4 border border-blue-100">
+                        <span className="text-sm font-semibold text-blue-700 uppercase tracking-wide block mb-2">
+                          Company Description
+                        </span>
+                        <p className="text-blue-900 leading-relaxed whitespace-pre-line">
+                          {linkedInData.description}
+                        </p>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Company Details */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-6">
+                    <div className="bg-white rounded-lg p-4 border border-blue-200">
+                      <span className="text-sm font-semibold text-blue-700 uppercase tracking-wide block mb-2">
+                        Industry
+                      </span>
+                      <div className="flex flex-wrap gap-2">
+                        {linkedInData.industries?.map((industry: string, index: number) => (
+                          <span
+                            key={index}
+                            className="px-3 py-1 bg-blue-100 text-blue-800 text-sm font-medium rounded-full"
+                          >
+                            {industry}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+
+                    <div className="bg-white rounded-lg p-4 border border-blue-200">
+                      <span className="text-sm font-semibold text-blue-700 uppercase tracking-wide block mb-2">
+                        Employee Count
+                      </span>
+                      <p className="text-blue-900 font-bold text-xl">
+                        {linkedInData.employee_count?.toLocaleString()} ({linkedInData.employee_range})
+                      </p>
+                    </div>
+
+                    <div className="bg-white rounded-lg p-4 border border-blue-200">
+                      <span className="text-sm font-semibold text-blue-700 uppercase tracking-wide block mb-2">
+                        Founded
+                      </span>
+                      <p className="text-blue-900 font-bold text-xl">
+                        {linkedInData.year_founded || "N/A"}
+                      </p>
+                    </div>
+
+                    <div className="bg-white rounded-lg p-4 border border-blue-200">
+                      <span className="text-sm font-semibold text-blue-700 uppercase tracking-wide block mb-2">
+                        Headquarters
+                      </span>
+                      <p className="text-blue-900 font-medium">
+                        {linkedInData.hq_full_address}
+                      </p>
+                    </div>
+
+                    <div className="bg-white rounded-lg p-4 border border-blue-200">
+                      <span className="text-sm font-semibold text-blue-700 uppercase tracking-wide block mb-2">
+                        Website
+                      </span>
+                      {linkedInData.website && (
+                        <a
+                          href={linkedInData.website}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-blue-600 hover:text-blue-800 font-medium flex items-center hover:underline"
+                        >
+                          <span className="truncate">
+                            {linkedInData.website.replace(/^https?:\/\//, "")}
+                          </span>
+                          <ExternalLink className="h-3 w-3 ml-1 flex-shrink-0" />
+                        </a>
+                      )}
+                    </div>
+
+                    <div className="bg-white rounded-lg p-4 border border-blue-200">
+                      <span className="text-sm font-semibold text-blue-700 uppercase tracking-wide block mb-2">
+                        Followers
+                      </span>
+                      <p className="text-blue-900 font-bold text-xl">
+                        {linkedInData.follower_count?.toLocaleString()}
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Specialties */}
+                  {linkedInData.specialties && (
+                    <div className="bg-white rounded-xl p-6 mb-6 border border-blue-200 shadow-sm">
+                      <h4 className="text-lg font-bold text-blue-900 mb-4">Specialties</h4>
+                      <div className="flex flex-wrap gap-2">
+                        {linkedInData.specialties.split(', ').map((specialty: string, index: number) => (
+                          <span
+                            key={index}
+                            className="px-3 py-2 bg-purple-100 text-purple-800 text-sm font-medium rounded-full border border-purple-200"
+                          >
+                            {specialty.trim()}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Office Locations */}
+                  {linkedInData.locations && linkedInData.locations.length > 0 && (
+                    <div className="bg-white rounded-xl p-6 mb-6 border border-blue-200 shadow-sm">
+                      <div className="flex items-center mb-4">
+                        <MapPin className="h-5 w-5 text-blue-600 mr-2" />
+                        <h4 className="text-lg font-bold text-blue-900">Office Locations</h4>
+                      </div>
+                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                        {linkedInData.locations.map((location: any, index: number) => (
+                          <div
+                            key={index}
+                            className={`rounded-lg p-4 border ${
+                              location.is_headquarter 
+                                ? 'bg-blue-100 border-blue-300' 
+                                : 'bg-blue-50 border-blue-200'
+                            }`}
+                          >
+                            <div className="flex items-center mb-2">
+                              <span className="font-bold text-blue-900">
+                                {location.city}, {location.country}
+                              </span>
+                              {location.is_headquarter && (
+                                <span className="ml-2 px-2 py-1 bg-blue-600 text-white text-xs rounded-full">
+                                  HQ
+                                </span>
+                              )}
+                            </div>
+                            <p className="text-sm text-blue-700">
+                              {location.full_address}
+                            </p>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Affiliated Companies */}
+                  {linkedInData.affiliated_companies && linkedInData.affiliated_companies.length > 0 && (
+                    <div className="bg-white rounded-xl p-6 border border-blue-200 shadow-sm">
+                      <h4 className="text-lg font-bold text-blue-900 mb-4">Affiliated Companies</h4>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        {linkedInData.affiliated_companies.map((affiliate: any, index: number) => (
+                          <div key={index} className="bg-blue-50 rounded-lg p-4 border border-blue-200">
+                            <a
+                              href={affiliate.linkedin_url}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="text-blue-600 hover:text-blue-800 font-medium flex items-center hover:underline"
+                            >
+                              {affiliate.name}
+                              <ExternalLink className="h-3 w-3 ml-1" />
+                            </a>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
           </TabPanel>
         </Tabs>
       </div>

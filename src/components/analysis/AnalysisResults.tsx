@@ -9,10 +9,11 @@ import {
   TableHead,
   TableCell,
 } from '../ui/table';
-import CompanyDetailsDialog from '../companies/CompanyDetailsDialog';
 import * as XLSX from 'xlsx';
+import { useNavigate } from "react-router-dom";
 
 interface CompanyCardProps {
+  _id: string;
   name: string;
   domain_name?: string;
   office_locations?: string[];
@@ -64,8 +65,7 @@ interface AnalysisResultsProps {
 const AnalysisResults = ({ analysis, lastAnalysisTimestamp, companies }: AnalysisResultsProps) => {
   const [sortColumn, setSortColumn] = useState<string>('overall_score');
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc');
-  const [selectedCompany, setSelectedCompany] = useState<CompanyCardProps | null>(null);
-  const [openDialog, setOpenDialog] = useState(false);
+  const navigate = useNavigate();
 
   const sortedRankings = [...analysis.rankings].sort((a, b) => {
     const valueA = a[sortColumn as keyof typeof a] as number;
@@ -83,10 +83,10 @@ const AnalysisResults = ({ analysis, lastAnalysisTimestamp, companies }: Analysi
   };
 
   const openCompanyDetails = (companyName: string) => {
-    const fullCompanyDetails = companies.find(c => c.name === companyName);
-    if (fullCompanyDetails) {
-      setSelectedCompany(fullCompanyDetails);
-      setOpenDialog(true);
+    const fullCompany = companies.find(c => c.name === companyName);
+    console.log("Full Company",fullCompany);
+    if (fullCompany) {
+      navigate(`/company/${fullCompany._id}`);
     }
   };
 
@@ -231,11 +231,7 @@ const AnalysisResults = ({ analysis, lastAnalysisTimestamp, companies }: Analysi
         )}
       </div>
 
-      <CompanyDetailsDialog
-        open={openDialog}
-        onOpenChange={setOpenDialog}
-        company={selectedCompany}
-      />
+      
     </div>
   );
 };

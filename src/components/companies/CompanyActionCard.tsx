@@ -1,5 +1,5 @@
 
-import { Check, X, FileText } from 'lucide-react';
+import { Check, X } from 'lucide-react';
 import { Button } from '../botton';
 import { ShortlistedCompany } from '../../types/company';
 
@@ -10,7 +10,7 @@ interface CompanyActionCardProps {
   onViewDetails: (company: any) => void;
 }
 
-const CompanyActionCard = ({ company, onStatusChange, onNoteChange, onViewDetails }: CompanyActionCardProps) => {
+const CompanyActionCard = ({ company, onStatusChange, onNoteChange }: CompanyActionCardProps) => {
   return (
     <div className={`p-4 border rounded-lg ${
       company.status === 'shortlisted' ? 'border-green-200 bg-green-50' :
@@ -67,13 +67,13 @@ const CompanyActionCard = ({ company, onStatusChange, onNoteChange, onViewDetail
           <X className="w-4 h-4 mr-1" />
           Reject
         </Button>
-        <Button
+        {/* <Button
           size="sm"
           variant="outline"
           onClick={() => onViewDetails(company)}
         >
           <FileText className="w-4 h-4" />
-        </Button>
+        </Button> */}
       </div>
     </div>
   );

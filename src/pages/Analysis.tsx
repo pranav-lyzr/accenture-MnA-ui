@@ -10,6 +10,7 @@ import RankedAnalysisTab from '../components/analysis/RankedAnalysisTab';
 import { CompanyStatus } from "../types/company";
 
 interface CompanyCardProps {
+  _id: string;
   rank?: number;
   name: string;
   domain_name?: string;
@@ -60,6 +61,7 @@ const Analysis = () => {
       const savedStatus = JSON.parse(localStorage.getItem(STATUS_STORAGE_KEY) || '{}') as CompanyStatus;
       const companiesWithStatus = companiesData.map(company => ({
         ...company,
+        _id: company._id, // <-- ensure _id is present
         status: savedStatus[company.name]?.status || "pending",
         notes: savedStatus[company.name]?.notes,
         timestamp: savedStatus[company.name]?.timestamp || Date.now(),
@@ -123,6 +125,7 @@ const Analysis = () => {
       const savedStatus = JSON.parse(localStorage.getItem(STATUS_STORAGE_KEY) || '{}') as CompanyStatus;
       const companiesWithStatus = companiesData.map(company => ({
         ...company,
+        _id: company._id, // <-- ensure _id is present
         status: savedStatus[company.name]?.status || "pending",
         notes: savedStatus[company.name]?.notes,
         timestamp: savedStatus[company.name]?.timestamp || Date.now(),

@@ -4,11 +4,12 @@ import { Button } from "../botton";
 import { Input } from "../ui/input";
 import { ShortlistedCompany, CompanyStatus } from "../../types/company";
 import CompanyActionCard from "./CompanyActionCard";
-import CompanyDetailsDialog from "./CompanyDetailsDialog";
+import { useNavigate } from "react-router-dom";
 
 const LOCAL_STORAGE_KEY = "shortlisted-companies";
 
 interface CompanyCardProps {
+  _id: string;
   rank?: number;
   name: string;
   domain_name?: string;
@@ -56,11 +57,10 @@ const CompanyManager: React.FC<CompanyManagerProps> = ({ companies, onStatusUpda
   const [statusFilter, setStatusFilter] = useState<
     "all" | "shortlisted" | "rejected" | "pending"
   >("all");
-  const [selectedCompany, setSelectedCompany] = useState<CompanyCardProps | null>(null);
-  const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [viewMode, setViewMode] = useState<"cards" | "table">("cards");
   const [sortBy, setSortBy] = useState<"name" | "status" | "updated">("updated");
   const [sortOrder, setSortOrder] = useState<"asc" | "desc">("desc");
+  const navigate = useNavigate();
 
   // Load saved status from localStorage
   useEffect(() => {
@@ -172,8 +172,11 @@ const CompanyManager: React.FC<CompanyManagerProps> = ({ companies, onStatusUpda
   };
 
   const handleViewDetails = (company: CompanyCardProps) => {
-    setSelectedCompany(company);
-    setIsDialogOpen(true);
+    // const fullCompany = companies.find(c => c.name === companyName);
+    console.log("Full Company",company);
+    if (company) {
+      navigate(`/company/${company._id}`);
+    }
   };
 
   // Filter and sort companies
@@ -436,14 +439,14 @@ const CompanyManager: React.FC<CompanyManagerProps> = ({ companies, onStatusUpda
                         >
                           <X className="h-4 w-4" />
                         </Button>
-                        <Button
+                        {/* <Button
                           variant="outline"
                           size="sm"
                           onClick={() => handleViewDetails(company.details)}
                           className="text-gray-600 border-gray-200 hover:bg-gray-50"
                         >
                           <FileText className="h-4 w-4" />
-                        </Button>
+                        </Button> */}
                       </div>
                     </td>
                   </tr>
@@ -454,12 +457,7 @@ const CompanyManager: React.FC<CompanyManagerProps> = ({ companies, onStatusUpda
         </div>
       )}
 
-      {/* Company details dialog */}
-      <CompanyDetailsDialog
-        open={isDialogOpen}
-        onOpenChange={setIsDialogOpen}
-        company={selectedCompany}
-      />
+      
     </div>
   );
 };

@@ -7,28 +7,7 @@ import CompanySelection from './CompanySelection';
 import AnalysisResults from './AnalysisResults';
 import AnalysisCompleteDialog from './AnalysisCompleteDialog';
 import api from '../../services/api';
-
-interface CompanyCardProps {
-  name: string;
-  domain_name?: string;
-  office_locations?: string[];
-  estimated_revenue?: string;
-  revenue?: string;
-  revenue_growth?: string;
-  employee_count?: string;
-  key_clients?: string[];
-  leadership?: Array<{
-    [key: string]: string;
-  }>;
-  merger_synergies?: string;
-  Industries?: string | string[];
-  Services?: string;
-  Broad_Category?: string;
-  Ownership?: string;
-  sources?: string[];
-  validation_warnings?: string[];
-  status?: "shortlisted" | "rejected" | "pending";
-}
+import { CompanyCardProps } from '../../types/company';
 
 interface Filters {
   office_locations: string[];

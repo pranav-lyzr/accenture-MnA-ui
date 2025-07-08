@@ -1,6 +1,6 @@
 // Base API URL - would typically come from environment variables
-const API_BASE_URL = 'https://accenture-mna.ca.lyzr.app';
-// const API_BASE_URL = "http://localhost:8002";
+// const API_BASE_URL = 'https://accenture-mna.ca.lyzr.app';
+const API_BASE_URL = "http://localhost:8002";
 export interface Prompt {
   index: number;
   title: string;
@@ -46,6 +46,7 @@ export interface PromptHistoryItem {
 }
 
 export interface CompanyData {
+  _id: string;
   name: string;
   revenue?: string;
   specialization?: string;
@@ -261,14 +262,13 @@ const api = {
   },
 
   // Enrich company with Apollo API
-  enrichCompanyApollo: async (companyDomain: string): Promise<any> => {
+  enrichCompanyApollo: async (companyId: string): Promise<any> => {
     try {
-      const response = await fetch(`${API_BASE_URL}/fetch_company_apollo`, {
+      const response = await fetch(`${API_BASE_URL}/fetch_company_apollo?company_id=${companyId}`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ company_domain: companyDomain }),
       });
 
       if (!response.ok) {
@@ -309,20 +309,13 @@ const api = {
       throw error;
     }
   },
-  companyResearch: async (
-    companyName: string,
-    companyDomain: string
-  ): Promise<any> => {
+  companyResearch: async (companyId: string): Promise<any> => {
     try {
-      const response = await fetch(`${API_BASE_URL}/research-company`, {
+      const response = await fetch(`${API_BASE_URL}/research-company?company_id=${companyId}`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({
-          name: companyName,
-          url: companyDomain,
-        }),
       });
 
       if (!response.ok) {
@@ -428,14 +421,13 @@ const api = {
     window.open(`${API_BASE_URL}/download_json`, "_blank");
   },
 
-  fetchCompanyLinkedIn: async (companyDomain: string): Promise<any> => {
+  fetchCompanyLinkedIn: async (companyId: string): Promise<any> => {
     try {
-      const response = await fetch(`${API_BASE_URL}/fetch_company_linkedin`, {
+      const response = await fetch(`${API_BASE_URL}/fetch_company_linkedin?company_id=${companyId}`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ company_domain: companyDomain }),
       });
       const json_response = await response.json();
       console.log(json_response.company, "json_response");
@@ -462,6 +454,82 @@ const api = {
       return await response.json();
     } catch (error) {
       console.error("Error fetching LinkedIn GET data:", error);
+      throw error;
+    }
+  },
+
+  getCompanyFullData: async (companyId: string): Promise<any> => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/company_data/${companyId}`, {
+        method: "GET",
+        headers: {
+          "accept": "application/json",
+        },
+      });
+      console.log("response",response);
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      return await response.json();
+    } catch (error) {
+      console.error("Error fetching full company data:", error);
+      throw error;
+    }
+  },
+
+  getCompanyFullDataByName: async (companyName: string): Promise<any> => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/company_data/${encodeURIComponent(companyName)}`, {
+        method: "GET",
+        headers: {
+          "accept": "application/json",
+        },
+      });
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      return await response.json();
+    } catch (error) {
+      console.error("Error fetching full company data by name:", error);
+      throw error;
+    }
+  },
+
+  // Analyze company with Lyzr
+  analyzeCompanyWithLyzr: async (companyId: string): Promise<any> => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/analyze_company_with_lyzr?company_id=${companyId}`, {
+        method: "POST",
+        headers: {
+          "accept": "application/json",
+        },
+        body: "",
+      });
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      return await response.json();
+    } catch (error) {
+      console.error("Error analyzing company with Lyzr:", error);
+      throw error;
+    }
+  },
+
+  // Get company analysis
+  getCompanyAnalysis: async (companyId: string): Promise<any> => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/company_analysis/${companyId}`, {
+        method: "GET",
+        headers: {
+          "accept": "application/json",
+        },
+      });
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      return await response.json();
+    } catch (error) {
+      console.error("Error fetching company analysis:", error);
       throw error;
     }
   },

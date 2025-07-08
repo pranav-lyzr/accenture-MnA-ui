@@ -3,6 +3,7 @@ import { Badge } from '../ui/badge';
 import { FileText, Link, TrendingUp, Users, Briefcase, Star, Award, Circle } from 'lucide-react';
 
 interface CompanyData {
+  _id?: string;
   rank?: number;
   name: string;
   domain_name?: string;

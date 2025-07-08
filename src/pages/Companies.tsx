@@ -12,9 +12,9 @@ import {
   TableCaption 
 } from "../components/ui/table";
 import api from '../services/api';
-import CompanyDetailsDialog from '../components/companies/CompanyDetailsDialog';
-import LoadingPopup from '../components/ui/LoadingPopup';
+import { useNavigate } from "react-router-dom";
 import * as XLSX from 'xlsx';
+import LoadingPopup from '../components/ui/LoadingPopup';
 
 // Interface aligned with the /company API response
 interface CompanyCardProps {
@@ -43,8 +43,7 @@ const Companies = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [sortColumn, setSortColumn] = useState<string>('name'); // Default sort by name
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc');
-  const [selectedCompany, setSelectedCompany] = useState<CompanyCardProps | null>(null);
-  const [openDialog, setOpenDialog] = useState(false);
+  const navigate = useNavigate();
 
   // Fetch companies directly from the /company API on mount
   useEffect(() => {
@@ -86,10 +85,9 @@ const Companies = () => {
     }
   };
 
-  // Open company details dialog
+  // Open company details page
   const openCompanyDetails = (company: CompanyCardProps) => {
-    setSelectedCompany(company);
-    setOpenDialog(true);
+    navigate(`/company/${company._id}`);
   };
 
   // Generate and download Excel file using API data
@@ -340,12 +338,6 @@ const Companies = () => {
       </div>
 
       {renderTableContent()}
-
-      <CompanyDetailsDialog 
-        open={openDialog} 
-        onOpenChange={setOpenDialog} 
-        company={selectedCompany} 
-      />
     </Layout>
   );
 };

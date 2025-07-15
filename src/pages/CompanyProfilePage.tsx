@@ -1100,7 +1100,7 @@ const CompanyProfilePage = () => {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="columns-1 md:columns-2 gap-6 space-y-6">
+            <div className="columns-1 md:columns-2 gap-4 space-y-6">
               {priorityFields.map((key) => {
                 if (!company[key]) return null;
                 return (
@@ -1276,7 +1276,7 @@ const CompanyProfilePage = () => {
           </div>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-start">
+          <div className="columns-1 md:columns-2 gap-6 space-y-6">
             {Object.entries(data)
               .filter(([key]) => !skipFields.includes(key))
               .map(([key, value]) => (

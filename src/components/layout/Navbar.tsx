@@ -12,10 +12,10 @@ const Navbar = () => {
             </p>
           </div>
           
-          <div className="flex items-center gap-4">
+          {/* <div className="flex items-center gap-4">
             <div className="w-3 h-3 rounded-full bg-green-400 animate-pulse"></div>
             <span className="text-sm font-medium text-gray-600">Live Analysis</span>
-          </div>
+          </div> */}
         </div>
       </div>
     </header>

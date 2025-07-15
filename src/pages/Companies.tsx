@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import Layout from '../components/layout/Layout';
-import { Search, ArrowUpDown, RefreshCw, Download } from 'lucide-react';
+import { Search, ArrowUpDown, RefreshCw, Download, ChevronLeft, ChevronRight } from 'lucide-react';
 import { Button } from '../components/botton';
 import { 
   Table, 
@@ -9,8 +9,8 @@ import {
   TableRow, 
   TableHead, 
   TableCell,
-  TableCaption 
 } from "../components/ui/table";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../components/ui/select";
 import api from '../services/api';
 import { useNavigate } from "react-router-dom";
 import * as XLSX from 'xlsx';
@@ -43,6 +43,8 @@ const Companies = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [sortColumn, setSortColumn] = useState<string>('name'); // Default sort by name
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc');
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(10);
   const navigate = useNavigate();
 
   // Fetch companies directly from the /company API on mount
@@ -152,9 +154,30 @@ const Companies = () => {
       )
     : sortedCompanies;
 
+  // Pagination calculations
+  const totalPages = Math.ceil(filteredCompanies.length / itemsPerPage);
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const endIndex = startIndex + itemsPerPage;
+  const currentCompanies = filteredCompanies.slice(startIndex, endIndex);
+
+  // Reset to first page when search changes
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchTerm, itemsPerPage]);
+
+  // Pagination handlers
+  const goToPage = (page: number) => {
+    setCurrentPage(Math.max(1, Math.min(page, totalPages)));
+  };
+
+  const handleItemsPerPageChange = (value: string) => {
+    setItemsPerPage(parseInt(value));
+    setCurrentPage(1);
+  };
+
   // Render sortable table header
-  const SortableHeader = ({ column, title }: { column: string, title: string }) => (
-    <TableHead onClick={() => handleSort(column)} className="cursor-pointer hover:bg-muted">
+  const SortableHeader = ({ column, title, className = "" }: { column: string, title: string, className?: string }) => (
+    <TableHead onClick={() => handleSort(column)} className={`cursor-pointer hover:bg-muted ${className}`}>
       <div className="flex items-center gap-1">
         {title}
         <ArrowUpDown size={14} className="ml-1 text-gray-400" />
@@ -191,101 +214,196 @@ const Companies = () => {
       );
     } else {
       return (
-        <div className="rounded-lg border border-gray-200 bg-card overflow-x-auto">
-          <Table>
-            <TableCaption>A list of potential merger candidates ({filteredCompanies.length} companies)</TableCaption>
-            <TableHeader>
-              <TableRow className="bg-gray-50 hover:bg-gray-50">
-                <SortableHeader column="name" title="Company" />
-                <TableHead>Domain</TableHead>
-                <TableHead>Estimated Revenue</TableHead>
-                <TableHead>Employee Count</TableHead>
-                <TableHead>Industries</TableHead>
-                <TableHead>Services</TableHead>
-                <TableHead>Ownership</TableHead>
-                <TableHead>Key Clients</TableHead>
-                <TableHead>Leadership</TableHead>
-                <TableHead>Merger Synergies</TableHead>
-                <TableHead>Office Locations</TableHead>
-                <TableHead>Revenue Growth</TableHead>
-                <TableHead>Sources</TableHead>
-                <TableHead>Actions</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {filteredCompanies.map((company) => (
-                <TableRow key={company._id} className="hover:bg-gray-50/70">
-                  <TableCell className="font-semibold text-purple-500">
-                    {company.name}
-                    {company.domain_name && (
-                      <div className="text-xs text-blue-500 mt-1">
-                        <a 
-                          href={`https://${company.domain_name}`} 
-                          target="_blank" 
-                          rel="noopener noreferrer" 
-                          className="hover:underline"
-                        >
-                          {company.domain_name}
-                        </a>
-                      </div>
-                    )}
-                  </TableCell>
-                  <TableCell>{company.domain_name || '-'}</TableCell>
-                  <TableCell>{company.estimated_revenue || '-'}</TableCell>
-                  <TableCell>{company.employee_count || '-'}</TableCell>
-                  <TableCell className="max-w-[200px]">{company.Industries || '-'}</TableCell>
-                  <TableCell className="max-w-[200px]">{company.Services || '-'}</TableCell>
-                  <TableCell>{company.Ownership || '-'}</TableCell>
-                  <TableCell className="max-w-[200px]">
-                    {Array.isArray(company.key_clients) ? company.key_clients.join(', ') : '-'}
-                  </TableCell>
-                  <TableCell className="max-w-[250px]">
-                    {Array.isArray(company.leadership) 
-                      ? company.leadership.map(l => `${l.name} (${l.title})`).join(', ') 
-                      : '-'}
-                  </TableCell>
-                  <TableCell className="max-w-[250px]">{company.merger_synergies || '-'}</TableCell>
-                  <TableCell className="max-w-[200px]">
-                    {Array.isArray(company.office_locations) ? company.office_locations.join(', ') : '-'}
-                  </TableCell>
-                  <TableCell>{company.revenue_growth || '-'}</TableCell>
-                  <TableCell>
-                    {Array.isArray(company.sources) && company.sources.length > 0 ? (
-                      <div className="flex flex-col space-y-1">
-                        {company.sources.map((source, idx) => {
-                          let hostname;
-                          try {
-                            hostname = new URL(source).hostname;
-                          } catch (e) {
-                            hostname = source;
-                          }
-                          return (
+        <div className="space-y-4">
+          {/* Table with fixed columns */}
+          <div className="relative rounded-lg border border-gray-200 bg-card overflow-hidden">
+            <div className="overflow-x-auto max-h-[600px]">
+              <Table className="relative">
+                {/* Fixed header */}
+                <TableHeader className="sticky top-0 z-20 bg-gray-50">
+                  <TableRow className="bg-gray-50 hover:bg-gray-50">
+                    {/* Fixed first column */}
+                    <SortableHeader 
+                      column="name" 
+                      title="Company" 
+                      className="sticky left-0 z-30 bg-gray-50 border-r border-gray-200 min-w-[200px]"
+                    />
+                    <TableHead className="min-w-[150px]">Domain</TableHead>
+                    <TableHead className="min-w-[150px]">Estimated Revenue</TableHead>
+                    <TableHead className="min-w-[130px]">Employee Count</TableHead>
+                    <TableHead className="min-w-[200px]">Industries</TableHead>
+                    <TableHead className="min-w-[200px]">Services</TableHead>
+                    <TableHead className="min-w-[120px]">Ownership</TableHead>
+                    <TableHead className="min-w-[200px]">Key Clients</TableHead>
+                    <TableHead className="min-w-[250px]">Leadership</TableHead>
+                    <TableHead className="min-w-[250px]">Merger Synergies</TableHead>
+                    <TableHead className="min-w-[200px]">Office Locations</TableHead>
+                    <TableHead className="min-w-[150px]">Revenue Growth</TableHead>
+                    <TableHead className="min-w-[150px]">Sources</TableHead>
+                    {/* Fixed last column */}
+                    <TableHead className="sticky right-0 z-30 bg-gray-50 border-l border-gray-200 min-w-[120px]">
+                      Actions
+                    </TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {currentCompanies.map((company) => (
+                    <TableRow key={company._id} className="hover:bg-gray-50/70">
+                      {/* Fixed first column */}
+                      <TableCell className="sticky left-0 z-10 bg-white border-r border-gray-200 font-semibold text-purple-500 min-w-[200px]">
+                        {company.name}
+                        {company.domain_name && (
+                          <div className="text-xs text-blue-500 mt-1">
                             <a 
-                              key={idx} 
-                              href={source} 
+                              href={`https://${company.domain_name}`} 
                               target="_blank" 
                               rel="noopener noreferrer" 
-                              className="text-blue-500 hover:underline text-sm truncate max-w-[150px]"
+                              className="hover:underline"
                             >
-                              {hostname}
+                              {company.domain_name}
                             </a>
-                          );
-                        })}
-                      </div>
-                    ) : '-'}
-                  </TableCell>
-                  <TableCell>
-                    <Button 
-                      onClick={() => openCompanyDetails(company)}
-                      className="text-blue-600"
-                    >
-                      View Details
-                    </Button>
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
+                          </div>
+                        )}
+                      </TableCell>
+                      <TableCell className="min-w-[150px]">{company.domain_name || '-'}</TableCell>
+                      <TableCell className="min-w-[150px]">{company.estimated_revenue || '-'}</TableCell>
+                      <TableCell className="min-w-[130px]">{company.employee_count || '-'}</TableCell>
+                      <TableCell className="min-w-[200px]">{company.Industries || '-'}</TableCell>
+                      <TableCell className="min-w-[200px]">{company.Services || '-'}</TableCell>
+                      <TableCell className="min-w-[120px]">{company.Ownership || '-'}</TableCell>
+                      <TableCell className="min-w-[200px]">
+                        {Array.isArray(company.key_clients) ? company.key_clients.join(', ') : '-'}
+                      </TableCell>
+                      <TableCell className="min-w-[250px]">
+                        {Array.isArray(company.leadership) 
+                          ? company.leadership.map(l => `${l.name} (${l.title})`).join(', ') 
+                          : '-'}
+                      </TableCell>
+                      <TableCell className="min-w-[250px]">{company.merger_synergies || '-'}</TableCell>
+                      <TableCell className="min-w-[200px]">
+                        {Array.isArray(company.office_locations) ? company.office_locations.join(', ') : '-'}
+                      </TableCell>
+                      <TableCell className="min-w-[150px]">{company.revenue_growth || '-'}</TableCell>
+                      <TableCell className="min-w-[150px]">
+                        {Array.isArray(company.sources) && company.sources.length > 0 ? (
+                          <div className="flex flex-col space-y-1">
+                            {company.sources.map((source, idx) => {
+                              let hostname;
+                              try {
+                                hostname = new URL(source).hostname;
+                              } catch (e) {
+                                hostname = source;
+                              }
+                              return (
+                                <a 
+                                  key={idx} 
+                                  href={source} 
+                                  target="_blank" 
+                                  rel="noopener noreferrer" 
+                                  className="text-blue-500 hover:underline text-sm truncate max-w-[120px]"
+                                >
+                                  {hostname}
+                                </a>
+                              );
+                            })}
+                          </div>
+                        ) : '-'}
+                      </TableCell>
+                      {/* Fixed last column */}
+                      <TableCell className="sticky right-0 z-10 bg-white border-l border-gray-200 min-w-[125px]">
+                        <Button 
+                          onClick={() => openCompanyDetails(company)}
+                          size="sm"
+                          className="text-blue-600 text-xs px-2 py-1"
+                          variant='secondary'
+                        >
+                          View Details
+                        </Button>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+          </div>
+
+          {/* Pagination Controls */}
+          <div className="flex items-center justify-between px-2">
+            <div className="flex items-center space-x-2">
+              <p className="text-sm text-gray-700">
+                Showing {startIndex + 1} to {Math.min(endIndex, filteredCompanies.length)} of {filteredCompanies.length} results
+              </p>
+            </div>
+            
+            <div className="flex items-center space-x-2">
+              <div className="flex items-center space-x-2">
+                <p className="text-sm text-gray-700">Rows per page:</p>
+                <Select value={itemsPerPage.toString()} onValueChange={handleItemsPerPageChange}>
+                  <SelectTrigger className="w-[70px] h-8">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="5">5</SelectItem>
+                    <SelectItem value="10">10</SelectItem>
+                    <SelectItem value="20">20</SelectItem>
+                    <SelectItem value="50">50</SelectItem>
+                    <SelectItem value="100">100</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              
+              <div className="flex items-center space-x-1">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => goToPage(currentPage - 1)}
+                  disabled={currentPage <= 1}
+                >
+                  <ChevronLeft className="h-4 w-4" />
+                </Button>
+                
+                <div className="flex items-center space-x-1">
+                  {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                    let pageNumber;
+                    if (totalPages <= 5) {
+                      pageNumber = i + 1;
+                    } else if (currentPage <= 3) {
+                      pageNumber = i + 1;
+                    } else if (currentPage >= totalPages - 2) {
+                      pageNumber = totalPages - 4 + i;
+                    } else {
+                      pageNumber = currentPage - 2 + i;
+                    }
+                    
+                    return (
+                      <Button
+                        key={i}
+                        variant={pageNumber === currentPage ? "secondary" : "outline"}
+                        size="sm"
+                        onClick={() => goToPage(pageNumber)}
+                        className="w-8 h-8 p-0"
+                      >
+                        {pageNumber}
+                      </Button>
+                    );
+                  })}
+                </div>
+                
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => goToPage(currentPage + 1)}
+                  disabled={currentPage >= totalPages}
+                >
+                  <ChevronRight className="h-4 w-4" />
+                </Button>
+              </div>
+              
+              <p className="text-sm text-gray-700">
+                Page {currentPage} of {totalPages}
+              </p>
+            </div>
+          </div>
         </div>
       );
     }
@@ -293,51 +411,54 @@ const Companies = () => {
 
   return (
     <Layout>
-      <LoadingPopup
-        isOpen={loading || redoingSearch}
-        message={loading ? "Loading Companies" : "Redoing All Searches"}
-      />
+      <div className='p-6'>
+        <LoadingPopup
+          isOpen={loading || redoingSearch}
+          message={loading ? "Loading Companies" : "Redoing All Searches"}
+        />
+        
+        <div className="mb-6 flex items-center justify-between">
+          <div>
+            <h1 className="text-2xl font-bold text-gray-800">Companies</h1>
+            <p className="text-gray-500">
+              Browse and filter identified merger candidates ({companies.length} identified)
+            </p>
+          </div>
+          <div className="flex items-center gap-2">
+            <Button 
+              onClick={handleDownloadExcel}
+              className="flex items-center gap-2"
+            >
+              <Download size={16} />
+              Download as Excel
+            </Button>
+            <Button 
+              onClick={handleRedoAllSearch}
+              disabled={redoingSearch}
+              className="flex items-center gap-2"
+            >
+              <RefreshCw size={16} className={redoingSearch ? "animate-spin" : ""} />
+              Redo All Searches
+            </Button>
+          </div>
+        </div>
+
+        <div className="mb-6 flex flex-col md:flex-row gap-4">
+          <div className="flex-1 relative">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={18} />
+            <input
+              type="text"
+              placeholder="Search by company name, industries, services, or synergies..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+            />
+          </div>
+        </div>
+
+        {renderTableContent()}
+      </div>
       
-      <div className="mb-6 flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-800">Companies</h1>
-          <p className="text-gray-500">
-            Browse and filter identified merger candidates ({companies.length} identified)
-          </p>
-        </div>
-        <div className="flex items-center gap-2">
-          <Button 
-            onClick={handleDownloadExcel}
-            className="flex items-center gap-2"
-          >
-            <Download size={16} />
-            Download as Excel
-          </Button>
-          <Button 
-            onClick={handleRedoAllSearch}
-            disabled={redoingSearch}
-            className="flex items-center gap-2"
-          >
-            <RefreshCw size={16} className={redoingSearch ? "animate-spin" : ""} />
-            Redo All Searches
-          </Button>
-        </div>
-      </div>
-
-      <div className="mb-6 flex flex-col md:flex-row gap-4">
-        <div className="flex-1 relative">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={18} />
-          <input
-            type="text"
-            placeholder="Search by company name, industries, services, or synergies..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-          />
-        </div>
-      </div>
-
-      {renderTableContent()}
     </Layout>
   );
 };

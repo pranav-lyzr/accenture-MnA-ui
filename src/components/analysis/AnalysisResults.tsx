@@ -10,7 +10,7 @@ import {
   TableCell,
 } from '../ui/table';
 import * as XLSX from 'xlsx';
-import { useNavigate } from "react-router-dom";
+// import { useNavigate } from "react-router-dom";
 
 interface CompanyCardProps {
   _id: string;
@@ -64,8 +64,9 @@ interface AnalysisResultsProps {
 
 const AnalysisResults = ({ analysis, lastAnalysisTimestamp, companies }: AnalysisResultsProps) => {
   const [sortColumn, setSortColumn] = useState<string>('overall_score');
+  console.log("companies",companies)
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc');
-  const navigate = useNavigate();
+  // const navigate = useNavigate();
 
   const sortedRankings = [...analysis.rankings].sort((a, b) => {
     const valueA = a[sortColumn as keyof typeof a] as number;
@@ -82,13 +83,13 @@ const AnalysisResults = ({ analysis, lastAnalysisTimestamp, companies }: Analysi
     }
   };
 
-  const openCompanyDetails = (companyName: string) => {
-    const fullCompany = companies.find(c => c.name === companyName);
-    console.log("Full Company",fullCompany);
-    if (fullCompany) {
-      navigate(`/company/${fullCompany._id}`);
-    }
-  };
+  // const openCompanyDetails = (companyName: string) => {
+  //   const fullCompany = companies.find(c => c.name === companyName);
+  //   console.log("Full Company",fullCompany);
+  //   if (fullCompany) {
+  //     navigate(`/company/${fullCompany._id}`);
+  //   }
+  // };
 
   const exportToExcel = () => {
     try {
@@ -175,7 +176,6 @@ const AnalysisResults = ({ analysis, lastAnalysisTimestamp, companies }: Analysi
                 <SortableHeader column="leadership_innovation_score" title="Leadership Innovation" />
                 <SortableHeader column="cultural_integration_score" title="Cultural Integration" />
                 <TableHead>Rationale</TableHead>
-                <TableHead>Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -190,15 +190,7 @@ const AnalysisResults = ({ analysis, lastAnalysisTimestamp, companies }: Analysi
                   <TableCell>{company.leadership_innovation_score}</TableCell>
                   <TableCell>{company.cultural_integration_score}</TableCell>
                   <TableCell className="max-w-xs truncate" title={company.rationale}>{company.rationale}</TableCell>
-                  <TableCell>
-                    <Button
-                      onClick={() => openCompanyDetails(company.name)}
-                      variant="link"
-                      size="sm"
-                    >
-                      View Details
-                    </Button>
-                  </TableCell>
+                  
                 </TableRow>
               ))}
             </TableBody>

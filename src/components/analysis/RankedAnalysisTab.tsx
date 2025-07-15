@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { Button } from '../botton';
 import { BarChart, Users, TrendingUp, AlertTriangle } from 'lucide-react';
@@ -124,45 +123,45 @@ const RankedAnalysisTab = ({ companies, categorizeRevenue }: RankedAnalysisTabPr
   return (
     <div className="space-y-8">
       {/* Header */}
-      <div className="relative bg-gradient-to-br from-indigo-500 to-purple-500 rounded-2xl shadow-xl overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-r from-white/10 to-transparent"></div>
+      <div className="relative bg-purple-50 rounded-2xl shadow-l overflow-hidden">
+        <div className="absolute inset-0"></div>
         <div className="relative px-8 py-10">
           <div className="flex items-center space-x-4 mb-4">
-            <div className="w-12 h-12 bg-white/20 backdrop-blur-sm rounded-xl flex items-center justify-center">
-              <BarChart className="h-6 w-6 text-white" />
+            <div className="w-12 h-12 bg-purple-200 backdrop-blur-sm rounded-xl flex items-center justify-center">
+              <BarChart className="h-6 w-6 text-purple-900" />
             </div>
             <div>
-              <h2 className="text-2xl font-bold text-white">Ranked Analysis</h2>
-              <p className="text-indigo-100">Select companies to analyze and view AI-driven rankings for merger candidacy</p>
+              <h2 className="text-2xl font-bold text-purple-900">Ranked Analysis</h2>
+              <p className="text-purple-800">Select companies to analyze and view AI-driven rankings for merger candidacy</p>
             </div>
           </div>
           
           {/* Stats */}
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mt-6">
-            <div className="bg-white/10 backdrop-blur-sm rounded-xl p-4 border border-white/20">
+            <div className="bg-white/10 backdrop-blur-sm rounded-xl p-4 border border-purple-200/50">
               <div className="flex items-center space-x-3">
-                <Users className="h-5 w-5 text-white" />
+                <Users className="h-5 w-5 text-purple-800" />
                 <div>
-                  <p className="text-white/80 text-sm">Available Companies</p>
-                  <p className="text-white text-lg font-semibold">{companies.length}</p>
+                  <p className="text-purple-800 text-sm">Available Companies</p>
+                  <p className="text-purple-800 text-lg font-semibold">{companies.length}</p>
                 </div>
               </div>
             </div>
-            <div className="bg-white/10 backdrop-blur-sm rounded-xl p-4 border border-white/20">
+            <div className="bg-white/10 backdrop-blur-sm rounded-xl p-4 border border-purple-200/50">
               <div className="flex items-center space-x-3">
-                <TrendingUp className="h-5 w-5 text-white" />
+                <TrendingUp className="h-5 w-5 text-purple-800" />
                 <div>
-                  <p className="text-white/80 text-sm">Selected for Analysis</p>
-                  <p className="text-white text-lg font-semibold">{selectedCompanies.length}</p>
+                  <p className="text-purple-800 text-sm">Selected for Analysis</p>
+                  <p className="text-purple-800 text-lg font-semibold">{selectedCompanies.length}</p>
                 </div>
               </div>
             </div>
-            <div className="bg-white/10 backdrop-blur-sm rounded-xl p-4 border border-white/20">
+            <div className="bg-white/10 backdrop-blur-sm rounded-xl p-4 border border-purple-200/50">
               <div className="flex items-center space-x-3">
-                <BarChart className="h-5 w-5 text-white" />
+                <BarChart className="h-5 w-5 text-purple-800" />
                 <div>
-                  <p className="text-white/80 text-sm">Analysis Status</p>
-                  <p className="text-white text-lg font-semibold">
+                  <p className="text-purple-800 text-sm">Analysis Status</p>
+                  <p className="text-purple-800 text-lg font-semibold">
                     {analysis ? 'Complete' : 'Pending'}
                   </p>
                 </div>
@@ -172,10 +171,11 @@ const RankedAnalysisTab = ({ companies, categorizeRevenue }: RankedAnalysisTabPr
         </div>
       </div>
 
-      {/* Filters and Selection */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        <div className="lg:col-span-1">
-          <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+      {/* Filters and Selection - Fixed Layout */}
+      <div className="relative">
+        {/* Sticky Filters Container */}
+        <div className="sticky top-4 z-50 mb-8">
+          <div className="bg-white rounded-xl border border-gray-200 p-6">
             <h3 className="text-lg font-semibold text-gray-900 mb-4">Filter Companies</h3>
             <CompanyFilters
               companies={companies}
@@ -185,36 +185,35 @@ const RankedAnalysisTab = ({ companies, categorizeRevenue }: RankedAnalysisTabPr
           </div>
         </div>
         
-        <div className="lg:col-span-2">
-          <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-            <div className="flex items-center justify-between mb-6">
-              <h3 className="text-lg font-semibold text-gray-900">Select Companies for Analysis</h3>
-              <Button
-                onClick={handleRunAnalysis}
-                disabled={selectedCompanies.length === 0 || isAnalyzing}
-                className="bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white shadow-lg"
-              >
-                {isAnalyzing ? (
-                  <>
-                    <div className="animate-spin mr-2 h-4 w-4 border-2 border-white border-t-transparent rounded-full"></div>
-                    Analyzing...
-                  </>
-                ) : (
-                  <>
-                    <BarChart className="h-4 w-4 mr-2" />
-                    Run AI Analysis
-                  </>
-                )}
-              </Button>
-            </div>
-            <CompanySelection
-              companies={companies}
-              filters={filters}
-              selectedCompanies={selectedCompanies}
-              onSelectCompanies={setSelectedCompanies}
-              categorizeRevenue={categorizeRevenue}
-            />
+        {/* Company Selection Section */}
+        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+          <div className="flex items-center justify-between mb-6">
+            <h3 className="text-lg font-semibold text-gray-900">Select Companies for Analysis</h3>
+            <Button
+              onClick={handleRunAnalysis}
+              disabled={selectedCompanies.length === 0 || isAnalyzing}
+              className="bg-purple-700 text-white shadow-lg"
+            >
+              {isAnalyzing ? (
+                <>
+                  <div className="animate-spin mr-2 h-4 w-4 border-2 border-white border-t-transparent rounded-full"></div>
+                  Analyzing...
+                </>
+              ) : (
+                <>
+                  <BarChart className="h-4 w-4 mr-2" />
+                  Run AI Analysis
+                </>
+              )}
+            </Button>
           </div>
+          <CompanySelection
+            companies={companies}
+            filters={filters}
+            selectedCompanies={selectedCompanies}
+            onSelectCompanies={setSelectedCompanies}
+            categorizeRevenue={categorizeRevenue}
+          />
         </div>
       </div>
 

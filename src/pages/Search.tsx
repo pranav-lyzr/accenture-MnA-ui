@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import Layout from "../components/layout/Layout";
 import PromptCard from "../components/search/PromptCard";
 import {
@@ -36,6 +36,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "../components/ui/select";
+import { AgentSwitcher } from "../components/search/AgentSwitcher";
 
 // Extend Prompt interface to include agent-ID
 interface ExtendedPrompt extends Prompt {
@@ -56,9 +57,7 @@ const Search = () => {
     key: string;
     direction: "asc" | "desc";
   } | null>(null);
-  const [selectedCompany, setSelectedCompany] = useState<CompanyDetails | null>(
-    null
-  );
+  const [selectedCompany] = useState<CompanyDetails | null>(null);
   const [openDialog, setOpenDialog] = useState(false);
   const [chatDrawerOpen, setChatDrawerOpen] = useState(false);
   const [activeTab, setActiveTab] = useState<number | null>(null);
@@ -73,6 +72,7 @@ const Search = () => {
     };
   }>({});
   const { toast } = useToast();
+  const resultsRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -272,10 +272,10 @@ const Search = () => {
     }
   };
 
-  const openCompanyDetails = (company: CompanyDetails) => {
-    setSelectedCompany(company);
-    setOpenDialog(true);
-  };
+  // const openCompanyDetails = (company: CompanyDetails) => {
+  //   setSelectedCompany(company);
+  //   setOpenDialog(true);
+  // };
 
   const handleChatResponseUpdate = (
     index: number,
@@ -559,11 +559,18 @@ const Search = () => {
     0
   );
 
+  const handleShowResults = (index: number) => {
+    setActiveTab(index);
+    setTimeout(() => {
+      resultsRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+    }, 100); // Delay to ensure UI updates before scrolling
+  };
+
   return (
     <Layout>
       <div
-        className={`transition-all duration-300 ${
-          chatDrawerOpen ? "pr-[350px] sm:pr-[400px]" : "pr-0"
+        className={`transition-all duration-300 p-6 ${
+          chatDrawerOpen ? "pr-[350px] sm:pr-[400px]" : ""
         }`}
       >
         <LoadingPopup
@@ -612,7 +619,7 @@ const Search = () => {
             <Button
               onClick={handleRedoAllSearch}
               disabled={redoingSearch}
-              className="flex items-center gap-3 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white px-6 py-3 rounded-xl shadow-lg hover:shadow-xl transition-all duration-200 font-medium"
+              className="flex items-center gap-3 bg-purple-500 text-white px-6 py-3 rounded-xl shadow-lg hover:shadow-xl transition-all duration-200 font-medium"
             >
               <RefreshCw
                 size={18}
@@ -659,7 +666,7 @@ const Search = () => {
             </div>
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6 mb-8">
+          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6 mb-8 items-start">
             {prompts.map((prompt) => (
               <PromptCard
                 key={prompt.index}
@@ -669,318 +676,295 @@ const Search = () => {
                 hasResults={!!results[prompt.index]}
                 onRun={handleRunPrompt}
                 agentId={prompt["agent-ID"]}
+                onShowResults={handleShowResults}
               />
             ))}
           </div>
         )}
 
+        
+
         {/* Results Section */}
-        {Object.keys(results).length > 0 && (
-          <div className="space-y-8">
+        {activeTab !== null && results[activeTab] && (
+          <div ref={resultsRef} className="space-y-8">
             <div className="flex items-center gap-3">
               <div className="p-2 bg-gradient-to-br from-green-500 to-emerald-600 rounded-lg">
                 <TrendingUp className="h-5 w-5 text-white" />
               </div>
               <h2 className="text-2xl font-bold text-gray-900">Search Results</h2>
-            </div>
-
-            {/* Tab Navigation */}
-            <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
-              <div className="border-b border-gray-100 bg-gray-50/50">
-                <nav className="flex space-x-1 p-1 overflow-x-auto">
-                  {prompts.map((prompt) => (
-                    <button
-                      key={prompt.index}
-                      onClick={() => setActiveTab(prompt.index)}
-                      className={`
-                        px-4 py-3 text-sm font-medium transition-all duration-200 rounded-lg whitespace-nowrap
-                        ${
-                          activeTab === prompt.index
-                            ? "bg-white text-indigo-600 shadow-sm border border-indigo-100"
-                            : "text-gray-600 hover:text-indigo-600 hover:bg-white/50"
-                        }
-                        ${results[prompt.index] ? "" : "opacity-50 cursor-not-allowed"}
-                      `}
-                      disabled={!results[prompt.index]}
-                    >
-                      {prompt.title}
-                      {results[prompt.index] && (
-                        <span className="ml-2 inline-flex items-center px-2 py-0.5 rounded-full text-xs bg-indigo-100 text-indigo-800">
-                          {results[prompt.index].response?.length || 0}
-                        </span>
-                      )}
-                    </button>
-                  ))}
-                </nav>
+              <div className="">
+                {/* <div className="text-gray-500 mb-2">Select Agent</div> */}
+                <AgentSwitcher
+                  agents={prompts.map((p) => ({
+                    index: p.index,
+                    title: p.title,
+                    agentId: p["agent-ID"],
+                  }))}
+                  activeAgentIndex={activeTab}
+                  onSelectAgent={setActiveTab}
+                />
               </div>
-
-              {/* Active Tab Content */}
-              {activeTab !== null && results[activeTab] && (
-                <div className="p-6">
-                  {/* Tab Header */}
-                  <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 mb-6">
-                    <div>
-                      <h3 className="text-xl font-bold text-gray-900 mb-2">{results[activeTab].title}</h3>
-                      <div className="flex items-center gap-4 text-sm text-gray-600">
-                        <span className="flex items-center gap-2">
-                          <Building2 className="h-4 w-4" />
-                          {results[activeTab].response?.length || 0} companies found
-                        </span>
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-3">
-                      <Select
-                        value={selectedHistory[activeTab] || "latest"}
-                        onValueChange={(value) => handleHistorySelect(activeTab, value === "latest" ? null : value)}
-                      >
-                        <SelectTrigger className="w-[220px] bg-white border-gray-200 hover:border-indigo-300 focus:border-indigo-500">
-                          <SelectValue placeholder="Select history" />
-                        </SelectTrigger>
-                        <SelectContent className="bg-white border border-gray-200 shadow-lg">
-                          <SelectItem value="latest" className="font-medium">Latest Result</SelectItem>
-                          {promptHistory
-                            .filter((h) => h.prompt_index === activeTab)
-                            .sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime())
-                            .map((history) => (
-                              <SelectItem key={history.timestamp} value={history.timestamp} className="text-sm">
-                                {new Date(history.timestamp).toLocaleString()}{" "}
-                                {history.custom_message && (
-                                  <span className="text-gray-500 ml-2" title={history.custom_message}>
-                                    - {history.custom_message.substring(0, 30)}...
-                                  </span>
-                                )}
-                              </SelectItem>
-                            ))}
-                        </SelectContent>
-                      </Select>
-                      <Button
-                        onClick={() => exportTabToExcel(activeTab)}
-                        className="flex items-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-lg transition-colors duration-200"
-                        disabled={!results[activeTab].response || results[activeTab].response.length === 0}
-                      >
-                        <Download className="h-4 w-4" />
-                        Export
-                      </Button>
-                      <Button
-                        onClick={() => handleRedo(activeTab)}
-                        className="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg transition-colors duration-200"
-                      >
-                        <RefreshCw className="h-4 w-4" />
-                        Redo
-                      </Button>
-                    </div>
-                  </div>
-
-                  {/* Refinement Controls */}
-                  <div className="mb-6 bg-gradient-to-r from-emerald-50 to-green-50 border border-emerald-200 rounded-xl p-4">
-                    <button
-                      onClick={() =>
-                        setRefinementStates((prev) => ({
-                          ...prev,
-                          [activeTab]: {
-                            ...prev[activeTab],
-                            isOpen: !prev[activeTab]?.isOpen,
-                          },
-                        }))
-                      }
-                      className="flex items-center gap-3 text-emerald-800 font-medium mb-3 focus:outline-none group"
-                    >
-                      <div className="p-1.5 bg-emerald-100 rounded-lg group-hover:bg-emerald-200 transition-colors duration-200">
-                        <Sliders size={18} />
-                      </div>
-                      <span>Refine Search Parameters</span>
-                      <ArrowDown
-                        className={`h-4 w-4 transition-transform duration-200 ${
-                          refinementStates[activeTab]?.isOpen ? "rotate-180" : ""
-                        }`}
-                      />
-                    </button>
-
-                    {refinementStates[activeTab]?.isOpen && (
-                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 p-4 bg-white rounded-lg border border-emerald-100">
-                        <div className="space-y-2">
-                          <label className="text-sm font-medium text-gray-700 flex items-center gap-2">
-                            <TrendingUp className="h-4 w-4 text-emerald-600" />
-                            Max Revenue (M)
-                          </label>
-                          <div className="flex items-center gap-3">
-                            <input
-                              type="range"
-                              min="0"
-                              max="500"
-                              step="10"
-                              value={refinementStates[activeTab]?.estimatedRevenue || 0}
-                              onChange={(e) =>
-                                setRefinementStates((prev) => ({
-                                  ...prev,
-                                  [activeTab]: {
-                                    ...prev[activeTab],
-                                    estimatedRevenue: Number(e.target.value),
-                                  },
-                                }))
-                              }
-                              className="flex-1 h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-emerald-600"
-                            />
-                            <span className="text-sm font-medium text-gray-900 min-w-[3rem]">
-                              {refinementStates[activeTab]?.estimatedRevenue || 0}M
-                            </span>
-                          </div>
-                        </div>
-                        <div className="space-y-2">
-                          <label className="text-sm font-medium text-gray-700 flex items-center gap-2">
-                            <Building2 className="h-4 w-4 text-emerald-600" />
-                            Max Employees
-                          </label>
-                          <div className="flex items-center gap-3">
-                            <input
-                              type="range"
-                              min="0"
-                              max="1000"
-                              step="10"
-                              value={refinementStates[activeTab]?.employeeCount || 0}
-                              onChange={(e) =>
-                                setRefinementStates((prev) => ({
-                                  ...prev,
-                                  [activeTab]: {
-                                    ...prev[activeTab],
-                                    employeeCount: Number(e.target.value),
-                                  },
-                                }))
-                              }
-                              className="flex-1 h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-emerald-600"
-                            />
-                            <span className="text-sm font-medium text-gray-900 min-w-[3rem]">
-                              {refinementStates[activeTab]?.employeeCount || 0}
-                            </span>
-                          </div>
-                        </div>
-                        <div className="flex items-end">
-                          <button
-                            onClick={() => handleRefine(activeTab)}
-                            className="w-full bg-gradient-to-r from-emerald-600 to-green-600 hover:from-emerald-700 hover:to-green-700 text-white text-sm py-2.5 px-4 rounded-lg font-medium transition-all duration-200 shadow-sm hover:shadow-md"
-                          >
-                            Apply Refinements
-                          </button>
-                        </div>
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Results Table */}
-                  {results[activeTab].response && results[activeTab].response.length > 0 && (
-                    <div className="bg-white rounded-lg border border-gray-200 overflow-hidden shadow-sm">
-                      <div className="overflow-x-auto">
-                        <Table>
-                          <TableHeader className="bg-gray-50">
-                            <TableRow>
-                              {getTableHeaders(results[activeTab].response).map((header) => (
-                                <TableHead
-                                  key={header}
-                                  onClick={() => handleSort(header)}
-                                  className="whitespace-nowrap cursor-pointer hover:bg-gray-100 transition-colors duration-150 font-semibold text-gray-900 py-4"
-                                >
-                                  <div className="flex items-center gap-1">
-                                    {header.replace(/_/g, " ").charAt(0).toUpperCase() + header.replace(/_/g, " ").slice(1)}
-                                    {renderSortIcon(header)}
-                                  </div>
-                                </TableHead>
-                              ))}
-                              <TableHead className="font-semibold text-gray-900">Actions</TableHead>
-                            </TableRow>
-                          </TableHeader>
-                          <TableBody>
-                            {getSortedCompanies(results[activeTab].response).map((company, i) => (
-                              <TableRow key={i} className="border-b hover:bg-gray-50 transition-colors duration-150">
-                                {getTableHeaders(results[activeTab].response).map((key) => (
-                                  <TableCell key={key} className="align-top py-4 text-sm">
-                                    {(() => {
-                                      const value: any = company[key];
-                                      if (key === "name") {
-                                        return <span className="font-semibold text-gray-900">{value || "N/A"}</span>;
-                                      } else if (key === "domain_name" && value) {
-                                        return (
-                                          <a
-                                            href={`${value}`}
-                                            target="_blank"
-                                            rel="noopener noreferrer"
-                                            className="text-indigo-600 hover:text-indigo-800 hover:underline font-medium"
-                                          >
-                                            {value}
-                                          </a>
-                                        );
-                                      } else if (key === "leadership") {
-                                        if (!value || !Array.isArray(value)) return <span className="text-gray-400">N/A</span>;
-                                        return (
-                                          <div className="space-y-1">
-                                            {value.slice(0, 2).map((leader: { name: string; title?: string }, idx: number) => (
-                                              <div key={idx} className="text-sm">
-                                                <span className="font-medium">{leader.name}</span>
-                                                {leader.title && <span className="text-gray-500 ml-1">({leader.title})</span>}
-                                              </div>
-                                            ))}
-                                            {value.length > 2 && (
-                                              <span className="text-xs text-gray-400">+{value.length - 2} more</span>
-                                            )}
-                                          </div>
-                                        );
-                                      } else if (key === "sources" && Array.isArray(value)) {
-                                        return (
-                                          <span className="inline-flex items-center px-2 py-1 rounded-full text-xs text-blue-800">
-                                            {value.length} sources
-                                          </span>
-                                        );
-                                      } else if (Array.isArray(value)) {
-                                        return value.length > 0 ? (
-                                          <div className="flex flex-wrap gap-1">
-                                            {value.slice(0, 3).map((item: string, idx: number) => (
-                                              <span
-                                                key={idx}
-                                                className="inline-flex items-center px-2 py-1 rounded-full text-xs text-gray-700"
-                                              >
-                                                {item}
-                                              </span>
-                                            ))}
-                                            {value.length > 3 && (
-                                              <span className="text-xs text-gray-400">+{value.length - 3} more</span>
-                                            )}
-                                          </div>
-                                        ) : (
-                                          <span className="text-gray-400">N/A</span>
-                                        );
-                                      } else if (value === undefined || value === null) {
-                                        return <span className="text-gray-400">N/A</span>;
-                                      } else if (typeof value === "object") {
-                                        return <span className="text-xs text-gray-500">{JSON.stringify(value)}</span>;
-                                      } else {
-                                        return <span className="text-gray-900">{value.toString()}</span>;
-                                      }
-                                    })()}
-                                  </TableCell>
-                                ))}
-                                <TableCell className="py-4">
-                                  <Button
-                                    onClick={() => openCompanyDetails(company)}
-                                    className="text-indigo-600 hover:text-indigo-800 hover:bg-indigo-50 text-sm px-3 py-1.5 rounded-lg transition-colors duration-150 font-medium"
-                                  >
-                                    View Details
-                                  </Button>
-                                </TableCell>
-                              </TableRow>
-                            ))}
-                          </TableBody>
-                        </Table>
-                      </div>
-                    </div>
-                  )}
-                  
+            </div>
+            {/* Agent Switcher */}
+            
+            {/* Tab Header */}
+            <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 mb-6">
+              <div>
+                <h3 className="text-xl font-bold text-gray-900 mb-2">{results[activeTab].title}</h3>
+                <div className="flex items-center gap-4 text-sm text-gray-600">
+                  <span className="flex items-center gap-2">
+                    <Building2 className="h-4 w-4" />
+                    {results[activeTab].response?.length || 0} companies found
+                  </span>
                 </div>
-              )}
-              {activeTab !== null && results[activeTab] && (!results[activeTab].response || results[activeTab].response.length === 0) && (
-                <div className="text-center py-8 bg-white rounded-lg border border-gray-200 shadow-sm">
-                  <p className="text-gray-500">No results available for this search.</p>
+              </div>
+              <div className="flex items-center gap-3">
+                <Select
+                  value={selectedHistory[activeTab] || "latest"}
+                  onValueChange={(value) => handleHistorySelect(activeTab, value === "latest" ? null : value)}
+                >
+                  <SelectTrigger className="w-[220px] bg-white border-gray-200 hover:border-indigo-300 focus:border-indigo-500 h-10">
+                    <SelectValue placeholder="Select history" />
+                  </SelectTrigger>
+                  <SelectContent className="bg-white border border-gray-200 shadow-lg">
+                    <SelectItem value="latest" className="font-medium">Latest Result</SelectItem>
+                    {promptHistory
+                      .filter((h) => h.prompt_index === activeTab)
+                      .sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime())
+                      .map((history) => (
+                        <SelectItem key={history.timestamp} value={history.timestamp} className="text-sm">
+                          {new Date(history.timestamp).toLocaleString()}{" "}
+                          {history.custom_message && (
+                            <span className="text-gray-500 ml-2" title={history.custom_message}>
+                              - {history.custom_message.substring(0, 30)}...
+                            </span>
+                          )}
+                        </SelectItem>
+                      ))}
+                  </SelectContent>
+                </Select>
+                <Button
+                  onClick={() => exportTabToExcel(activeTab)}
+                  className="flex items-center gap-2 bg-gray-200 hover:bg-gray-300 text-gray-800 px-4 py-2 rounded-lg transition-colors duration-200"
+                  variant="secondary"
+                  disabled={!results[activeTab].response || results[activeTab].response.length === 0}
+                >
+                  <Download className="h-4 w-4" />
+                  Export
+                </Button>
+                <Button
+                  onClick={() => handleRedo(activeTab)}
+                  className="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg transition-colors duration-200"
+                >
+                  <RefreshCw className="h-4 w-4" />
+                  Re Run
+                </Button>
+              </div>
+            </div>
+
+            {/* Refinement Controls */}
+            <div className="mb-6 bg-gradient-to-r from-emerald-50 to-green-50 border border-emerald-200 rounded-xl p-4">
+              <button
+                onClick={() =>
+                  setRefinementStates((prev) => ({
+                    ...prev,
+                    [activeTab]: {
+                      ...prev[activeTab],
+                      isOpen: !prev[activeTab]?.isOpen,
+                    },
+                  }))
+                }
+                className="flex items-center gap-3 text-emerald-800 font-medium mb-3 focus:outline-none group"
+              >
+                <div className="p-1.5 bg-emerald-100 rounded-lg group-hover:bg-emerald-200 transition-colors duration-200">
+                  <Sliders size={18} />
+                </div>
+                <span>Refine Search Parameters</span>
+                <ArrowDown
+                  className={`h-4 w-4 transition-transform duration-200 ${
+                    refinementStates[activeTab]?.isOpen ? "rotate-180" : ""
+                  }`}
+                />
+              </button>
+
+              {refinementStates[activeTab]?.isOpen && (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 p-4 bg-white rounded-lg border border-emerald-100">
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium text-gray-700 flex items-center gap-2">
+                      <TrendingUp className="h-4 w-4 text-emerald-600" />
+                      Max Revenue (M)
+                    </label>
+                    <div className="flex items-center gap-3">
+                      <input
+                        type="range"
+                        min="0"
+                        max="500"
+                        step="10"
+                        value={refinementStates[activeTab]?.estimatedRevenue || 0}
+                        onChange={(e) =>
+                          setRefinementStates((prev) => ({
+                            ...prev,
+                            [activeTab]: {
+                              ...prev[activeTab],
+                              estimatedRevenue: Number(e.target.value),
+                            },
+                          }))
+                        }
+                        className="flex-1 h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-emerald-600"
+                      />
+                      <span className="text-sm font-medium text-gray-900 min-w-[3rem]">
+                        {refinementStates[activeTab]?.estimatedRevenue || 0}M
+                      </span>
+                    </div>
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium text-gray-700 flex items-center gap-2">
+                      <Building2 className="h-4 w-4 text-emerald-600" />
+                      Max Employees
+                    </label>
+                    <div className="flex items-center gap-3">
+                      <input
+                        type="range"
+                        min="0"
+                        max="1000"
+                        step="10"
+                        value={refinementStates[activeTab]?.employeeCount || 0}
+                        onChange={(e) =>
+                          setRefinementStates((prev) => ({
+                            ...prev,
+                            [activeTab]: {
+                              ...prev[activeTab],
+                              employeeCount: Number(e.target.value),
+                            },
+                          }))
+                        }
+                        className="flex-1 h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-emerald-600"
+                      />
+                      <span className="text-sm font-medium text-gray-900 min-w-[3rem]">
+                        {refinementStates[activeTab]?.employeeCount || 0}
+                      </span>
+                    </div>
+                  </div>
+                  <div className="flex items-end">
+                    <button
+                      onClick={() => handleRefine(activeTab)}
+                      className="w-full bg-gradient-to-r from-emerald-600 to-green-600 hover:from-emerald-700 hover:to-green-700 text-white text-sm py-2.5 px-4 rounded-lg font-medium transition-all duration-200 shadow-sm hover:shadow-md"
+                    >
+                      Apply Refinements
+                    </button>
+                  </div>
                 </div>
               )}
             </div>
+
+            {/* Results Table */}
+            {results[activeTab].response && results[activeTab].response.length > 0 && (
+              <div className="bg-white rounded-lg border border-gray-200 overflow-hidden shadow-sm">
+                <div className="relative overflow-auto max-h-[600px]">
+                  <Table className="w-full">
+                    <TableHeader className="bg-gray-50 sticky top-0 z-50">
+                      <TableRow>
+                        {getTableHeaders(results[activeTab].response).map((header, index) => (
+                          <TableHead
+                            key={header}
+                            onClick={() => handleSort(header)}
+                            className={`whitespace-nowrap cursor-pointer hover:bg-gray-100 transition-colors duration-150 font-semibold text-gray-900 py-4 bg-gray-50 ${
+                              index === 0 ? 'sticky left-0 z-60 shadow-[2px_0_5px_rgba(0,0,0,0.1)]' : ''
+                            }`}
+                          >
+                            <div className="flex items-center gap-1">
+                              {header.replace(/_/g, " ").charAt(0).toUpperCase() + header.replace(/_/g, " ").slice(1)}
+                              {renderSortIcon(header)}
+                            </div>
+                          </TableHead>
+                        ))}
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {getSortedCompanies(results[activeTab].response).map((company, i) => (
+                        <TableRow key={i} className="border-b hover:bg-gray-50 transition-colors duration-150">
+                          {getTableHeaders(results[activeTab].response).map((key, index) => (
+                            <TableCell key={key}  className={`align-top py-4 text-sm bg-white ${
+                              index === 0 ? 'sticky left-0 z-40 shadow-[2px_0_5px_rgba(0,0,0,0.1)]' : ' bg-gray-50'
+                            }`}>
+                              {(() => {
+                                const value: any = company[key];
+                                if (key === "name") {
+                                  return <span className="font-semibold text-gray-900">{value || "N/A"}</span>;
+                                } else if (key === "domain_name" && value) {
+                                  return (
+                                    <a
+                                      href={`https://${value}`} 
+                                      target="_blank"
+                                      rel="noopener noreferrer"
+                                      className="text-indigo-600 hover:text-indigo-800 hover:underline font-medium"
+                                    >
+                                      {value}
+                                    </a>
+                                  );
+                                } else if (key === "leadership") {
+                                  if (!value || !Array.isArray(value)) return <span className="text-gray-400">N/A</span>;
+                                  return (
+                                    <div className="space-y-1">
+                                      {value.slice(0, 2).map((leader: { name: string; title?: string }, idx: number) => (
+                                        <div key={idx} className="text-sm">
+                                          <span className="font-medium">{leader.name}</span>
+                                          {leader.title && <span className="text-gray-500 ml-1">({leader.title})</span>}
+                                        </div>
+                                      ))}
+                                      {value.length > 2 && (
+                                        <span className="text-xs text-gray-400">+{value.length - 2} more</span>
+                                      )}
+                                    </div>
+                                  );
+                                } else if (key === "sources" && Array.isArray(value)) {
+                                  return (
+                                    <span className="inline-flex items-center px-2 py-1 rounded-full text-xs text-blue-800">
+                                      {value.length} sources
+                                    </span>
+                                  );
+                                } else if (Array.isArray(value)) {
+                                  return value.length > 0 ? (
+                                    <div className="flex flex-wrap gap-1">
+                                      {value.slice(0, 3).map((item: string, idx: number) => (
+                                        <span
+                                          key={idx}
+                                          className="inline-flex items-center px-2 py-1 rounded-full text-xs text-gray-700"
+                                        >
+                                          {item}
+                                        </span>
+                                      ))}
+                                      {value.length > 3 && (
+                                        <span className="text-xs text-gray-400">+{value.length - 3} more</span>
+                                      )}
+                                    </div>
+                                  ) : (
+                                    <span className="text-gray-400">N/A</span>
+                                  );
+                                } else if (value === undefined || value === null) {
+                                  return <span className="text-gray-400">N/A</span>;
+                                } else if (typeof value === "object") {
+                                  return <span className="text-xs text-gray-500">{JSON.stringify(value)}</span>;
+                                } else {
+                                  return <span className="text-gray-900">{value.toString()}</span>;
+                                }
+                              })()}
+                            </TableCell>
+                          ))}
+                          
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
+              </div>
+            )}
+            
+          </div>
+        )}
+        {activeTab !== null && results[activeTab] && (!results[activeTab].response || results[activeTab].response.length === 0) && (
+          <div className="text-center py-8 bg-white rounded-lg border border-gray-200 shadow-sm">
+            <p className="text-gray-500">No results available for this search.</p>
           </div>
         )}
 

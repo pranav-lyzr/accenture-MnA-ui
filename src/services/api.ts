@@ -1,6 +1,6 @@
 // Base API URL - would typically come from environment variables
-const API_BASE_URL = 'https://accenture-mna.ca.lyzr.app';
-// const API_BASE_URL = "http://localhost:8002";
+// const API_BASE_URL = 'https://accenture-mna.ca.lyzr.app';
+const API_BASE_URL = "http://localhost:8002";
 export interface Prompt {
   index: number;
   title: string;
@@ -532,6 +532,78 @@ const api = {
       console.error("Error fetching company analysis:", error);
       throw error;
     }
+  },
+
+  // Get talent analysis for company
+  getTalentAnalysis: async (companyId: string): Promise<any> => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/get_talent_analysis/${companyId}`, {
+        method: "POST",
+        headers: {
+          "accept": "application/json",
+        },
+      });
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      return await response.json();
+    } catch (error) {
+      console.error("Error fetching talent analysis:", error);
+      throw error;
+    }
+  },
+
+  // Get available talent analysis for company
+  getAvailableTalentAnalysis: async (companyId: string): Promise<any> => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/get_talent_analysis/${companyId}`, {
+        method: "GET",
+        headers: {
+          "accept": "application/json",
+        },
+      });
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      return await response.json();
+    } catch (error) {
+      console.error("Error fetching available talent analysis:", error);
+      throw error;
+    }
+  },
+
+  updateCompanyData: async (identifier: string, data: any) => {
+    const response = await fetch(`${API_BASE_URL}/company_data/${identifier}`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(data),
+    });
+    if (!response.ok) throw new Error("Failed to update company data");
+    return await response.json();
+  },
+  updateTalentAnalysis: async (
+    companyId: string,
+    companyName: string,
+    domainName: string,
+    linkedinUrl: string,
+    talentAnalysis: any,
+    rawLyzrResponse: any = null
+  ) => {
+    const body = {
+      company_id: companyId,
+      company_name: companyName,
+      domain_name: domainName,
+      linkedin_url: linkedinUrl || "",
+      talent_analysis: talentAnalysis,
+      raw_lyzr_response: rawLyzrResponse ?? {},
+    };
+    const response = await fetch(`${API_BASE_URL}/update_talent_analysis/${companyId}`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+    });
+    if (!response.ok) throw new Error("Failed to update talent analysis");
+    return await response.json();
   },
 
 };

@@ -1,7 +1,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import Layout from '../components/layout/Layout';
-import { FileText, Loader2, RefreshCw, TrendingUp, Users, MapPin } from 'lucide-react';
+import { FileText, Loader2, RefreshCw, TrendingUp, Users, MapPin, ChartCandlestick } from 'lucide-react';
 import { Button } from '../components/botton';
 import api from '../services/api';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "../components/ui/tabs";
@@ -156,25 +156,19 @@ const Analysis = () => {
 
   return (
     <Layout>
-      <div className="space-y-8">
+      <div className="space-y-8 p-6">
         {/* Header Section */}
-        <div className="relative bg-gradient-to-br from-purple-600 via-purple-700 to-indigo-800 rounded-2xl shadow-xl overflow-hidden">
-          <div className="absolute inset-0 bg-gradient-to-r from-purple-600/20 to-transparent"></div>
-          <div className="relative px-8 py-10">
-            <div className="flex items-center justify-between flex-wrap gap-6">
-              <div className="space-y-2">
-                <h1 className="text-3xl font-bold text-white">Company Analysis</h1>
-                <p className="text-purple-100 text-lg">Evaluate and shortlist potential acquisition candidates</p>
-              </div>
-              {/* <Button
-                onClick={handleRefreshData}
-                disabled={loading}
-                className="bg-white/10 backdrop-blur-sm border border-white/20 text-white hover:bg-white/20 transition-all duration-200 shadow-lg"
-              >
-                <RefreshCw className={`h-5 w-5 mr-2 ${loading ? 'animate-spin' : ''}`} />
-                Refresh Data
-              </Button> */}
-            </div>
+        <div className="flex items-center gap-3">
+          <div className="p-2 bg-purple-500 rounded-xl">
+            <ChartCandlestick className="h-6 w-6 text-white" />
+          </div>
+          <div>
+            <h1 className="text-3xl font-bold bg-gradient-to-r from-gray-900 to-gray-700 bg-clip-text text-transparent">
+              Company Analysis
+            </h1>
+            <p className="text-gray-600 mt-1">
+            Evaluate and shortlist potential acquisition candidates
+            </p>
           </div>
         </div>
 

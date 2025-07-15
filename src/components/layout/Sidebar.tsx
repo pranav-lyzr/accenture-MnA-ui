@@ -2,9 +2,9 @@
 import { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { 
-  Home, FileText, 
-  ChevronRight, ChevronLeft,
-  Database, BarChart2
+  Home, FileText,  ChevronLeft,
+  Database, BarChart2,
+  // MessageSquare
 } from 'lucide-react';
 import logo from '../../assets/Accenture-Logo.png';
 
@@ -21,6 +21,7 @@ const Sidebar = () => {
     { name: 'Analysis', icon: <BarChart2 size={20} />, path: '/analysis' },
     { name: 'Companies', icon: <Database size={20} />, path: '/companies' },
     { name: 'Reports', icon: <FileText size={20} />, path: '/reports' },
+    // { name: 'Chat', icon: <MessageSquare size={20} />, path: '/chat' },
   ];
 
   const isActivePath = (itemPath: string, currentPath: string) => {
@@ -36,12 +37,10 @@ const Sidebar = () => {
         collapsed ? 'w-20' : 'w-72'
       }`}
     >
-      <div className="flex items-center justify-between p-6 border-b border-gray-200 h-20 bg-gradient-to-r from-purple-50 to-indigo-50">
+      <div className="flex items-center justify-between p-6 border-b border-gray-200 h-20 bg-purple-500/10">
         {!collapsed && (
           <Link to="/" className="flex items-center group">
-            <div className="p-2 rounded-lg bg-white shadow-sm border border-gray-200">
-              <img src={logo} alt="Accenture Logo" className='h-6 rounded'/>
-            </div>
+            <img src={logo} alt="Accenture Logo" className='h-6 rounded'/>
             <div className="ml-3">
               <span className="font-bold text-xl text-gray-900 group-hover:text-purple-600 transition-colors">
                 Accenture
@@ -52,18 +51,16 @@ const Sidebar = () => {
         )}
         {collapsed && (
           <Link to="/" className="flex items-center justify-center flex-1 group">
-            <div className="p-3 rounded-lg bg-white shadow-sm border border-gray-200 group-hover:border-purple-300 transition-colors">
-              <img src={logo} alt="Accenture Logo" className='h-5 rounded'/>
-            </div>
+            <img src={logo} alt="Accenture Logo" className='h-8 mx-auto rounded'/>
           </Link>
         )}
         <button 
           onClick={() => setCollapsed(!collapsed)}
-          className="p-2 rounded-lg hover:bg-white hover:shadow-sm transition-all duration-200 border border-transparent hover:border-gray-200"
-          aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+          className="rounded-lg hover:bg-white hover:shadow-sm transition-all duration-200 border border-transparent hover:border-gray-200"
+          aria-label={collapsed ? 'Expand sidebar ml-5' : 'Collapse sidebar p-2 '}
         >
           {collapsed ? 
-            <ChevronRight size={18} className="text-gray-600" /> : 
+            <></> : 
             <ChevronLeft size={18} className="text-gray-600" />
           }
         </button>
@@ -79,7 +76,7 @@ const Sidebar = () => {
                   relative group flex items-center p-4 rounded-xl transition-all duration-200
                   ${collapsed ? 'justify-center' : ''}
                   ${isActivePath(item.path, location.pathname)
-                    ? 'bg-gradient-to-r from-purple-100 to-indigo-100 text-purple-700 shadow-sm border border-purple-200' 
+                    ? 'bg-purple-100 shadow-sm border border-purple-200' 
                     : 'text-gray-700 hover:bg-gradient-to-r hover:from-purple-50 hover:to-indigo-50 hover:text-purple-600 hover:shadow-sm'}
                 `}
                 title={collapsed ? item.name : undefined}
@@ -88,11 +85,11 @@ const Sidebar = () => {
                   {item.icon}
                 </span>
                 {!collapsed && <span className="ml-4 font-medium">{item.name}</span>}
-                {collapsed && (
+                {/* {collapsed && (
                   <span className="absolute left-full ml-4 hidden group-hover:block bg-gray-900 text-white text-sm rounded-lg py-2 px-3 z-50 whitespace-nowrap shadow-lg border border-gray-700">
                     {item.name}
                   </span>
-                )}
+                )} */}
                 {isActivePath(item.path, location.pathname) && !collapsed && (
                   <div className="absolute right-3 w-2 h-2 rounded-full bg-purple-500"></div>
                 )}

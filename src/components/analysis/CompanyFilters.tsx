@@ -88,7 +88,7 @@ const CompanyFilters = ({ companies, onFilterChange }: CompanyFiltersProps) => {
         <select
           id="location-filter"
           onChange={handleLocationChange}
-          className="w-full border rounded-lg p-2 focus:outline-none focus:ring-2 focus:ring-purple-500"
+          className="w-full border rounded-lg p-2 focus:outline-none focus:ring-2 focus:ring-purple-500 border-gray-200"
           defaultValue=""
         >
           <option value="" disabled>
@@ -123,14 +123,14 @@ const CompanyFilters = ({ companies, onFilterChange }: CompanyFiltersProps) => {
         </div>
       </div>
       <div className="flex-1 min-w-[200px]">
-        <label htmlFor="revenue-filter" className="block text-sm font-medium text-gray-700 mb-1">
+        <label htmlFor="revenue-filter" className="block text-sm font-medium text-gray-700 mb-1 border-gray-200">
           Revenue Range
         </label>
         <select
           id="revenue-filter"
           value={filters.revenue}
           onChange={(e) => handleFilterChange('revenue', e.target.value)}
-          className="w-full border rounded-lg p-2 focus:outline-none focus:ring-2 focus:ring-purple-500"
+          className="w-full border border-gray-200 rounded-lg p-2 focus:outline-none focus:ring-2 focus:ring-purple-500"
         >
           {revenueOptions.map(option => (
             <option key={option} value={option}>{option}</option>
@@ -145,10 +145,10 @@ const CompanyFilters = ({ companies, onFilterChange }: CompanyFiltersProps) => {
           id="industry-filter"
           value={filters.industry}
           onChange={(e) => handleFilterChange('industry', e.target.value)}
-          className="w-full border rounded-lg p-2 focus:outline-none focus:ring-2 focus:ring-purple-500"
+          className="w-full border border-gray-200 rounded-lg p-2 focus:outline-none focus:ring-2 focus:ring-purple-500"
         >
           {industryOptions.map(option => (
-            <option key={option} value={option}>{option}</option>
+            <option key={option} value={option} className='border-gray-200'>{option}</option>
           ))}
         </select>
       </div>

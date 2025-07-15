@@ -127,7 +127,7 @@ const ChatDrawer = ({ open, onOpenChange, agentIndexes, onResponseUpdate, active
       `}
     >
       {/* Header */}
-      <div className="px-4 py-4 border-b border-slate-200/50 flex items-center justify-between bg-gradient-to-r from-indigo-600 to-purple-600 text-white">
+      <div className="px-4 py-4 border-b border-slate-200/50 flex items-center justify-between bg-purple-700 text-white">
         <div className="flex items-center space-x-3 min-w-0 flex-1">
           <button 
             onClick={() => onOpenChange(false)}
@@ -239,7 +239,7 @@ const ChatDrawer = ({ open, onOpenChange, agentIndexes, onResponseUpdate, active
           <Button
             onClick={handleSendMessage}
             disabled={isLoading || !inputMessage.trim() || selectedAgent === null}
-            className="m-2 rounded-xl bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white h-10 w-10 flex items-center justify-center shadow-md hover:shadow-lg transition-all duration-200 hover:scale-105 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
+            className="m-2 rounded-xl bg-purple-700 text-white h-10 w-10 flex items-center justify-center shadow-md hover:shadow-lg transition-all duration-200 hover:scale-105 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
             aria-label="Send message"
           >
             {isLoading ? (

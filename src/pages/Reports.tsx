@@ -484,81 +484,81 @@ const Reports = () => {
 
   return (
     <Layout>
-      {/* Header Section */}
-      <div className="mb-8">
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-3xl font-bold text-gray-900 mb-2">Reports & Analytics</h1>
-            <p className="text-gray-600 text-lg">Download comprehensive analysis reports and export data</p>
-          </div>
-          
-          {!isLoading && (
-            <div className="text-right">
-              <div className="text-2xl font-bold text-purple-600">{companies.length}</div>
-              <div className="text-sm text-gray-500 font-medium">Companies Analyzed</div>
+      <div className='p-6'>
+        {/* Header Section */}
+        <div className="mb-8">
+          <div className="flex items-center justify-between">
+            <div>
+              <h1 className="text-3xl font-bold text-gray-900 mb-2">Reports & Analytics</h1>
+              <p className="text-gray-600 text-lg">Download comprehensive analysis reports and export data</p>
             </div>
-          )}
-        </div>
-      </div>
-
-      {/* Loading State */}
-      {isLoading ? (
-        <div className="flex items-center justify-center py-12">
-          <div className="text-center">
-            <div className="inline-block animate-spin rounded-full h-12 w-12 border-4 border-purple-500 border-opacity-25 border-t-purple-500 mb-4"></div>
-            <p className="text-lg font-medium text-gray-700">Loading company data...</p>
-            <p className="text-gray-500">Preparing your reports</p>
+            
+            {!isLoading && (
+              <div className="text-right">
+                <div className="text-2xl font-bold text-purple-600">{companies.length}</div>
+                <div className="text-sm text-gray-500 font-medium">Companies Analyzed</div>
+              </div>
+            )}
           </div>
         </div>
-      ) : (
-        /* Report Cards */
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-          {reportTypes.map((report, index) => {
-            const colors = getColorClasses(report.color);
-            return (
-              <Card key={index} className={`transition-all duration-300 hover:shadow-xl hover:-translate-y-1 ${colors.border} overflow-hidden`}>
-                <CardHeader className={`${colors.bg} ${colors.border} border-b`}>
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center space-x-4">
-                      <div className="p-3 bg-white rounded-lg shadow-sm">
-                        {report.icon}
-                      </div>
-                      <div>
-                        <CardTitle className="text-xl font-bold text-gray-900">
-                          {report.title}
-                        </CardTitle>
-                        <div className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-semibold ${colors.bg} ${colors.text} mt-2`}>
-                          {report.format} Format
+
+        {/* Loading State */}
+        {isLoading ? (
+          <div className="flex items-center justify-center py-12">
+            <div className="text-center">
+              <div className="inline-block animate-spin rounded-full h-12 w-12 border-4 border-purple-500 border-opacity-25 border-t-purple-500 mb-4"></div>
+              <p className="text-lg font-medium text-gray-700">Loading company data...</p>
+              <p className="text-gray-500">Preparing your reports</p>
+            </div>
+          </div>
+        ) : (
+          /* Report Cards */
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            {reportTypes.map((report, index) => {
+              const colors = getColorClasses(report.color);
+              return (
+                <Card key={index} className={`transition-all duration-300 hover:shadow-xl hover:-translate-y-1 ${colors.border} overflow-hidden`}>
+                  <CardHeader className={`${colors.bg} ${colors.border} border-b`}>
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center space-x-4">
+                        <div className="p-3 bg-white rounded-lg shadow-sm">
+                          {report.icon}
+                        </div>
+                        <div>
+                          <CardTitle className="text-xl font-bold text-gray-900">
+                            {report.title}
+                          </CardTitle>
+                          <div className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-semibold ${colors.bg} ${colors.text} mt-2`}>
+                            {report.format} Format
+                          </div>
                         </div>
                       </div>
                     </div>
-                  </div>
-                </CardHeader>
-                
-                <CardContent className="p-6">
-                  <br />
-                  <Button
-                    onClick={() => handleDownload(report.handler)}
-                    className={`w-full ${colors.button} text-white font-semibold py-3 px-6 rounded-lg transition-all duration-200 flex items-center justify-center space-x-2 hover:shadow-lg`}
-                    disabled={isLoading || companies.length === 0}
-                  >
-                    <Download size={20} />
-                    <span>Download {report.format}</span>
-                  </Button>
+                  </CardHeader>
                   
-                  {companies.length === 0 && (
-                    <p className="text-xs text-gray-500 text-center mt-2">
-                      No data available for download
-                    </p>
-                  )}
-                </CardContent>
-              </Card>
-            );
-          })}
-        </div>
-      )}
-      
-      
+                  <CardContent className="p-6">
+                    <br />
+                    <Button
+                      onClick={() => handleDownload(report.handler)}
+                      className={`w-full ${colors.button} text-white font-semibold py-3 px-6 rounded-lg transition-all duration-200 flex items-center justify-center space-x-2 hover:shadow-lg`}
+                      disabled={isLoading || companies.length === 0}
+                    >
+                      <Download size={20} />
+                      <span>Download {report.format}</span>
+                    </Button>
+                    
+                    {companies.length === 0 && (
+                      <p className="text-xs text-gray-500 text-center mt-2">
+                        No data available for download
+                      </p>
+                    )}
+                  </CardContent>
+                </Card>
+              );
+            })}
+          </div>
+        )}
+      </div>
     </Layout>
   );
 };

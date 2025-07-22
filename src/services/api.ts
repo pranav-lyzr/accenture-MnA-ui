@@ -1,6 +1,6 @@
 // Base API URL - would typically come from environment variables
-const API_BASE_URL = 'https://accenture-mna.ca.lyzr.app';
-// const API_BASE_URL = "http://localhost:8002";
+// const API_BASE_URL = 'https://accenture-mna.ca.lyzr.app';
+const API_BASE_URL = "http://localhost:8002";
 export interface Prompt {
   index: number;
   title: string;
@@ -131,6 +131,29 @@ interface AnalysisResponse {
     }>;
     summary: string;
   };
+}
+
+export interface ChatMessage {
+  id: number;
+  session_id: string;
+  user_id: string;
+  agent_id: string;
+  message: string;
+  response: string;
+  timestamp: string;
+}
+
+export interface ChatMessageCreate {
+  session_id: string;
+  user_id: string;
+  agent_id: string;
+  message: string;
+}
+
+export interface ChatSessionSummary {
+  session_id: string;
+  first_message: string;
+  timestamp: string;
 }
 // API service functions
 const api = {
@@ -606,6 +629,30 @@ const api = {
     return await response.json();
   },
 
+  // Get all chat sessions for the user
+  getChatSessions: async (): Promise<ChatSessionSummary[]> => {
+    const response = await fetch(`${API_BASE_URL}/chat/sessions`);
+    if (!response.ok) throw new Error("Failed to fetch chat sessions");
+    return await response.json();
+  },
+
+  // Get all messages for a session
+  getChatMessages: async (session_id: string): Promise<ChatMessage[]> => {
+    const response = await fetch(`${API_BASE_URL}/chat/messages/${session_id}`);
+    if (!response.ok) throw new Error("Failed to fetch chat messages");
+    return await response.json();
+  },
+
+  // Send a message and get response
+  sendChatMessage: async (data: ChatMessageCreate): Promise<ChatMessage> => {
+    const response = await fetch(`${API_BASE_URL}/chat/message`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(data),
+    });
+    if (!response.ok) throw new Error("Failed to send chat message");
+    return await response.json();
+  },
 };
 
 export default api;

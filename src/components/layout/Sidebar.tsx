@@ -4,7 +4,7 @@ import { Link, useLocation } from 'react-router-dom';
 import { 
   Home, FileText,  ChevronLeft,
   Database, BarChart2,
-  // MessageSquare
+  MessageSquare
 } from 'lucide-react';
 import logo from '../../assets/Accenture-Logo.png';
 
@@ -21,7 +21,7 @@ const Sidebar = () => {
     { name: 'Analysis', icon: <BarChart2 size={20} />, path: '/analysis' },
     { name: 'Companies', icon: <Database size={20} />, path: '/companies' },
     { name: 'Reports', icon: <FileText size={20} />, path: '/reports' },
-    // { name: 'Chat', icon: <MessageSquare size={20} />, path: '/chat' },
+    { name: 'Chat', icon: <MessageSquare size={20} />, path: '/chat' },
   ];
 
   const isActivePath = (itemPath: string, currentPath: string) => {

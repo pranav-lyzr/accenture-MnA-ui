@@ -39,6 +39,14 @@ const CompanyProfilePage = () => {
   const [editingResearch, setEditingResearch] = useState(false);
   const [researchEditData, setResearchEditData] = useState<any>(null);
   const [talentAnalysisFullData, setTalentAnalysisFullData] = useState<any>(null);
+  const [expandedEmploymentHistory, setExpandedEmploymentHistory] = useState<{[key: string]: boolean}>({});
+
+  const toggleEmploymentHistory = (personId: string) => {
+    setExpandedEmploymentHistory(prev => ({
+      ...prev,
+      [personId]: !prev[personId]
+    }));
+  };
 
   const fetchCompany = async () => {
     if (!id) return;
@@ -84,7 +92,7 @@ const CompanyProfilePage = () => {
       } else if (type === "talent") {
         const newTalentAnalysis = await api.getTalentAnalysis(id);
         setTalentAnalysisData(newTalentAnalysis.talent_analysis);
-        setTalentAnalysisFullData(newTalentAnalysis); // <-- store the full data object
+        setTalentAnalysisFullData(newTalentAnalysis);
       }
       
       if (type !== "analysis" && type !== "talent") {
@@ -105,7 +113,8 @@ const CompanyProfilePage = () => {
       const response = await api.getAvailableTalentAnalysis(id);
       if (response.data && response.data.talent_analysis) {
         setTalentAnalysisData(response.data.talent_analysis);
-        setTalentAnalysisFullData(response.data); // <-- store the full data object
+        setTalentAnalysisFullData(response.data);
+        console.log("TalentAnalysisData", response.data.talent_analysis);
       }
     } catch (err) {
       console.error("Error fetching talent analysis:", err);
@@ -141,21 +150,18 @@ const CompanyProfilePage = () => {
   const handleCompanyEditChange = (key: string, value: any) => {
     setCompanyEditData((prev: any) => ({ ...prev, [key]: value }));
   };
-  const handleTalentEditChange = (section: string, key: string, value: any) => {
-    setTalentEditData((prev: any) => ({
-      ...prev,
-      [section]: {
-        ...prev?.[section],
-        [key]: value,
-      },
-    }));
-  };
+
+  // const handleTalentEditChange = (key: string, value: any) => {
+  //   setTalentEditData((prev: any) => ({ ...prev, [key]: value }));
+  // };
+
   const handleSaveCompanyEdit = async () => {
     if (!companyEditData) return;
     await api.updateCompanyData(company._id, companyEditData);
     setEditingCompany(false);
     fetchCompany();
   };
+
   const handleSaveTalentEdit = async () => {
     if (!talentEditData) return;
     await api.updateTalentAnalysis(
@@ -164,11 +170,12 @@ const CompanyProfilePage = () => {
       company.domain_name || "",
       company.linkedin_url || "",
       talentEditData,
-      (talentAnalysisFullData?.raw_lyzr_response) ? talentAnalysisFullData.raw_lyzr_response : {}
+      talentAnalysisFullData || {}
     );
     setEditingTalent(false);
     fetchTalentAnalysis();
   };
+
   const handleApolloEditChange = (key: string, value: any) => {
     setApolloEditData((prev: any) => ({ ...prev, [key]: value }));
   };
@@ -587,6 +594,63 @@ const CompanyProfilePage = () => {
     );
   };
 
+  // Helper functions to analyze the new talent data format
+  const analyzeTalentData = (talentData: any) => {
+    if (!talentData || !talentData.people) return null;
+
+    const people = talentData.people;
+    const totalPeople = people.length;
+    
+    // Analyze seniority levels
+    const seniorityLevels = people.reduce((acc: any, person: any) => {
+      const seniority = person.seniority || 'unknown';
+      acc[seniority] = (acc[seniority] || 0) + 1;
+      return acc;
+    }, {});
+
+    // Analyze departments
+    const departments = people.reduce((acc: any, person: any) => {
+      if (person.departments) {
+        person.departments.forEach((dept: string) => {
+          acc[dept] = (acc[dept] || 0) + 1;
+        });
+      }
+      return acc;
+    }, {});
+
+    // Analyze functions
+    const functions = people.reduce((acc: any, person: any) => {
+      if (person.functions) {
+        person.functions.forEach((func: string) => {
+          acc[func] = (acc[func] || 0) + 1;
+        });
+      }
+      return acc;
+    }, {});
+
+    // Get leadership (C-suite and head level)
+    const leadership = people.filter((person: any) => 
+      person.seniority === 'c_suite' || person.seniority === 'head'
+    );
+
+    // Get technical people
+    const technical = people.filter((person: any) => 
+      person.departments?.some((dept: string) => dept.includes('engineering') || dept.includes('technical')) ||
+      person.functions?.includes('engineering') ||
+      person.functions?.includes('information_technology')
+    );
+
+    return {
+      totalPeople,
+      seniorityLevels,
+      departments,
+      functions,
+      leadership,
+      technical,
+      pagination: talentData.pagination
+    };
+  };
+
   const renderTalentAnalysisSection = () => {
     return (
       <div className="space-y-6">
@@ -599,7 +663,7 @@ const CompanyProfilePage = () => {
                 </div>
                 <div>
                   <h3 className="text-xl font-bold text-orange-900">Talent Analysis</h3>
-                  <p className="text-orange-700">AI-powered talent insights and workforce analysis</p>
+                  <p className="text-orange-700">Employee data and workforce insights</p>
                 </div>
               </div>
               <Button 
@@ -624,19 +688,23 @@ const CompanyProfilePage = () => {
               <TabsTrigger value="overview" className="data-[state=active]:bg-orange-100 data-[state=active]:text-orange-700">
                 Overview
               </TabsTrigger>
+              <TabsTrigger value="people" className="data-[state=active]:bg-orange-100 data-[state=active]:text-orange-700">
+                People
+              </TabsTrigger>
               <TabsTrigger value="leadership" className="data-[state=active]:bg-orange-100 data-[state=active]:text-orange-700">
                 Leadership
               </TabsTrigger>
               <TabsTrigger value="technical" className="data-[state=active]:bg-orange-100 data-[state=active]:text-orange-700">
                 Technical
               </TabsTrigger>
-              <TabsTrigger value="insights" className="data-[state=active]:bg-orange-100 data-[state=active]:text-orange-700">
-                Key Insights
-              </TabsTrigger>
             </TabsList>
 
             <TabsContent value="overview" className="mt-6">
               {renderTalentAnalysisOverview()}
+            </TabsContent>
+
+            <TabsContent value="people" className="mt-6">
+              {renderTalentPeopleAnalysis()}
             </TabsContent>
 
             <TabsContent value="leadership" className="mt-6">
@@ -645,10 +713,6 @@ const CompanyProfilePage = () => {
 
             <TabsContent value="technical" className="mt-6">
               {renderTalentTechnicalAnalysis()}
-            </TabsContent>
-
-            <TabsContent value="insights" className="mt-6">
-              {renderTalentInsights()}
             </TabsContent>
           </Tabs>
         ) : (
@@ -669,8 +733,9 @@ const CompanyProfilePage = () => {
   const renderTalentAnalysisOverview = () => {
     if (!talentAnalysisData) return null;
     
-    const { company_info, leadership_analysis, technical_analysis, data_sources } = talentAnalysisData;
-    
+    const analysis = analyzeTalentData(talentAnalysisData);
+    if (!analysis) return null;
+
     return (
       <div className="space-y-6">
         <div className="flex justify-end">
@@ -686,6 +751,7 @@ const CompanyProfilePage = () => {
             </Button>
           ) : null}
         </div>
+
         <Card className="bg-gradient-to-br from-orange-50 to-amber-100 border-orange-200 shadow-lg">
           <CardHeader>
             <CardTitle className="flex items-center space-x-3">
@@ -693,8 +759,8 @@ const CompanyProfilePage = () => {
                 <Building2 className="h-6 w-6 text-white" />
               </div>
               <div>
-                <h3 className="text-2xl font-bold text-orange-900">Company Overview</h3>
-                <p className="text-orange-700">Talent Analysis Summary</p>
+                <h3 className="text-2xl font-bold text-orange-900">Talent Overview</h3>
+                <p className="text-orange-700">Workforce Analysis Summary</p>
               </div>
             </CardTitle>
           </CardHeader>
@@ -702,198 +768,496 @@ const CompanyProfilePage = () => {
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
               <div className="text-center">
                 <div className="w-16 h-16 bg-orange-600 rounded-full flex items-center justify-center mx-auto mb-3">
-                  <span className="text-2xl font-bold text-white">{company_info?.total_employees || 0}</span>
+                  <span className="text-2xl font-bold text-white">{analysis.totalPeople}</span>
                 </div>
-                <p className="font-semibold text-orange-900">Total Employees</p>
+                <p className="font-semibold text-orange-900">Total People</p>
+                <p className="text-sm text-orange-700">in database</p>
               </div>
               <div className="text-center">
                 <div className="w-16 h-16 bg-gradient-to-br from-orange-100 to-orange-200 rounded-full flex items-center justify-center mx-auto mb-3">
                   <Users className="h-8 w-8 text-orange-600" />
                 </div>
-                <p className="font-semibold text-orange-900">{leadership_analysis?.total_leadership_count || 0}</p>
+                <p className="font-semibold text-orange-900">{analysis.leadership.length}</p>
                 <p className="text-sm text-orange-700">Leadership</p>
               </div>
               <div className="text-center">
                 <div className="w-16 h-16 bg-gradient-to-br from-orange-100 to-orange-200 rounded-full flex items-center justify-center mx-auto mb-3">
                   <Zap className="h-8 w-8 text-orange-600" />
                 </div>
-                <p className="font-semibold text-orange-900">{technical_analysis?.total_technical_count || 0}</p>
+                <p className="font-semibold text-orange-900">{analysis.technical.length}</p>
                 <p className="text-sm text-orange-700">Technical</p>
               </div>
               <div className="text-center">
                 <div className="w-16 h-16 bg-gradient-to-br from-orange-100 to-orange-200 rounded-full flex items-center justify-center mx-auto mb-3">
                   <TrendingUp className="h-8 w-8 text-orange-600" />
                 </div>
-                <p className="font-semibold text-orange-900">{data_sources?.confidence_level || "N/A"}</p>
-                <p className="text-sm text-orange-700">Confidence</p>
+                <p className="font-semibold text-orange-900">{analysis.pagination?.total_entries || 0}</p>
+                <p className="text-sm text-orange-700">Total Entries</p>
               </div>
             </div>
           </CardContent>
         </Card>
-        <Card className="bg-white border-slate-200 shadow-sm">
-          <CardHeader>
-            <CardTitle className="flex items-center space-x-2">
-              <Users className="h-5 w-5 text-orange-600" />
-              <span className="text-lg font-semibold text-slate-800">Company Info</span>
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-3">
-              {Object.entries(company_info || {}).map(([key, value]) => (
-                <div key={key} className="flex justify-between items-center">
-                  <span className="text-sm font-medium text-slate-600">{formatFieldName(key)}:</span>
-                  {editingTalent ? (
-                    typeof talentEditData?.company_info?.[key] === "object" && talentEditData?.company_info?.[key] !== null ? (
-                      <div className="flex-1 ml-4">
-                        <JsonEditor 
-                          value={talentEditData.company_info[key]}
-                          onChange={(newValue) => handleTalentEditChange("company_info", key, newValue)}
-                        />
-                      </div>
-                    ) : (
-                      <input
-                        className="border rounded px-2 py-1 w-full border-gray-200"
-                        value={talentEditData?.company_info?.[key] || ""}
-                        onChange={e => handleTalentEditChange("company_info", key, e.target.value)}
-                      />
-                    )
-                  ) : (
-                    <span className="text-sm text-slate-900 font-medium">{value?.toString() || "N/A"}</span>
-                  )}
-                </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
-        <Card className="bg-white border-slate-200 shadow-sm">
-          <CardHeader>
-            <CardTitle className="flex items-center space-x-2">
-              <Database className="h-5 w-5 text-orange-600" />
-              <span className="text-lg font-semibold text-slate-800">Data Sources</span>
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-3">
-              <div>
-                <span className="text-sm font-medium text-slate-600">Primary Sources:</span>
-                {editingTalent ? (
-                  <input
-                    className="border rounded px-2 py-1 w-full mt-1 border-gray-100"
-                    value={talentEditData?.data_sources?.primary_sources?.join(", ") || ""}
-                    onChange={e => handleTalentEditChange("data_sources", "primary_sources", e.target.value.split(",").map(s => s.trim()))}
-                  />
-                ) : (
-                  <div className="flex flex-wrap gap-1 mt-1">
-                    {(data_sources?.primary_sources || []).map((source: string, idx: number) => (
-                      <Badge key={idx} variant="outline" className="text-xs">
-                        {source}
-                      </Badge>
-                    ))}
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <Card className="bg-white border-slate-200 shadow-sm">
+            <CardHeader>
+              <CardTitle className="flex items-center space-x-2">
+                <Target className="h-5 w-5 text-orange-600" />
+                <span className="text-lg font-semibold text-slate-800">Seniority Levels</span>
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-3">
+                {Object.entries(analysis.seniorityLevels).map(([level]) => (
+                  <div key={level} className="flex justify-between items-center">
+                    <span className="text-sm font-medium text-slate-600">{formatFieldName(level)}:</span>
+                    <span className="text-sm text-slate-900 font-medium">{formatFieldName(level) as React.ReactNode}</span>
                   </div>
-                )}
+                ))}
               </div>
-              <div className="flex justify-between items-center">
-                <span className="text-sm font-medium text-slate-600">Sample Size:</span>
-                {editingTalent ? (
-                  <input
-                    className="border rounded px-2 py-1 w-24"
-                    value={talentEditData?.data_sources?.sample_size || ""}
-                    onChange={e => handleTalentEditChange("data_sources", "sample_size", e.target.value)}
-                  />
-                ) : (
-                  <span className="text-sm text-slate-900 font-medium">{data_sources?.sample_size || 0}</span>
-                )}
+            </CardContent>
+          </Card>
+
+          <Card className="bg-white border-slate-200 shadow-sm">
+            <CardHeader>
+              <CardTitle className="flex items-center space-x-2">
+                <Building2 className="h-5 w-5 text-orange-600" />
+                <span className="text-lg font-semibold text-slate-800">Top Departments</span>
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-3">
+                {Object.entries(analysis.departments)
+                  .sort(([,a], [,b]) => (b as number) - (a as number))
+                  .slice(0, 5)
+                  .map(([dept, count]) => (
+                    <div key={dept} className="flex justify-between items-center">
+                      <span className="text-sm font-medium text-slate-600">{formatFieldName(dept)}:</span>
+                      <span className="text-sm text-slate-900 font-medium">{count as number}</span>
+                    </div>
+                  ))}
               </div>
-              <div className="flex justify-between items-center">
-                <span className="text-sm font-medium text-slate-600">Limitations:</span>
-                {editingTalent ? (
-                  <input
-                    className="border rounded px-2 py-1 w-full border-gray-200"
-                    value={talentEditData?.data_sources?.limitations || ""}
-                    onChange={e => handleTalentEditChange("data_sources", "limitations", e.target.value)}
-                  />
-                ) : (
-                  <span className="text-sm text-slate-900 font-medium max-w-xs text-right">{data_sources?.limitations || "N/A"}</span>
-                )}
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+            </CardContent>
+          </Card>
+        </div>
+
         {editingTalent && (
-          <div className="flex gap-2 mt-4 justify-end">            
-            <Button variant="outline" onClick={() => { setEditingTalent(false); setTalentEditData(talentAnalysisData); }}>Cancel</Button>
-            <Button onClick={handleSaveTalentEdit}>Save</Button>
-          </div>
+          <Card className="bg-yellow-50 border-yellow-200">
+            <CardContent className="p-4">
+              <div className="space-y-4">
+                <h4 className="font-semibold text-yellow-800">Edit Raw Talent Data</h4>
+                <JsonEditor 
+                  value={talentEditData}
+                  onChange={(newValue) => setTalentEditData(newValue)}
+                />
+                <div className="flex gap-2 justify-end">
+                  <Button variant="outline" onClick={() => { setEditingTalent(false); setTalentEditData(talentAnalysisData); }}>
+                    Cancel
+                  </Button>
+                  <Button onClick={handleSaveTalentEdit}>Save</Button>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
         )}
       </div>
     );
   };
 
-  const renderTalentLeadershipAnalysis = () => {
-    if (!talentAnalysisData?.leadership_analysis) return null;
+  const renderTalentPeopleAnalysis = () => {
+    if (!talentAnalysisData?.people) return null;
     
-    const { leadership_analysis } = talentAnalysisData;
+    const { people } = talentAnalysisData;
     
     return (
       <div className="space-y-6">
-        <Card className="bg-gradient-to-br from-blue-50 to-indigo-50 border-blue-200">
+        <div className="grid grid-cols-1 gap-6">
+          {people.map((person: any) => (
+            <Card key={person.id} className="bg-white border-slate-200 shadow-sm hover:shadow-md transition-shadow overflow-hidden">
+              <CardContent className="p-0">
+                {/* Header Section */}
+                <div className="bg-gradient-to-r from-orange-50 to-amber-50 p-6 border-b border-orange-100">
+                  <div className="flex items-start space-x-4">
+                    {person.photo_url && person.photo_url !== "https://static.licdn.com/aero-v1/sc/h/9c8pery4andzj6ohjkjp54ma2" ? (
+                      <img
+                        src={person.photo_url}
+                        alt={person.name}
+                        className="w-20 h-20 rounded-full object-cover border-3 border-white shadow-lg"
+                      />
+                    ) : (
+                      <div className="w-20 h-20 bg-orange-100 rounded-full flex items-center justify-center border-3 border-white shadow-lg">
+                        <Users className="h-10 w-10 text-orange-600" />
+                      </div>
+                    )}
+                    <div className="flex-1">
+                      <div className="flex items-start justify-between">
+                        <div>
+                          <h3 className="text-xl font-bold text-slate-900 mb-1">{person.name}</h3>
+                          <p className="text-lg text-slate-700 font-medium mb-2">{person.title}</p>
+                          <p className="text-sm text-slate-600 mb-3">{person.headline}</p>
+                        </div>
+                        <div className="flex gap-2">
+                          {person.linkedin_url && (
+                            <a
+                              href={person.linkedin_url}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="bg-purple-600 hover:bg-purple-700 text-white p-2 rounded-lg transition-colors shadow-sm text-sm flex"
+                              title="LinkedIn Profile"
+                            >
+                              LinkedIn <ExternalLink className="h-4 w-4 ml-2" />
+                            </a>
+                          )}
+                          {person.twitter_url && (
+                            <a
+                              href={person.twitter_url}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="bg-sky-500 hover:bg-sky-600 text-white p-2 rounded-lg transition-colors shadow-sm"
+                              title="Twitter Profile"
+                            >
+                              <ExternalLink className="h-4 w-4" />
+                            </a>
+                          )}
+                          {person.github_url && (
+                            <a
+                              href={person.github_url}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="bg-gray-800 hover:bg-gray-900 text-white p-2 rounded-lg transition-colors shadow-sm"
+                              title="GitHub Profile"
+                            >
+                              <ExternalLink className="h-4 w-4" />
+                            </a>
+                          )}
+                        </div>
+                      </div>
+                      
+                      {/* Badges */}
+                      <div className="flex flex-wrap gap-2 mb-4">
+                        {person.seniority && (
+                          <Badge className="bg-orange-100 text-orange-800 border-orange-200 font-medium">
+                            {formatFieldName(person.seniority)}
+                          </Badge>
+                        )}
+                        {person.email_status && (
+                          <Badge variant="outline" className={`${
+                            person.email_status === 'verified' 
+                              ? 'bg-green-50 text-green-700 border-green-200' 
+                              : 'bg-yellow-50 text-yellow-700 border-yellow-200'
+                          }`}>
+                            Email: {person.email_status}
+                          </Badge>
+                        )}
+                      </div>
+
+                      {/* Location & Contact Info */}
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
+                        {(person.city || person.state || person.country) && (
+                          <div className="flex items-center space-x-2">
+                            <MapPin className="h-4 w-4 text-slate-500" />
+                            <span className="text-slate-700">
+                              {[person.city, person.state, person.country].filter(Boolean).join(', ')}
+                            </span>
+                          </div>
+                        )}
+                        {person.email && person.email !== "email_not_unlocked@domain.com" && (
+                          <div className="flex items-center space-x-2">
+                            <span className="text-slate-500">✉</span>
+                            <span className="text-slate-700">{person.email}</span>
+                          </div>
+                        )}
+                        {person.revealed_for_current_team && (
+                          <div className="flex items-center space-x-2">
+                            <span className="w-2 h-2 bg-green-500 rounded-full"></span>
+                            <span className="text-green-700 text-xs">Revealed Contact</span>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Detailed Information Sections */}
+                <div className="p-6 space-y-6">
+                  
+                  {/* Departments and Functions */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    {person.departments && person.departments.length > 0 && (
+                      <div>
+                        <h4 className="text-sm font-semibold text-slate-700 mb-3 flex items-center">
+                          <Building2 className="h-4 w-4 mr-2 text-blue-600" />
+                          Departments
+                        </h4>
+                        <div className="flex flex-wrap gap-2">
+                          {person.departments.map((dept: string, idx: number) => (
+                            <Badge key={idx} variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">
+                              {formatFieldName(dept)}
+                            </Badge>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                    
+                    {person.functions && person.functions.length > 0 && (
+                      <div>
+                        <h4 className="text-sm font-semibold text-slate-700 mb-3 flex items-center">
+                          <Target className="h-4 w-4 mr-2 text-green-600" />
+                          Functions
+                        </h4>
+                        <div className="flex flex-wrap gap-2">
+                          {person.functions.map((func: string, idx: number) => (
+                            <Badge key={idx} variant="outline" className="bg-green-50 text-green-700 border-green-200">
+                              {formatFieldName(func)}
+                            </Badge>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Subdepartments */}
+                  {person.subdepartments && person.subdepartments.length > 0 && (
+                    <div>
+                      <h4 className="text-sm font-semibold text-slate-700 mb-3 flex items-center">
+                        <Users className="h-4 w-4 mr-2 text-purple-600" />
+                        Subdepartments
+                      </h4>
+                      <div className="flex flex-wrap gap-2">
+                        {person.subdepartments.map((subdept: string, idx: number) => (
+                          <Badge key={idx} variant="outline" className="bg-purple-50 text-purple-700 border-purple-200">
+                            {formatFieldName(subdept)}
+                          </Badge>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Employment History */}
+                  {person.employment_history && person.employment_history.length > 0 && (
+                    <div>
+                      <h4 className="text-sm font-semibold text-slate-700 mb-4 flex items-center">
+                        <TrendingUp className="h-4 w-4 mr-2 text-indigo-600" />
+                        Employment History ({person.employment_history.length} positions)
+                      </h4>
+                      <div className="space-y-3">
+                        {(expandedEmploymentHistory[person.id] 
+                          ? person.employment_history 
+                          : person.employment_history.slice(0, 2)
+                        ).map((job: any, idx: number) => (
+                          <div key={idx} className={`bg-slate-50 border-l-4 ${
+                            job.current ? 'border-green-500 bg-green-50' : 'border-slate-300'
+                          } p-4 rounded-r-lg`}>
+                            <div className="flex items-start justify-between">
+                              <div className="flex-1">
+                                <div className="flex items-center space-x-2 mb-1">
+                                  <h5 className="font-semibold text-slate-900">{job.title}</h5>
+                                  {job.current && (
+                                    <Badge className="bg-green-100 text-green-800 text-xs">Current</Badge>
+                                  )}
+                                </div>
+                                <p className="text-slate-700 font-medium mb-1">{job.organization_name}</p>
+                                <div className="flex items-center space-x-4 text-sm text-slate-600">
+                                  <span className="flex items-center">
+                                    <span className="w-2 h-2 bg-slate-400 rounded-full mr-2"></span>
+                                    {job.start_date ? new Date(job.start_date).toLocaleDateString('en-US', { 
+                                      year: 'numeric', 
+                                      month: 'short' 
+                                    }) : 'Unknown start'}
+                                  </span>
+                                  <span>→</span>
+                                  <span className="flex items-center">
+                                    <span className={`w-2 h-2 ${job.current ? 'bg-green-500' : 'bg-slate-400'} rounded-full mr-2`}></span>
+                                    {job.end_date ? new Date(job.end_date).toLocaleDateString('en-US', { 
+                                      year: 'numeric', 
+                                      month: 'short' 
+                                    }) : 'Present'}
+                                  </span>
+                                  {job.start_date && (job.end_date || job.current) && (
+                                    <span className="text-xs bg-slate-200 px-2 py-1 rounded">
+                                      {calculateDuration(job.start_date, job.end_date)}
+                                    </span>
+                                  )}
+                                </div>
+                                {job.description && (
+                                  <p className="text-sm text-slate-600 mt-2">{job.description}</p>
+                                )}
+                              </div>
+                            </div>
+                          </div>
+                        ))}
+                        {person.employment_history.length > 2 && (
+                          <button
+                            onClick={() => toggleEmploymentHistory(person.id)}
+                            className="w-full mt-3 px-4 py-2 text-sm font-medium text-indigo-600 bg-indigo-50 border border-indigo-200 rounded-lg hover:bg-indigo-100 transition-colors flex items-center justify-center space-x-2"
+                          >
+                            {expandedEmploymentHistory[person.id] ? (
+                              <>
+                                <span>Show Less</span>
+                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" />
+                                </svg>
+                              </>
+                            ) : (
+                              <>
+                                <span>View All {person.employment_history.length} Positions</span>
+                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                                </svg>
+                              </>
+                            )}
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  )}
+                  
+
+                  {/* Additional Metadata */}
+                  <div>
+                    <h4 className="text-sm font-semibold text-slate-700 mb-3 flex items-center">
+                      <Database className="h-4 w-4 mr-2 text-slate-600" />
+                      Additional Information
+                    </h4>
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 text-sm">
+                      <div className="bg-slate-50 p-3 rounded-lg">
+                        <span className="text-slate-600">Person ID:</span>
+                        <p className="font-mono text-xs text-slate-900 mt-1">{person.id}</p>
+                      </div>
+                      {person.intent_strength && (
+                        <div className="bg-slate-50 p-3 rounded-lg">
+                          <span className="text-slate-600">Intent Strength:</span>
+                          <p className="text-slate-900 font-medium mt-1">{person.intent_strength}</p>
+                        </div>
+                      )}
+                      {person.extrapolated_email_confidence && (
+                        <div className="bg-slate-50 p-3 rounded-lg">
+                          <span className="text-slate-600">Email Confidence:</span>
+                          <p className="text-slate-900 font-medium mt-1">{person.extrapolated_email_confidence}</p>
+                        </div>
+                      )}
+                      <div className="bg-slate-50 p-3 rounded-lg">
+                        <span className="text-slate-600">Show Intent:</span>
+                        <p className="text-slate-900 font-medium mt-1">{person.show_intent ? 'Yes' : 'No'}</p>
+                      </div>
+                      <div className="bg-slate-50 p-3 rounded-lg">
+                        <span className="text-slate-600">Email Catchall:</span>
+                        <p className="text-slate-900 font-medium mt-1">{person.email_domain_catchall ? 'Yes' : 'No'}</p>
+                      </div>
+                      {person.organization_id && (
+                        <div className="bg-slate-50 p-3 rounded-lg">
+                          <span className="text-slate-600">Org ID:</span>
+                          <p className="font-mono text-xs text-slate-900 mt-1">{person.organization_id}</p>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+        
+        {/* {talentAnalysisData.pagination && (
+          <div className="mt-6 text-center">
+            <p className="text-sm text-slate-600">
+              Showing {talentAnalysisData.pagination.per_page} of {talentAnalysisData.pagination.total_entries} people
+              (Page {talentAnalysisData.pagination.page} of {talentAnalysisData.pagination.total_pages})
+            </p>
+          </div>
+        )} */}
+      </div>
+    );
+  };
+
+  // Helper function to calculate duration between dates
+  const calculateDuration = (startDate: string, endDate?: string) => {
+    const start = new Date(startDate);
+    const end = endDate ? new Date(endDate) : new Date();
+    
+    const diffTime = Math.abs(end.getTime() - start.getTime());
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    const diffMonths = Math.floor(diffDays / 30);
+    const diffYears = Math.floor(diffMonths / 12);
+    
+    if (diffYears > 0) {
+      const remainingMonths = diffMonths % 12;
+      return `${diffYears}y ${remainingMonths > 0 ? remainingMonths + 'm' : ''}`.trim();
+    } else if (diffMonths > 0) {
+      return `${diffMonths}m`;
+    } else {
+      return `${diffDays}d`;
+    }
+  };
+
+  const renderTalentLeadershipAnalysis = () => {
+    if (!talentAnalysisData?.people) return null;
+    
+    const analysis = analyzeTalentData(talentAnalysisData);
+    if (!analysis) return null;
+
+    return (
+      <div className="space-y-6">
+        <Card className="bg-gradient-to-br from-purple-50 to-indigo-50 border-purple-200">
           <CardHeader>
             <CardTitle className="flex items-center space-x-3">
-              <Users className="h-6 w-6 text-blue-600" />
-              <span className="text-xl font-bold text-blue-900">Leadership Analysis</span>
+              <Award className="h-6 w-6 text-purple-600" />
+              <span className="text-xl font-bold text-purple-900">Leadership Analysis</span>
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div>
-                <h4 className="font-semibold text-blue-800 mb-3">Educational Background</h4>
-                <div className="space-y-2">
-                  <div className="flex justify-between items-center">
-                    <span className="text-sm text-blue-700">Top 50 Colleges %:</span>
-                    <span className="text-sm font-medium text-blue-900">{leadership_analysis.educational_background?.top_50_colleges_percentage || 0}%</span>
-                  </div>
-                  <div>
-                    <span className="text-sm text-blue-700">Top Universities:</span>
-                    <div className="mt-1 space-y-1">
-                      {(leadership_analysis.educational_background?.top_universities || []).map((uni: any, idx: number) => (
-                        <div key={idx} className="text-sm text-blue-900 bg-blue-50 p-2 rounded">
-                          <div className="font-medium">{uni.name}</div>
-                          <div className="text-xs text-blue-600">Employees: {uni.employee_count} | Ranking: {uni.ranking || "N/A"}</div>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {analysis.leadership.map((person: any) => (
+                <Card key={person.id} className="bg-white border-slate-200 shadow-sm">
+                  <CardContent className="p-4">
+                    <div className="flex items-start space-x-3">
+                      {person.photo_url ? (
+                        <img 
+                          src={person.photo_url} 
+                          alt={person.name}
+                          className="w-12 h-12 rounded-full object-cover"
+                        />
+                      ) : (
+                        <div className="w-12 h-12 bg-purple-100 rounded-full flex items-center justify-center">
+                          <Award className="h-6 w-6 text-purple-600" />
                         </div>
-                      ))}
-                    </div>
-                  </div>
-                </div>
-              </div>
-              
-              <div>
-                <h4 className="font-semibold text-blue-800 mb-3">Previous Companies</h4>
-                <div className="space-y-2">
-                  <div className="flex justify-between items-center">
-                    <span className="text-sm text-blue-700">Top 50 Companies %:</span>
-                    <span className="text-sm font-medium text-blue-900">{leadership_analysis.previous_companies?.top_50_companies_percentage || 0}%</span>
-                  </div>
-                  <div className="flex justify-between items-center">
-                    <span className="text-sm text-blue-700">Product Companies %:</span>
-                    <span className="text-sm font-medium text-blue-900">{leadership_analysis.previous_companies?.product_companies_percentage || 0}%</span>
-                  </div>
-                  <div className="flex justify-between items-center">
-                    <span className="text-sm text-blue-700">Service Companies %:</span>
-                    <span className="text-sm font-medium text-blue-900">{leadership_analysis.previous_companies?.service_companies_percentage || 0}%</span>
-                  </div>
-                  <div>
-                    <span className="text-sm text-blue-700">Top Source Companies:</span>
-                    <div className="mt-1 space-y-1">
-                      {(leadership_analysis.previous_companies?.top_source_companies || []).map((company: any, idx: number) => (
-                        <div key={idx} className="text-sm text-blue-900 bg-blue-50 p-2 rounded">
-                          <div className="font-medium">{company.name}</div>
-                          <div className="text-xs text-blue-600">Type: {company.company_type} | Industry: {company.industry}</div>
+                      )}
+                      <div className="flex-1 min-w-0">
+                        <h4 className="font-semibold text-slate-900 truncate">{person.name}</h4>
+                        <p className="text-sm text-slate-600 truncate">{person.title}</p>
+                        <div className="flex items-center gap-2 mt-2">
+                          <Badge variant="outline" className="text-xs bg-purple-50 border-purple-200">
+                            {formatFieldName(person.seniority)}
+                          </Badge>
+                          {person.linkedin_url && (
+                            <a 
+                              href={person.linkedin_url} 
+                              target="_blank" 
+                              rel="noopener noreferrer"
+                              className="text-purple-600 hover:text-purple-800"
+                            >
+                              <ExternalLink className="h-3 w-3" />
+                            </a>
+                          )}
                         </div>
-                      ))}
+                        {person.employment_history && person.employment_history.length > 0 && (
+                          <div className="mt-2">
+                            <p className="text-xs text-slate-500">Previous:</p>
+                            {person.employment_history
+                              .filter((job: any) => !job.current)
+                              .slice(0, 2)
+                              .map((job: any, idx: number) => (
+                                <p key={idx} className="text-xs text-slate-600 truncate">
+                                  {job.title} at {job.organization_name}
+                                </p>
+                              ))}
+                          </div>
+                        )}
+                      </div>
                     </div>
-                  </div>
-                </div>
-              </div>
+                  </CardContent>
+                </Card>
+              ))}
             </div>
           </CardContent>
         </Card>
@@ -902,10 +1266,11 @@ const CompanyProfilePage = () => {
   };
 
   const renderTalentTechnicalAnalysis = () => {
-    if (!talentAnalysisData?.technical_analysis) return null;
+    if (!talentAnalysisData?.people) return null;
     
-    const { technical_analysis } = talentAnalysisData;
-    
+    const analysis = analyzeTalentData(talentAnalysisData);
+    if (!analysis) return null;
+
     return (
       <div className="space-y-6">
         <Card className="bg-gradient-to-br from-green-50 to-emerald-50 border-green-200">
@@ -916,118 +1281,57 @@ const CompanyProfilePage = () => {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div>
-                <h4 className="font-semibold text-green-800 mb-3">Educational Background</h4>
-                <div className="space-y-2">
-                  <div className="flex justify-between items-center">
-                    <span className="text-sm text-green-700">Top 50 Colleges %:</span>
-                    <span className="text-sm font-medium text-green-900">{technical_analysis.educational_background?.top_50_colleges_percentage || 0}%</span>
-                  </div>
-                  <div>
-                    <span className="text-sm text-green-700">Top Universities:</span>
-                    <div className="mt-1 space-y-1">
-                      {(technical_analysis.educational_background?.top_universities || []).map((uni: any, idx: number) => (
-                        <div key={idx} className="text-sm text-green-900 bg-green-50 p-2 rounded">
-                          <div className="font-medium">{uni.name}</div>
-                          <div className="text-xs text-green-600">Employees: {uni.employee_count} | Ranking: {uni.ranking || "N/A"}</div>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {analysis.technical.map((person: any) => (
+                <Card key={person.id} className="bg-white border-slate-200 shadow-sm pt-5">
+                  <CardContent className="p-4">
+                    <div className="flex items-start space-x-3">
+                      {person.photo_url ? (
+                        <img 
+                          src={person.photo_url} 
+                          alt={person.name}
+                          className="w-12 h-12 rounded-full object-cover"
+                        />
+                      ) : (
+                        <div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center">
+                          <Zap className="h-6 w-6 text-green-600" />
                         </div>
-                      ))}
-                    </div>
-                  </div>
-                </div>
-              </div>
-              
-              <div>
-                <h4 className="font-semibold text-green-800 mb-3">Previous Companies</h4>
-                <div className="space-y-2">
-                  <div className="flex justify-between items-center">
-                    <span className="text-sm text-green-700">Top 50 Companies %:</span>
-                    <span className="text-sm font-medium text-green-900">{technical_analysis.previous_companies?.top_50_companies_percentage || 0}%</span>
-                  </div>
-                  <div className="flex justify-between items-center">
-                    <span className="text-sm text-green-700">Product Companies %:</span>
-                    <span className="text-sm font-medium text-green-900">{technical_analysis.previous_companies?.product_companies_percentage || 0}%</span>
-                  </div>
-                  <div className="flex justify-between items-center">
-                    <span className="text-sm text-green-700">Service Companies %:</span>
-                    <span className="text-sm font-medium text-green-900">{technical_analysis.previous_companies?.service_companies_percentage || 0}%</span>
-                  </div>
-                  <div>
-                    <span className="text-sm text-green-700">Top Source Companies:</span>
-                    <div className="mt-1 space-y-1">
-                      {(technical_analysis.previous_companies?.top_source_companies || []).map((company: any, idx: number) => (
-                        <div key={idx} className="text-sm text-green-900 bg-green-50 p-2 rounded">
-                          <div className="font-medium">{company.name}</div>
-                          <div className="text-xs text-green-600">Type: {company.company_type} | Industry: {company.industry}</div>
+                      )}
+                      <div className="flex-1 min-w-0">
+                        <h4 className="font-semibold text-slate-900 truncate">{person.name}</h4>
+                        <p className="text-sm text-slate-600 truncate">{person.title}</p>
+                        <div className="flex items-center gap-2 mt-2">
+                          <Badge variant="outline" className="text-xs bg-green-50 border-green-200">
+                            {formatFieldName(person.seniority)}
+                          </Badge>
+                          {person.linkedin_url && (
+                            <a 
+                              href={person.linkedin_url} 
+                              target="_blank" 
+                              rel="noopener noreferrer"
+                              className="text-green-600 hover:text-green-800"
+                            >
+                              <ExternalLink className="h-3 w-3" />
+                            </a>
+                          )}
                         </div>
-                      ))}
+                        {person.functions && person.functions.length > 0 && (
+                          <div className="mt-2 flex flex-wrap gap-1">
+                            {person.functions.map((func: string) => (
+                              <Badge key={func} variant="secondary" className="text-xs">
+                                {formatFieldName(func)}
+                              </Badge>
+                            ))}
+                          </div>
+                        )}
+                      </div>
                     </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-    );
-  };
-
-  const renderTalentInsights = () => {
-    if (!talentAnalysisData?.key_insights) return null;
-    
-    const { key_insights, comparative_analysis } = talentAnalysisData;
-    
-    return (
-      <div className="space-y-6">
-        <Card className="bg-gradient-to-br from-purple-50 to-indigo-50 border-purple-200">
-          <CardHeader>
-            <CardTitle className="flex items-center space-x-3">
-              <Target className="h-6 w-6 text-purple-600" />
-              <span className="text-xl font-bold text-purple-900">Key Insights</span>
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {Object.entries(key_insights || {}).map(([key, value]) => (
-                <div key={key} className="bg-white rounded-lg p-4 border border-purple-200">
-                  <h4 className="font-semibold text-purple-800 mb-2">{formatFieldName(key)}</h4>
-                  <p className="text-sm text-purple-700">{value?.toString() || "N/A"}</p>
-                </div>
+                  </CardContent>
+                </Card>
               ))}
             </div>
           </CardContent>
         </Card>
-
-        {comparative_analysis && comparative_analysis.length > 0 && (
-          <Card className="bg-gradient-to-br from-amber-50 to-orange-50 border-amber-200">
-            <CardHeader>
-              <CardTitle className="flex items-center space-x-3">
-                <TrendingUp className="h-6 w-6 text-amber-600" />
-                <span className="text-xl font-bold text-amber-900">Comparative Analysis</span>
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                {comparative_analysis.map((comparison: any, idx: number) => (
-                  <div key={idx} className="bg-white rounded-lg p-4 border border-amber-200">
-                    <h4 className="font-semibold text-amber-800 mb-2">{comparison.competitor_name}</h4>
-                    <div className="space-y-2">
-                      <div>
-                        <span className="text-sm font-medium text-amber-700">Similar Patterns:</span>
-                        <p className="text-sm text-amber-900 mt-1">{comparison.similar_patterns}</p>
-                      </div>
-                      <div>
-                        <span className="text-sm font-medium text-amber-700">Key Differences:</span>
-                        <p className="text-sm text-amber-900 mt-1">{comparison.key_differences}</p>
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
-        )}
       </div>
     );
   };

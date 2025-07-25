@@ -1,20 +1,24 @@
-import React, { useState } from 'react';
-import { Modal } from './Modal';
-import { Button } from '../botton';
-import { Plus, FolderOpen } from 'lucide-react';
+/* eslint-disable @typescript-eslint/no-explicit-any */
+import React, { useState } from "react";
+import { Modal } from "./Modal";
+import { Button } from "../botton";
+import { Plus, FolderOpen } from "lucide-react";
 
 interface CollectionModalProps {
   isOpen: boolean;
   onClose: () => void;
   selectedCompanies: any[];
-  onAddToCollection: (collectionId: string | null, collectionName?: string) => void;
+  onAddToCollection: (
+    collectionId: string | null,
+    collectionName?: string
+  ) => void;
 }
 
 // Mock collections data
 const mockCollections = [
-  { id: '1', name: 'Target Companies Q1', count: 12 },
-  { id: '2', name: 'SaaS Prospects', count: 8 },
-  { id: '3', name: 'Manufacturing Targets', count: 15 },
+  { id: "1", name: "Target Companies Q1", count: 12 },
+  { id: "2", name: "SaaS Prospects", count: 8 },
+  { id: "3", name: "Manufacturing Targets", count: 15 },
 ];
 
 export const CollectionModal: React.FC<CollectionModalProps> = ({
@@ -24,7 +28,7 @@ export const CollectionModal: React.FC<CollectionModalProps> = ({
   onAddToCollection,
 }) => {
   const [showCreateNew, setShowCreateNew] = useState(false);
-  const [newCollectionName, setNewCollectionName] = useState('');
+  const [newCollectionName, setNewCollectionName] = useState("");
 
   const handleAddToExisting = (collectionId: string) => {
     onAddToCollection(collectionId);
@@ -34,7 +38,7 @@ export const CollectionModal: React.FC<CollectionModalProps> = ({
   const handleCreateNew = () => {
     if (newCollectionName.trim()) {
       onAddToCollection(null, newCollectionName.trim());
-      setNewCollectionName('');
+      setNewCollectionName("");
       setShowCreateNew(false);
       onClose();
     }
@@ -49,7 +53,9 @@ export const CollectionModal: React.FC<CollectionModalProps> = ({
           </p>
           <div className="space-y-1">
             {selectedCompanies.map((company, idx) => (
-              <p key={idx} className="text-sm text-gray-600">• {company.name}</p>
+              <p key={idx} className="text-sm text-gray-600">
+                • {company.name}
+              </p>
             ))}
           </div>
         </div>
@@ -57,7 +63,9 @@ export const CollectionModal: React.FC<CollectionModalProps> = ({
         {!showCreateNew ? (
           <div className="space-y-3">
             <div>
-              <h3 className="text-sm font-medium text-gray-700 mb-2">Add to existing collection:</h3>
+              <h3 className="text-sm font-medium text-gray-700 mb-2">
+                Add to existing collection:
+              </h3>
               <div className="space-y-2">
                 {mockCollections.map((collection) => (
                   <button
@@ -67,9 +75,13 @@ export const CollectionModal: React.FC<CollectionModalProps> = ({
                   >
                     <div className="flex items-center gap-3">
                       <FolderOpen className="w-4 h-4 text-gray-500" />
-                      <span className="text-sm font-medium text-gray-900">{collection.name}</span>
+                      <span className="text-sm font-medium text-gray-900">
+                        {collection.name}
+                      </span>
                     </div>
-                    <span className="text-xs text-gray-500">{collection.count} companies</span>
+                    <span className="text-xs text-gray-500">
+                      {collection.count} companies
+                    </span>
                   </button>
                 ))}
               </div>

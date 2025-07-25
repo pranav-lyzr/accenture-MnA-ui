@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { useState, useEffect, useRef } from "react";
 import Layout from "../components/layout/Layout";
 import PromptCard from "../components/search/PromptCard";
@@ -10,9 +11,14 @@ import {
   TrendingUp,
   Building2,
   Search as SearchIcon,
+  Calendar,
 } from "lucide-react";
 import { SearchResponse, CompanyDetails } from "../types/search";
-import api, { Prompt, PromptHistoryItem, PromptResponse } from "../services/api";
+import api, {
+  Prompt,
+  PromptHistoryItem,
+  PromptResponse,
+} from "../services/api";
 import LoadingPopup from "../components/ui/LoadingPopup";
 import { Button } from "../components/botton";
 import {
@@ -37,6 +43,12 @@ import {
   SelectValue,
 } from "../components/ui/select";
 import { AgentSwitcher } from "../components/search/AgentSwitcher";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "../components/ui/tooltip";
 
 // Extend Prompt interface to include agent-ID
 interface ExtendedPrompt extends Prompt {
@@ -99,13 +111,17 @@ const Search = () => {
           if (promptHistories.length > 0) {
             // Sort by timestamp descending to get the latest
             const latest = promptHistories.sort(
-              (a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()
+              (a, b) =>
+                new Date(b.timestamp).getTime() -
+                new Date(a.timestamp).getTime()
             )[0];
             formattedResults[prompt.index] = {
               title: latest.title,
               response: latest.raw_response,
               companies: latest.raw_response.map((c: CompanyDetails) => c.name), // Map to company names
-              sources: latest.raw_response.flatMap((c: CompanyDetails) => c.sources || []),
+              sources: latest.raw_response.flatMap(
+                (c: CompanyDetails) => c.sources || []
+              ),
               validation_warnings: latest.validation_warnings,
               document_id: latest.document_id,
             };
@@ -149,7 +165,7 @@ const Search = () => {
     try {
       setRunningPrompts((prev) => new Set([...prev, index]));
       const result: PromptResponse = await api.runPrompt(index, customMessage);
-  
+
       // Defensive check for raw_response
       if (!result.raw_response || !Array.isArray(result.raw_response)) {
         console.error("Invalid raw_response in API result:", {
@@ -164,20 +180,24 @@ const Search = () => {
         });
         return;
       }
-  
+
       // Log the result for debugging
       console.debug("runPrompt result:", { index, result });
-  
+
       // Convert PromptResponse to SearchResponse format
       const searchResponse: SearchResponse = {
         title: result.title,
         response: result.raw_response,
-        companies: result.raw_response.map((c: CompanyDetails) => c.name || "Unknown"),
-        sources: result.sources || result.raw_response.flatMap((c: CompanyDetails) => c.sources || []),
+        companies: result.raw_response.map(
+          (c: CompanyDetails) => c.name || "Unknown"
+        ),
+        sources:
+          result.sources ||
+          result.raw_response.flatMap((c: CompanyDetails) => c.sources || []),
         validation_warnings: result.validation_warnings || [],
         document_id: result.document_id,
       };
-  
+
       // Update results state immediately with runPrompt result
       setResults((prev) => {
         const updated = {
@@ -187,7 +207,7 @@ const Search = () => {
         console.debug("Updated results state:", { index, updated });
         return updated;
       });
-  
+
       // Reset selected history to ensure latest result is shown
       setSelectedHistory((prev) => {
         const updated = {
@@ -197,11 +217,11 @@ const Search = () => {
         console.debug("Updated selectedHistory state:", { index, updated });
         return updated;
       });
-  
+
       // Set active tab to ensure UI switches to the correct tab
       setActiveTab(index);
       console.debug("Set activeTab:", { index });
-  
+
       // Fetch prompt history to keep dropdown updated, but don't block UI
       const historyData = await api.getPromptHistory();
       setPromptHistory(historyData);
@@ -210,7 +230,9 @@ const Search = () => {
       console.error("Error running prompt:", error, { index, customMessage });
       toast({
         title: "Error",
-        description: `Failed to run prompt: ${error.message || "Unknown error"}`,
+        description: `Failed to run prompt: ${
+          error.message || "Unknown error"
+        }`,
         variant: "destructive",
       });
     } finally {
@@ -242,13 +264,16 @@ const Search = () => {
         );
         if (promptHistories.length > 0) {
           const latest = promptHistories.sort(
-            (a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()
+            (a, b) =>
+              new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()
           )[0];
           formattedResults[prompt.index] = {
             title: latest.title,
             response: latest.raw_response,
             companies: latest.raw_response.map((c: CompanyDetails) => c.name),
-            sources: latest.raw_response.flatMap((c: CompanyDetails) => c.sources || []),
+            sources: latest.raw_response.flatMap(
+              (c: CompanyDetails) => c.sources || []
+            ),
             validation_warnings: latest.validation_warnings,
             document_id: latest.document_id,
           };
@@ -405,10 +430,14 @@ const Search = () => {
     // Construct a strict sentence-based prompt for the API
     const messageParts: string[] = [];
     if (estimatedRevenue > 0) {
-      messageParts.push(`estimated revenue must be strictly below $${estimatedRevenue}M`);
+      messageParts.push(
+        `estimated revenue must be strictly below $${estimatedRevenue}M`
+      );
     }
     if (employeeCount > 0) {
-      messageParts.push(`employee count must be strictly below ${employeeCount}`);
+      messageParts.push(
+        `employee count must be strictly below ${employeeCount}`
+      );
     }
     if (location.trim() !== "") {
       messageParts.push(`location must be exactly in ${location}`);
@@ -454,8 +483,12 @@ const Search = () => {
         [index]: {
           title: historyItem.title,
           response: historyItem.raw_response,
-          companies: historyItem.raw_response.map((c: CompanyDetails) => c.name),
-          sources: historyItem.raw_response.flatMap((c: CompanyDetails) => c.sources || []),
+          companies: historyItem.raw_response.map(
+            (c: CompanyDetails) => c.name
+          ),
+          sources: historyItem.raw_response.flatMap(
+            (c: CompanyDetails) => c.sources || []
+          ),
           validation_warnings: historyItem.validation_warnings,
           document_id: historyItem.document_id,
         },
@@ -554,25 +587,19 @@ const Search = () => {
     }
   };
 
-  const totalResults = Object.values(results).reduce(
-    (total, result) => total + (result.response?.length || 0),
-    0
-  );
-
   const handleShowResults = (index: number) => {
     setActiveTab(index);
     setTimeout(() => {
-      resultsRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+      resultsRef.current?.scrollIntoView({
+        behavior: "smooth",
+        block: "start",
+      });
     }, 100); // Delay to ensure UI updates before scrolling
   };
 
   return (
     <Layout>
-      <div
-        className={`transition-all duration-300 p-6 ${
-          chatDrawerOpen ? "pr-[350px] sm:pr-[400px]" : ""
-        }`}
-      >
+      <div className={`transition-all duration-300 p-6 `}>
         <LoadingPopup
           isOpen={loading || runningPrompts.size > 0 || redoingSearch}
           message={
@@ -589,8 +616,8 @@ const Search = () => {
           <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
             <div className="space-y-2">
               <div className="flex items-center gap-3">
-                <div className="p-2 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-xl">
-                  <SearchIcon className="h-6 w-6 text-white" />
+                <div className="p-3 bg-gray-100 rounded-xl">
+                  <SearchIcon className="h-8 w-8 text-gray-600" />
                 </div>
                 <div>
                   <h1 className="text-3xl font-bold bg-gradient-to-r from-gray-900 to-gray-700 bg-clip-text text-transparent">
@@ -601,49 +628,22 @@ const Search = () => {
                   </p>
                 </div>
               </div>
-
-              {/* Stats Overview */}
-              {totalResults > 0 && (
-                <div className="flex items-center gap-6 mt-4">
-                  <div className="flex items-center gap-2 text-sm">
-                    <TrendingUp className="h-4 w-4 text-green-600" />
-                    <span className="font-medium text-gray-900">
-                      {Object.keys(results).length}
-                    </span>
-                    <span className="text-gray-600">active searches</span>
-                  </div>
-                </div>
-              )}
             </div>
-
-            <Button
-              onClick={handleRedoAllSearch}
-              disabled={redoingSearch}
-              className="flex items-center gap-3 bg-purple-500 text-white px-6 py-3 rounded-xl shadow-lg hover:shadow-xl transition-all duration-200 font-medium"
-            >
-              <RefreshCw
-                size={18}
-                className={redoingSearch ? "animate-spin" : ""}
-              />
-              Redo All Searches
-            </Button>
           </div>
         </div>
 
         {/* Info Banner */}
-        <div className="mb-8 bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-xl p-6 shadow-sm">
-          <div className="flex items-start gap-4">
-            <div className="p-2 bg-blue-100 rounded-lg">
-              <AlertCircle className="h-5 w-5 text-blue-600" />
-            </div>
+        <div className="mb-8 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl p-3 shadow-sm">
+          <div className="flex items-center gap-3">
             <div className="flex-1">
-              <h3 className="text-lg font-semibold text-blue-900 mb-2">
+              <h3 className="text-base font-semibold text-blue-900 mb-1 flex items-center gap-2">
+                <AlertCircle className="h-4 w-4 text-blue-600 flex-shrink-0" />{" "}
                 AI-Powered Search Intelligence
               </h3>
-              <p className="text-blue-700 leading-relaxed">
-                Execute individual search agents to explore specific criteria, or
-                use the "Redo All" button to regenerate a comprehensive merger
-                candidate report using the latest market intelligence.
+              <p className="text-blue-700 text-sm leading-relaxed pl-6">
+                Execute individual search agents to explore specific criteria,
+                or use the "Redo All" button to regenerate a comprehensive
+                merger candidate report using the latest market intelligence.
               </p>
             </div>
           </div>
@@ -682,35 +682,50 @@ const Search = () => {
           </div>
         )}
 
-        
-
         {/* Results Section */}
         {activeTab !== null && results[activeTab] && (
           <div ref={resultsRef} className="space-y-8">
-            <div className="flex items-center gap-3">
-              <div className="p-2 bg-gradient-to-br from-green-500 to-emerald-600 rounded-lg">
-                <TrendingUp className="h-5 w-5 text-white" />
+            <div className="flex items-center justify-between gap-3">
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-gray-100 rounded-lg">
+                  <TrendingUp className="h-5 w-5 text-gray-600" />
+                </div>
+                <h2 className="text-2xl font-bold text-gray-900">
+                  Search Results
+                </h2>
+                <div className="">
+                  {/* <div className="text-gray-500 mb-2">Select Agent</div> */}
+                  <AgentSwitcher
+                    agents={prompts.map((p) => ({
+                      index: p.index,
+                      title: p.title,
+                      agentId: p["agent-ID"],
+                    }))}
+                    activeAgentIndex={activeTab}
+                    onSelectAgent={setActiveTab}
+                  />
+                </div>
               </div>
-              <h2 className="text-2xl font-bold text-gray-900">Search Results</h2>
-              <div className="">
-                {/* <div className="text-gray-500 mb-2">Select Agent</div> */}
-                <AgentSwitcher
-                  agents={prompts.map((p) => ({
-                    index: p.index,
-                    title: p.title,
-                    agentId: p["agent-ID"],
-                  }))}
-                  activeAgentIndex={activeTab}
-                  onSelectAgent={setActiveTab}
+              <Button
+                onClick={handleRedoAllSearch}
+                disabled={redoingSearch}
+                className="flex items-center gap-3 cursor-pointer px-6 py-3 rounded-xl shadow-lg hover:shadow-xl transition-all duration-200 font-medium bg-purple-600 hover:bg-purple-700 text-white"
+              >
+                <RefreshCw
+                  size={18}
+                  className={redoingSearch ? "animate-spin" : ""}
                 />
-              </div>
+                Redo All Searches
+              </Button>
             </div>
             {/* Agent Switcher */}
-            
+
             {/* Tab Header */}
             <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 mb-6">
               <div>
-                <h3 className="text-xl font-bold text-gray-900 mb-2">{results[activeTab].title}</h3>
+                <h3 className="text-xl font-bold text-gray-900 mb-2">
+                  {results[activeTab].title}
+                </h3>
                 <div className="flex items-center gap-4 text-sm text-gray-600">
                   <span className="flex items-center gap-2">
                     <Building2 className="h-4 w-4" />
@@ -721,21 +736,42 @@ const Search = () => {
               <div className="flex items-center gap-3">
                 <Select
                   value={selectedHistory[activeTab] || "latest"}
-                  onValueChange={(value) => handleHistorySelect(activeTab, value === "latest" ? null : value)}
+                  onValueChange={(value) =>
+                    handleHistorySelect(
+                      activeTab,
+                      value === "latest" ? null : value
+                    )
+                  }
                 >
                   <SelectTrigger className="w-[220px] bg-white border-gray-200 hover:border-indigo-300 focus:border-indigo-500 h-10">
-                    <SelectValue placeholder="Select history" />
+                    <div className="flex items-center gap-2">
+                      <Calendar className="h-4 w-4 text-gray-500" />
+                      <SelectValue placeholder="Select history" />
+                    </div>
                   </SelectTrigger>
                   <SelectContent className="bg-white border border-gray-200 shadow-lg">
-                    <SelectItem value="latest" className="font-medium">Latest Result</SelectItem>
+                    <SelectItem value="latest" className="font-medium">
+                      Latest Result
+                    </SelectItem>
                     {promptHistory
                       .filter((h) => h.prompt_index === activeTab)
-                      .sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime())
+                      .sort(
+                        (a, b) =>
+                          new Date(b.timestamp).getTime() -
+                          new Date(a.timestamp).getTime()
+                      )
                       .map((history) => (
-                        <SelectItem key={history.timestamp} value={history.timestamp} className="text-sm">
+                        <SelectItem
+                          key={history.timestamp}
+                          value={history.timestamp}
+                          className="text-sm"
+                        >
                           {new Date(history.timestamp).toLocaleString()}{" "}
                           {history.custom_message && (
-                            <span className="text-gray-500 ml-2" title={history.custom_message}>
+                            <span
+                              className="text-gray-500 ml-2"
+                              title={history.custom_message}
+                            >
                               - {history.custom_message.substring(0, 30)}...
                             </span>
                           )}
@@ -747,17 +783,21 @@ const Search = () => {
                   onClick={() => exportTabToExcel(activeTab)}
                   className="flex items-center gap-2 bg-gray-200 hover:bg-gray-300 text-gray-800 px-4 py-2 rounded-lg transition-colors duration-200"
                   variant="secondary"
-                  disabled={!results[activeTab].response || results[activeTab].response.length === 0}
+                  disabled={
+                    !results[activeTab].response ||
+                    results[activeTab].response.length === 0
+                  }
                 >
                   <Download className="h-4 w-4" />
                   Export
                 </Button>
                 <Button
+                  variant="secondary"
                   onClick={() => handleRedo(activeTab)}
-                  className="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg transition-colors duration-200"
+                  className="flex items-center gap-2 cursor-pointer px-4 py-2 rounded-lg transition-colors duration-200"
                 >
                   <RefreshCw className="h-4 w-4" />
-                  Re Run
+                  Re Run Searches
                 </Button>
               </div>
             </div>
@@ -774,7 +814,7 @@ const Search = () => {
                     },
                   }))
                 }
-                className="flex items-center gap-3 text-emerald-800 font-medium mb-3 focus:outline-none group"
+                className="flex items-center gap-3 text-emerald-800 font-medium  focus:outline-none group"
               >
                 <div className="p-1.5 bg-emerald-100 rounded-lg group-hover:bg-emerald-200 transition-colors duration-200">
                   <Sliders size={18} />
@@ -788,7 +828,7 @@ const Search = () => {
               </button>
 
               {refinementStates[activeTab]?.isOpen && (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 p-4 bg-white rounded-lg border border-emerald-100">
+                <div className="mt-3 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 p-4 bg-white rounded-lg border border-emerald-100">
                   <div className="space-y-2">
                     <label className="text-sm font-medium text-gray-700 flex items-center gap-2">
                       <TrendingUp className="h-4 w-4 text-emerald-600" />
@@ -800,7 +840,9 @@ const Search = () => {
                         min="0"
                         max="500"
                         step="10"
-                        value={refinementStates[activeTab]?.estimatedRevenue || 0}
+                        value={
+                          refinementStates[activeTab]?.estimatedRevenue || 0
+                        }
                         onChange={(e) =>
                           setRefinementStates((prev) => ({
                             ...prev,
@@ -858,115 +900,320 @@ const Search = () => {
             </div>
 
             {/* Results Table */}
-            {results[activeTab].response && results[activeTab].response.length > 0 && (
-              <div className="bg-white rounded-lg border border-gray-200 overflow-hidden shadow-sm">
-                <div className="relative overflow-auto max-h-[600px]">
-                  <Table className="w-full">
-                    <TableHeader className="bg-gray-50 sticky top-0 z-50">
-                      <TableRow>
-                        {getTableHeaders(results[activeTab].response).map((header, index) => (
-                          <TableHead
-                            key={header}
-                            onClick={() => handleSort(header)}
-                            className={`whitespace-nowrap cursor-pointer hover:bg-gray-100 transition-colors duration-150 font-semibold text-gray-900 py-4 bg-gray-50 ${
-                              index === 0 ? 'sticky left-0 z-60 shadow-[2px_0_5px_rgba(0,0,0,0.1)]' : ''
-                            }`}
-                          >
-                            <div className="flex items-center gap-1">
-                              {header.replace(/_/g, " ").charAt(0).toUpperCase() + header.replace(/_/g, " ").slice(1)}
-                              {renderSortIcon(header)}
-                            </div>
-                          </TableHead>
-                        ))}
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {getSortedCompanies(results[activeTab].response).map((company, i) => (
-                        <TableRow key={i} className="border-b hover:bg-gray-50 transition-colors duration-150">
-                          {getTableHeaders(results[activeTab].response).map((key, index) => (
-                            <TableCell key={key}  className={`align-top py-4 text-sm bg-white ${
-                              index === 0 ? 'sticky left-0 z-40 shadow-[2px_0_5px_rgba(0,0,0,0.1)]' : ' bg-gray-50'
-                            }`}>
-                              {(() => {
-                                const value: any = company[key];
-                                if (key === "name") {
-                                  return <span className="font-semibold text-gray-900">{value || "N/A"}</span>;
-                                } else if (key === "domain_name" && value) {
-                                  return (
-                                    <a
-                                      href={`https://${value}`} 
-                                      target="_blank"
-                                      rel="noopener noreferrer"
-                                      className="text-indigo-600 hover:text-indigo-800 hover:underline font-medium"
-                                    >
-                                      {value}
-                                    </a>
-                                  );
-                                } else if (key === "leadership") {
-                                  if (!value || !Array.isArray(value)) return <span className="text-gray-400">N/A</span>;
-                                  return (
-                                    <div className="space-y-1">
-                                      {value.slice(0, 2).map((leader: { name: string; title?: string }, idx: number) => (
-                                        <div key={idx} className="text-sm">
-                                          <span className="font-medium">{leader.name}</span>
-                                          {leader.title && <span className="text-gray-500 ml-1">({leader.title})</span>}
-                                        </div>
-                                      ))}
-                                      {value.length > 2 && (
-                                        <span className="text-xs text-gray-400">+{value.length - 2} more</span>
-                                      )}
-                                    </div>
-                                  );
-                                } else if (key === "sources" && Array.isArray(value)) {
-                                  return (
-                                    <span className="inline-flex items-center px-2 py-1 rounded-full text-xs text-blue-800">
-                                      {value.length} sources
-                                    </span>
-                                  );
-                                } else if (Array.isArray(value)) {
-                                  return value.length > 0 ? (
-                                    <div className="flex flex-wrap gap-1">
-                                      {value.slice(0, 3).map((item: string, idx: number) => (
-                                        <span
-                                          key={idx}
-                                          className="inline-flex items-center px-2 py-1 rounded-full text-xs text-gray-700"
-                                        >
-                                          {item}
-                                        </span>
-                                      ))}
-                                      {value.length > 3 && (
-                                        <span className="text-xs text-gray-400">+{value.length - 3} more</span>
-                                      )}
-                                    </div>
-                                  ) : (
-                                    <span className="text-gray-400">N/A</span>
-                                  );
-                                } else if (value === undefined || value === null) {
-                                  return <span className="text-gray-400">N/A</span>;
-                                } else if (typeof value === "object") {
-                                  return <span className="text-xs text-gray-500">{JSON.stringify(value)}</span>;
-                                } else {
-                                  return <span className="text-gray-900">{value.toString()}</span>;
-                                }
-                              })()}
-                            </TableCell>
-                          ))}
-                          
+            {results[activeTab].response &&
+              results[activeTab].response.length > 0 && (
+                <div className="bg-white rounded-lg border border-gray-200 overflow-hidden shadow-sm">
+                  <div className="overflow-auto max-h-[600px]">
+                    <Table className="w-full ">
+                      <TableHeader className="bg-gray-50 sticky top-0 z-50 border-b border-gray-200">
+                        <TableRow className="border-gray-200">
+                          {getTableHeaders(results[activeTab].response).map(
+                            (header, index) => (
+                              <TableHead
+                                key={header}
+                                onClick={() => handleSort(header)}
+                                className={`whitespace-nowrap cursor-pointer hover:bg-gray-100 transition-colors duration-150 font-semibold text-gray-900 py-4 bg-gray-50 max-w-[170px] sticky top-0 ${
+                                  index === 0
+                                    ? "sticky left-0 z-60 shadow-[2px_0_5px_rgba(0,0,0,0.1)]"
+                                    : ""
+                                }`}
+                              >
+                                <TooltipProvider>
+                                  <Tooltip>
+                                    <TooltipTrigger asChild>
+                                      <div className="flex items-center gap-1 truncate">
+                                        {header
+                                          .replace(/_/g, " ")
+                                          .charAt(0)
+                                          .toUpperCase() +
+                                          header.replace(/_/g, " ").slice(1)}
+                                        {renderSortIcon(header)}
+                                      </div>
+                                    </TooltipTrigger>
+                                    <TooltipContent>
+                                      <p>{header.replace(/_/g, " ")}</p>
+                                    </TooltipContent>
+                                  </Tooltip>
+                                </TooltipProvider>
+                              </TableHead>
+                            )
+                          )}
                         </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
+                      </TableHeader>
+                      <TableBody>
+                        {getSortedCompanies(results[activeTab].response).map(
+                          (company, i) => (
+                            <TableRow
+                              key={i}
+                              className="border-b border-gray-200 hover:bg-gray-50 transition-colors duration-150"
+                            >
+                              {getTableHeaders(results[activeTab].response).map(
+                                (key, index) => (
+                                  <TableCell
+                                    key={key}
+                                    className={`align-top py-4 text-sm max-w-[170px] ${
+                                      index === 0
+                                        ? "sticky left-0 z-40 bg-gray-50 shadow-[4px_0_8px_rgba(0,0,0,0.15)]"
+                                        : "bg-white"
+                                    }`}
+                                  >
+                                    {(() => {
+                                      const value: any = company[key];
+                                      if (key === "name") {
+                                        return (
+                                          <TooltipProvider>
+                                            <Tooltip>
+                                              <TooltipTrigger asChild>
+                                                <span className="font-semibold text-gray-900 truncate block">
+                                                  {value || "N/A"}
+                                                </span>
+                                              </TooltipTrigger>
+                                              <TooltipContent>
+                                                <p>{value || "N/A"}</p>
+                                              </TooltipContent>
+                                            </Tooltip>
+                                          </TooltipProvider>
+                                        );
+                                      } else if (
+                                        key === "domain_name" &&
+                                        value
+                                      ) {
+                                        return (
+                                          <TooltipProvider>
+                                            <Tooltip>
+                                              <TooltipTrigger asChild>
+                                                <a
+                                                  href={`https://${value}`}
+                                                  target="_blank"
+                                                  rel="noopener noreferrer"
+                                                  className="text-indigo-600 hover:text-indigo-800 hover:underline font-medium truncate block"
+                                                >
+                                                  {value}
+                                                </a>
+                                              </TooltipTrigger>
+                                              <TooltipContent>
+                                                <p>{value}</p>
+                                              </TooltipContent>
+                                            </Tooltip>
+                                          </TooltipProvider>
+                                        );
+                                      } else if (key === "leadership") {
+                                        if (!value || !Array.isArray(value))
+                                          return (
+                                            <span className="text-gray-400">
+                                              N/A
+                                            </span>
+                                          );
+                                        return (
+                                          <TooltipProvider>
+                                            <Tooltip>
+                                              <TooltipTrigger asChild>
+                                                <div className="max-w-[170px]">
+                                                  <div className="text-sm truncate">
+                                                    {value.slice(0, 1).map(
+                                                      (
+                                                        leader: {
+                                                          name: string;
+                                                          title?: string;
+                                                        },
+                                                        idx: number
+                                                      ) => (
+                                                        <span key={idx}>
+                                                          <span className="font-medium">
+                                                            {leader.name}
+                                                          </span>
+                                                          {leader.title && (
+                                                            <span className="text-gray-500 ml-1">
+                                                              ({leader.title})
+                                                            </span>
+                                                          )}
+                                                        </span>
+                                                      )
+                                                    )}
+                                                    {value.length > 1 && (
+                                                      <span className="text-xs text-gray-400 ml-1">
+                                                        +{value.length - 1} more
+                                                      </span>
+                                                    )}
+                                                  </div>
+                                                </div>
+                                              </TooltipTrigger>
+                                              <TooltipContent>
+                                                <p>
+                                                  {value
+                                                    .map(
+                                                      (leader: any) =>
+                                                        `${leader.name}${
+                                                          leader.title
+                                                            ? ` (${leader.title})`
+                                                            : ""
+                                                        }`
+                                                    )
+                                                    .join(", ")}
+                                                </p>
+                                              </TooltipContent>
+                                            </Tooltip>
+                                          </TooltipProvider>
+                                        );
+                                      } else if (
+                                        key === "key_clients" &&
+                                        Array.isArray(value)
+                                      ) {
+                                        return (
+                                          <TooltipProvider>
+                                            <Tooltip>
+                                              <TooltipTrigger asChild>
+                                                <div className="max-w-[170px]">
+                                                  <div className="text-sm truncate">
+                                                    {value
+                                                      .slice(0, 1)
+                                                      .map(
+                                                        (
+                                                          client: string,
+                                                          idx: number
+                                                        ) => (
+                                                          <span
+                                                            key={idx}
+                                                            className="text-gray-700"
+                                                          >
+                                                            {client}
+                                                          </span>
+                                                        )
+                                                      )}
+                                                    {value.length > 1 && (
+                                                      <span className="text-xs text-gray-400 ml-1">
+                                                        +{value.length - 1} more
+                                                      </span>
+                                                    )}
+                                                  </div>
+                                                </div>
+                                              </TooltipTrigger>
+                                              <TooltipContent>
+                                                <p>{value.join(", ")}</p>
+                                              </TooltipContent>
+                                            </Tooltip>
+                                          </TooltipProvider>
+                                        );
+                                      } else if (
+                                        key === "sources" &&
+                                        Array.isArray(value)
+                                      ) {
+                                        return (
+                                          <TooltipProvider>
+                                            <Tooltip>
+                                              <TooltipTrigger asChild>
+                                                <span className="inline-flex items-center px-2 py-1 rounded-full text-xs text-blue-800 truncate">
+                                                  {value.length} sources
+                                                </span>
+                                              </TooltipTrigger>
+                                              <TooltipContent>
+                                                <p>{value.length} sources</p>
+                                              </TooltipContent>
+                                            </Tooltip>
+                                          </TooltipProvider>
+                                        );
+                                      } else if (Array.isArray(value)) {
+                                        return value.length > 0 ? (
+                                          <TooltipProvider>
+                                            <Tooltip>
+                                              <TooltipTrigger asChild>
+                                                <div className="flex flex-wrap gap-1 max-w-[170px]">
+                                                  {value
+                                                    .slice(0, 3)
+                                                    .map(
+                                                      (
+                                                        item: string,
+                                                        idx: number
+                                                      ) => (
+                                                        <span
+                                                          key={idx}
+                                                          className="inline-flex items-center px-2 py-1 rounded-full text-xs text-gray-700 truncate"
+                                                        >
+                                                          {item}
+                                                        </span>
+                                                      )
+                                                    )}
+                                                  {value.length > 3 && (
+                                                    <span className="text-xs text-gray-400">
+                                                      +{value.length - 3} more
+                                                    </span>
+                                                  )}
+                                                </div>
+                                              </TooltipTrigger>
+                                              <TooltipContent>
+                                                <p>{value.join(", ")}</p>
+                                              </TooltipContent>
+                                            </Tooltip>
+                                          </TooltipProvider>
+                                        ) : (
+                                          <span className="text-gray-400">
+                                            N/A
+                                          </span>
+                                        );
+                                      } else if (
+                                        value === undefined ||
+                                        value === null
+                                      ) {
+                                        return (
+                                          <span className="text-gray-400">
+                                            N/A
+                                          </span>
+                                        );
+                                      } else if (typeof value === "object") {
+                                        return (
+                                          <TooltipProvider>
+                                            <Tooltip>
+                                              <TooltipTrigger asChild>
+                                                <span className="text-xs text-gray-500 truncate block">
+                                                  {JSON.stringify(value)}
+                                                </span>
+                                              </TooltipTrigger>
+                                              <TooltipContent>
+                                                <p>{JSON.stringify(value)}</p>
+                                              </TooltipContent>
+                                            </Tooltip>
+                                          </TooltipProvider>
+                                        );
+                                      } else {
+                                        return (
+                                          <TooltipProvider>
+                                            <Tooltip>
+                                              <TooltipTrigger asChild>
+                                                <span className="text-gray-900 truncate block">
+                                                  {value.toString()}
+                                                </span>
+                                              </TooltipTrigger>
+                                              <TooltipContent>
+                                                <p>{value.toString()}</p>
+                                              </TooltipContent>
+                                            </Tooltip>
+                                          </TooltipProvider>
+                                        );
+                                      }
+                                    })()}
+                                  </TableCell>
+                                )
+                              )}
+                            </TableRow>
+                          )
+                        )}
+                      </TableBody>
+                    </Table>
+                  </div>
                 </div>
-              </div>
-            )}
-            
+              )}
           </div>
         )}
-        {activeTab !== null && results[activeTab] && (!results[activeTab].response || results[activeTab].response.length === 0) && (
-          <div className="text-center py-8 bg-white rounded-lg border border-gray-200 shadow-sm">
-            <p className="text-gray-500">No results available for this search.</p>
-          </div>
-        )}
+        {activeTab !== null &&
+          results[activeTab] &&
+          (!results[activeTab].response ||
+            results[activeTab].response.length === 0) && (
+            <div className="text-center py-8 bg-white rounded-lg border border-gray-200 shadow-sm">
+              <p className="text-gray-500">
+                No results available for this search.
+              </p>
+            </div>
+          )}
 
         <CompanyDetailsDialog
           open={openDialog}
@@ -974,14 +1221,11 @@ const Search = () => {
           company={selectedCompany}
         />
 
-        {!chatDrawerOpen &&
-          !(loading || runningPrompts.size > 0 || redoingSearch) && (
-            <ChatButton
-              onClick={toggleChatDrawer}
-              isActive={false}
-              isLoading={loading || runningPrompts.size > 0 || redoingSearch}
-            />
-          )}
+        <ChatButton
+          onClick={toggleChatDrawer}
+          isActive={chatDrawerOpen}
+          isLoading={loading || runningPrompts.size > 0 || redoingSearch}
+        />
 
         <ChatDrawer
           open={chatDrawerOpen}

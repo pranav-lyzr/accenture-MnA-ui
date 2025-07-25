@@ -4,7 +4,6 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
-  DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "../ui/dropdown-menu";
@@ -34,10 +33,10 @@ export function AgentSwitcher({
           <ChevronsUpDown className="ml-2 h-4 w-4" />
         </Button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent align="start" className="min-w-56 rounded-lg bg-white z-[100] border p-2 border-gray-200">
-        <DropdownMenuLabel className="text-xs text-muted-foreground">
-          Search Agents
-        </DropdownMenuLabel>
+      <DropdownMenuContent
+        align="start"
+        className="min-w-56 rounded-lg bg-white z-[100] border p-2 border-gray-200"
+      >
         {agents.map((agent) => (
           <DropdownMenuItem
             key={agent.index}

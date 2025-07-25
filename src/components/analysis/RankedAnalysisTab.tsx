@@ -171,50 +171,36 @@ const RankedAnalysisTab = ({ companies, categorizeRevenue }: RankedAnalysisTabPr
         </div>
       </div>
 
-      {/* Filters and Selection - Fixed Layout */}
-      <div className="relative">
-        {/* Sticky Filters Container */}
-        <div className="sticky top-4 z-50 mb-8">
-          <div className="bg-white rounded-xl border border-gray-200 p-6">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">Filter Companies</h3>
-            <CompanyFilters
-              companies={companies}
-              onFilterChange={setFilters}
-              categorizeRevenue={categorizeRevenue}
-            />
-          </div>
+      {/* Company Selection Section */}
+      <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+        <div className="flex items-center justify-between mb-6">
+          <h3 className="text-lg font-semibold text-gray-900">Select Companies for Analysis</h3>
+          <Button
+            onClick={handleRunAnalysis}
+            disabled={selectedCompanies.length === 0 || isAnalyzing}
+            className="bg-purple-700 text-white shadow-lg"
+          >
+            {isAnalyzing ? (
+              <>
+                <div className="animate-spin mr-2 h-4 w-4 border-2 border-white border-t-transparent rounded-full"></div>
+                Analyzing...
+              </>
+            ) : (
+              <>
+                <BarChart className="h-4 w-4 mr-2" />
+                Run AI Analysis
+              </>
+            )}
+          </Button>
         </div>
-        
-        {/* Company Selection Section */}
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-          <div className="flex items-center justify-between mb-6">
-            <h3 className="text-lg font-semibold text-gray-900">Select Companies for Analysis</h3>
-            <Button
-              onClick={handleRunAnalysis}
-              disabled={selectedCompanies.length === 0 || isAnalyzing}
-              className="bg-purple-700 text-white shadow-lg"
-            >
-              {isAnalyzing ? (
-                <>
-                  <div className="animate-spin mr-2 h-4 w-4 border-2 border-white border-t-transparent rounded-full"></div>
-                  Analyzing...
-                </>
-              ) : (
-                <>
-                  <BarChart className="h-4 w-4 mr-2" />
-                  Run AI Analysis
-                </>
-              )}
-            </Button>
-          </div>
-          <CompanySelection
-            companies={companies}
-            filters={filters}
-            selectedCompanies={selectedCompanies}
-            onSelectCompanies={setSelectedCompanies}
-            categorizeRevenue={categorizeRevenue}
-          />
-        </div>
+        <CompanySelection
+          companies={companies}
+          filters={filters}
+          selectedCompanies={selectedCompanies}
+          onSelectCompanies={setSelectedCompanies}
+          onFilterChange={setFilters}
+          categorizeRevenue={categorizeRevenue}
+        />
       </div>
 
       {/* Error Message */}

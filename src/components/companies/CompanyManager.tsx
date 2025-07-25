@@ -57,7 +57,7 @@ const CompanyManager: React.FC<CompanyManagerProps> = ({ companies, onStatusUpda
   const [statusFilter, setStatusFilter] = useState<
     "all" | "shortlisted" | "rejected" | "pending"
   >("all");
-  const [viewMode, setViewMode] = useState<"cards" | "table">("cards");
+
   const [sortBy, setSortBy] = useState<"name" | "status" | "updated">("updated");
   const [sortOrder, setSortOrder] = useState<"asc" | "desc">("desc");
   const navigate = useNavigate();
@@ -230,38 +230,18 @@ const CompanyManager: React.FC<CompanyManagerProps> = ({ companies, onStatusUpda
 
   return (
     <div className="space-y-6">
-      {/* Search and View Toggle */}
-      <div className="flex flex-col sm:flex-row gap-4">
-        <div className="relative flex-1">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
-          <Input
-            type="text"
-            placeholder="Search companies by name..."
-            className="pl-10 bg-white border-gray-200 focus:border-purple-500 focus:ring-purple-500"
-            value={searchTerm}
-            onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-              setSearchTerm(e.target.value)
-            }
-          />
-        </div>
-        <div className="flex items-center gap-2">
-          <Button
-            variant={viewMode === "cards" ? "default" : "outline"}
-            onClick={() => setViewMode("cards")}
-            className="flex items-center gap-2"
-          >
-            <List className="h-4 w-4" />
-            Cards
-          </Button>
-          <Button
-            variant={viewMode === "table" ? "default" : "outline"}
-            onClick={() => setViewMode("table")}
-            className="flex items-center gap-2"
-          >
-            <FileText className="h-4 w-4" />
-            Table
-          </Button>
-        </div>
+      {/* Search */}
+      <div className="relative flex-1 max-w-md">
+        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+        <Input
+          type="text"
+          placeholder="Search companies by name..."
+          className="pl-10 bg-white border-gray-200 focus:border-purple-500 focus:ring-purple-500"
+          value={searchTerm}
+          onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+            setSearchTerm(e.target.value)
+          }
+        />
       </div>
 
       {/* Filters and Sort */}
@@ -368,7 +348,7 @@ const CompanyManager: React.FC<CompanyManagerProps> = ({ companies, onStatusUpda
           <h3 className="text-lg font-semibold text-gray-700 mb-2">No Companies Found</h3>
           <p className="text-gray-500">No companies match your current filter criteria.</p>
         </div>
-      ) : viewMode === "cards" ? (
+      ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
           {filteredCompanies.map((company) => (
             <CompanyActionCard
@@ -379,81 +359,6 @@ const CompanyManager: React.FC<CompanyManagerProps> = ({ companies, onStatusUpda
               onViewDetails={handleViewDetails}
             />
           ))}
-        </div>
-      ) : (
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead className="bg-gradient-to-r from-gray-50 to-slate-50 border-b border-gray-200">
-                <tr>
-                  <th className="px-6 py-4 text-left text-sm font-semibold text-gray-900">Company</th>
-                  <th className="px-6 py-4 text-left text-sm font-semibold text-gray-900">Status</th>
-                  <th className="px-6 py-4 text-left text-sm font-semibold text-gray-900">Revenue</th>
-                  <th className="px-6 py-4 text-left text-sm font-semibold text-gray-900">Notes</th>
-                  <th className="px-6 py-4 text-left text-sm font-semibold text-gray-900">Actions</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-100">
-                {filteredCompanies.map((company, index) => (
-                  <tr key={company.id} className={`hover:bg-gray-50 transition-colors ${index % 2 === 0 ? 'bg-white' : 'bg-gray-50/50'}`}>
-                    <td className="px-6 py-4">
-                      <div className="font-semibold text-gray-900">{company.name}</div>
-                      <div className="text-sm text-gray-500">{company.details.domain_name || 'N/A'}</div>
-                    </td>
-                    <td className="px-6 py-4">
-                      <span
-                        className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                          company.status === "shortlisted"
-                            ? "bg-emerald-100 text-emerald-800"
-                            : company.status === "rejected"
-                            ? "bg-red-100 text-red-800"
-                            : "bg-amber-100 text-amber-800"
-                        }`}
-                      >
-                        {company.status.charAt(0).toUpperCase() + company.status.slice(1)}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4 text-sm text-gray-900">
-                      {company.details.revenue || "N/A"}
-                    </td>
-                    <td className="px-6 py-4">
-                      <div className="text-sm text-gray-900 max-w-xs truncate">
-                        {company.notes || "No notes"}
-                      </div>
-                    </td>
-                    <td className="px-6 py-4">
-                      <div className="flex items-center gap-2">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => handleStatusChange(company.id, "shortlisted")}
-                          className="text-emerald-600 border-emerald-200 hover:bg-emerald-50"
-                        >
-                          <Check className="h-4 w-4" />
-                        </Button>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => handleStatusChange(company.id, "rejected")}
-                          className="text-red-600 border-red-200 hover:bg-red-50"
-                        >
-                          <X className="h-4 w-4" />
-                        </Button>
-                        {/* <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => handleViewDetails(company.details)}
-                          className="text-gray-600 border-gray-200 hover:bg-gray-50"
-                        >
-                          <FileText className="h-4 w-4" />
-                        </Button> */}
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
         </div>
       )}
 

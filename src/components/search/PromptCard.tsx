@@ -1,4 +1,10 @@
-import { Play, Loader2, ExternalLink } from 'lucide-react';
+import { Play, Loader2, ExternalLink } from "lucide-react";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "../ui/tooltip";
 
 interface PromptCardProps {
   index: number;
@@ -20,15 +26,24 @@ const PromptCard = ({
   onShowResults,
 }: PromptCardProps) => {
   return (
-    <div className="bg-white rounded-xl shadow-sm border border-gray-100 hover:shadow-md hover:border-gray-200 transition-all duration-200 overflow-hidden flex flex-col">
+    <div className="bg-white rounded-xl shadow-sm border border-gray-100 hover:shadow-md hover:border-gray-200 transition-all duration-200 overflow-hidden flex flex-col h-35">
       {/* Main Content */}
       <div className="p-4 flex-1 flex flex-col">
         {/* Header Section */}
         <div className="flex items-start justify-between gap-2 mb-2">
           <div className="flex-1 min-w-0">
-            <h3 className="text-lg font-semibold text-gray-900 leading-tight mb-1">
-              {title}
-            </h3>
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <h3 className="text-lg font-semibold text-gray-900 leading-tight mb-1 truncate">
+                    {title}
+                  </h3>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>{title}</p>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
             <p className="text-sm text-gray-600 line-clamp-2">
               Agent #{index + 1} • Ready to execute
             </p>
@@ -42,8 +57,8 @@ const PromptCard = ({
               transition-all duration-200 min-w-[100px] justify-center
               ${
                 isRunning
-                  ? 'bg-gray-100 text-gray-500 cursor-not-allowed'
-                  : 'bg-purple-600 text-white hover:bg-purple-700 active:bg-purple-800 shadow-sm hover:shadow-md'
+                  ? "bg-gray-100 text-gray-500 cursor-not-allowed"
+                  : "bg-gray-200 text-gray-800 hover:bg-gray-300 active:bg-gray-400 shadow-sm hover:shadow-md"
               }
             `}
           >
@@ -60,15 +75,15 @@ const PromptCard = ({
             )}
           </button>
         </div>
-        
+
         {/* Action Links */}
         {(hasResults || agentId) && (
-          <div className="flex flex-wrap gap-2 pt-2 border-t border-gray-100 mt-2">
+          <div className="flex justify-between items-center pt-2 border-t border-gray-100 mt-auto">
             {hasResults && onShowResults && (
               <button
                 type="button"
                 onClick={() => onShowResults(index)}
-                className="inline-flex items-center gap-2 text-sm text-blue-600 hover:text-blue-700 hover:underline font-medium transition-colors pr-5"
+                className="inline-flex items-center gap-2 text-sm text-gray-600 hover:text-purple-600 font-medium transition-colors cursor-pointer"
               >
                 Results Available
                 <ExternalLink size={12} />
@@ -79,7 +94,7 @@ const PromptCard = ({
                 href={`https://studio.lyzr.ai/agent-create/${agentId}`}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex items-center gap-2 text-sm text-purple-600 hover:text-purple-700 hover:underline font-medium transition-colors"
+                className="inline-flex items-center gap-2 text-sm text-gray-600 hover:text-purple-600 font-medium transition-colors"
               >
                 View in Lyzr
                 <ExternalLink size={12} />

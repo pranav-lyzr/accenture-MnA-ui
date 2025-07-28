@@ -1,6 +1,6 @@
 // Base API URL - would typically come from environment variables
-const API_BASE_URL = 'https://accenture-mna.ca.lyzr.app';
-// const API_BASE_URL = "http://localhost:8002";
+// const API_BASE_URL = 'https://accenture-mna.ca.lyzr.app';
+const API_BASE_URL = "http://localhost:8002";
 export interface Prompt {
   index: number;
   title: string;
@@ -652,6 +652,21 @@ const api = {
     });
     if (!response.ok) throw new Error("Failed to send chat message");
     return await response.json();
+  },
+
+  // Delete a chat session
+  deleteChatSession: async (session_id: string): Promise<void> => {
+    console.log('API: Deleting session with ID:', session_id);
+    const response = await fetch(`${API_BASE_URL}/chat/sessions/${session_id}`, {
+      method: "DELETE",
+      headers: { "Content-Type": "application/json" },
+    });
+    console.log('API: Delete response status:', response.status);
+    if (!response.ok) {
+      console.error('API: Delete failed with status:', response.status);
+      throw new Error("Failed to delete chat session");
+    }
+    console.log('API: Successfully deleted session:', session_id);
   },
 };
 

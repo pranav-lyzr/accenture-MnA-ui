@@ -10,6 +10,7 @@ import {
   Plus,
   Send,
   Sparkles,
+  Trash2,
 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import ReactMarkdown from "react-markdown";
@@ -48,22 +49,24 @@ const Chat = () => {
   const [newSessionPending, setNewSessionPending] = useState(false);
   const [selectedCompanies, setSelectedCompanies] = useState<any[]>([]);
   const [showCollectionModal, setShowCollectionModal] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [sessionToDelete, setSessionToDelete] = useState<ChatSessionSummary | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   // Parse extracted JSON from response
   const parseExtractedJson = (response: string) => {
     try {
-      // Look for JSON between triple backticks or within the response
-      const jsonMatch =
-        response.match(/```json\s*([\s\S]*?)\s*```/) ||
-        response.match(/```\s*([\s\S]*?)\s*```/);
-
-      if (jsonMatch) {
-        return JSON.parse(jsonMatch[1]);
+      // Look for JSON between triple backticks
+      const jsonMatch = response.match(/```json\s*([\s\S]*?)\s*```/);
+      
+      if (jsonMatch && jsonMatch[1]) {
+        const parsed = JSON.parse(jsonMatch[1].trim());
+        return parsed;
       }
 
-      // Try to parse the entire response as JSON
-      return JSON.parse(response);
+      // If no code block, try to parse the entire response as JSON
+      const parsed = JSON.parse(response.trim());
+      return parsed;
     } catch (e) {
       return null;
     }
@@ -131,6 +134,19 @@ const Chat = () => {
   const handleSendMessage = async (message?: string) => {
     const messageToSend = message || inputMessage;
     if (!messageToSend.trim() || isLoading) return;
+    
+    // Add user message immediately to the UI
+    const userMessage: ChatMessage = {
+      id: Date.now(),
+      session_id: currentSessionId || Date.now().toString(),
+      user_id: USER_ID,
+      agent_id: AGENT_ID,
+      message: messageToSend,
+      response: "",
+      timestamp: new Date().toISOString(),
+    };
+    
+    setMessages(prev => [...prev, userMessage]);
     setIsLoading(true);
     setInputMessage("");
     setSelectedCompanies([]);
@@ -159,19 +175,18 @@ const Chat = () => {
       const msgs = await api.getChatMessages(response.session_id);
       setMessages(msgs);
     } catch (e) {
-      setMessages((prev) => [
-        ...prev,
-        {
-          id: -1,
-          session_id: currentSessionId || "",
-          user_id: USER_ID,
-          agent_id: AGENT_ID,
-          message: "",
-          response:
-            "I apologize, but I encountered an error processing your request. Please try again.",
-          timestamp: new Date().toISOString(),
-        },
-      ]);
+      // Add error message to the conversation
+      const errorMessage: ChatMessage = {
+        id: Date.now() + 1,
+        session_id: currentSessionId || "",
+        user_id: USER_ID,
+        agent_id: AGENT_ID,
+        message: "",
+        response:
+          "I apologize, but I encountered an error processing your request. Please try again.",
+        timestamp: new Date().toISOString(),
+      };
+      setMessages(prev => [...prev, errorMessage]);
     } finally {
       setIsLoading(false);
     }
@@ -186,6 +201,47 @@ const Chat = () => {
 
   const handleSuggestionClick = (suggestion: string) => {
     handleSendMessage(suggestion);
+  };
+
+  const handleDeleteSession = (session: ChatSessionSummary, e: React.MouseEvent) => {
+    e.stopPropagation(); // Prevent triggering the session selection
+    console.log('Setting session to delete:', session);
+    setSessionToDelete(session);
+    setShowDeleteConfirm(true);
+    setShowChatHistory(false); // Close the dropdown
+  };
+
+  const confirmDeleteSession = async () => {
+    if (!sessionToDelete) return;
+    
+    console.log('Deleting session:', sessionToDelete.session_id);
+    console.log('Session to delete:', sessionToDelete);
+    
+    try {
+      await api.deleteChatSession(sessionToDelete.session_id);
+      console.log('Successfully deleted session:', sessionToDelete.session_id);
+      
+      // Remove from local state
+      setChatSessions(prev => {
+        console.log('Previous sessions:', prev);
+        const filtered = prev.filter(s => s.session_id !== sessionToDelete.session_id);
+        console.log('Filtered sessions:', filtered);
+        return filtered;
+      });
+      
+      // If the deleted session was the current one, clear it
+      if (currentSessionId === sessionToDelete.session_id) {
+        setCurrentSessionId(null);
+        setMessages([]);
+        setNewSessionPending(false);
+      }
+      
+      setShowDeleteConfirm(false);
+      setSessionToDelete(null);
+    } catch (error) {
+      console.error('Failed to delete session:', error);
+      // You could add a toast notification here for error handling
+    }
   };
 
   const handleCompanySelect = (company: any) => {
@@ -227,7 +283,7 @@ const Chat = () => {
   const renderMessageContent = (message: ChatMessage) => {
     const extractedJson = parseExtractedJson(message.response);
 
-    if (extractedJson) {
+    if (extractedJson && extractedJson.query_type) {
       switch (extractedJson.query_type) {
         case "COMPANY_SEARCH":
           return (
@@ -314,12 +370,18 @@ const Chat = () => {
                   <h3 className="font-semibold text-purple-900">AI Analysis</h3>
                 </div>
                 <p className="text-xs text-purple-700">
-                  <strong> Confidence:</strong> {extractedJson.confidence_level}
+                  <strong>Agent:</strong> {extractedJson.selected_agent} | <strong>Confidence:</strong> {extractedJson.confidence_level}
                 </p>
+                {extractedJson.reasoning && (
+                  <p className="text-xs text-purple-600 mt-1">
+                    <strong>Reasoning:</strong> {extractedJson.reasoning}
+                  </p>
+                )}
               </div>
               <GenericResponse
                 response={extractedJson.response}
                 followUpSuggestions={extractedJson.follow_up_suggestions}
+                onFollowUpClick={handleSuggestionClick}
               />
             </div>
           );
@@ -414,23 +476,34 @@ const Chat = () => {
                           No chat history yet
                         </p>
                       ) : (
-                        chatSessions.slice(0, 5).map((session) => (
-                          <button
+                        chatSessions.map((session) => (
+                          <div
                             key={session.session_id}
-                            onClick={() => selectChatSession(session)}
-                            className={`w-full text-left p-3 hover:bg-gray-50 transition-colors ${
+                            className={`flex items-center justify-between p-3 hover:bg-gray-50 transition-colors ${
                               currentSessionId === session.session_id
                                 ? "bg-purple-50 border border-purple-200"
                                 : ""
                             }`}
                           >
-                            <p className="text-sm font-medium text-gray-900 truncate">
-                              {session.first_message || "(No message)"}
-                            </p>
-                            <p className="text-xs text-gray-500 mt-1">
-                              {new Date(session.timestamp).toLocaleDateString()}
-                            </p>
-                          </button>
+                            <button
+                              onClick={() => selectChatSession(session)}
+                              className="flex-1 text-left min-w-0"
+                            >
+                              <p className="text-sm font-medium text-gray-900 truncate">
+                                {session.first_message || "(No message)"}
+                              </p>
+                              <p className="text-xs text-gray-500 mt-1">
+                                {new Date(session.timestamp).toLocaleDateString()}
+                              </p>
+                            </button>
+                            <button
+                              onClick={(e) => handleDeleteSession(session, e)}
+                              className="ml-2 p-1 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded transition-colors"
+                              title="Delete chat"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </button>
+                          </div>
                         ))
                       )}
                     </div>
@@ -598,6 +671,45 @@ const Chat = () => {
         selectedCompanies={selectedCompanies}
         onAddToCollection={handleAddToCollection}
       />
+
+              {/* Delete Confirmation Modal */}
+        {showDeleteConfirm && sessionToDelete && (
+          <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg shadow-xl max-w-md w-full mx-4">
+            <div className="p-6">
+              <div className="flex items-center gap-3 mb-4">
+                <div className="w-10 h-10 bg-red-100 rounded-full flex items-center justify-center">
+                  <Trash2 className="w-5 h-5 text-red-600" />
+                </div>
+                <div>
+                  <h3 className="text-lg font-semibold text-gray-900">Delete Chat</h3>
+                  <p className="text-sm text-gray-600">This action cannot be undone</p>
+                </div>
+              </div>
+              <p className="text-gray-700 mb-6">
+                Are you sure you want to delete the chat "{sessionToDelete.first_message || '(No message)'}"?
+              </p>
+              <div className="flex gap-3 justify-end">
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    setShowDeleteConfirm(false);
+                    setSessionToDelete(null);
+                  }}
+                >
+                  Cancel
+                </Button>
+                <Button
+                  onClick={confirmDeleteSession}
+                  className="bg-red-600 hover:bg-red-700 text-white"
+                >
+                  Delete
+                </Button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </Layout>
   );
 };

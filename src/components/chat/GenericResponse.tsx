@@ -37,7 +37,11 @@ export const GenericResponse: React.FC<GenericResponseProps> = ({
 
   const renderDetailedAnalysis = (detailedAnalysis: any) => {
     if (typeof detailedAnalysis === 'string') {
-      return <p className="text-gray-700 leading-relaxed">{detailedAnalysis}</p>;
+      return (
+        <div className="bg-gray-50 rounded-lg p-4">
+          <p className="text-gray-700 leading-relaxed whitespace-pre-line">{detailedAnalysis}</p>
+        </div>
+      );
     }
 
     return (

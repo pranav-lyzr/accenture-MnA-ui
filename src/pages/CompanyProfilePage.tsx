@@ -248,15 +248,15 @@ const CompanyProfilePage = () => {
       return (
         <div className="space-y-3">
           {value.map((item, idx) => (
-            <Card key={idx} className="bg-gradient-to-br from-slate-50 to-gray-50 border-slate-200 shadow-sm">
+            <Card key={idx} className="bg-white border border-gray-200 shadow-sm">
               <CardContent className="p-4">
                 <div className="space-y-2 pt-4">
                   {Object.entries(item).map(([k, v]) => (
                     <div key={k} className="flex justify-between items-start">
-                      <span className="text-sm font-medium text-slate-600">
+                      <span className="text-sm font-medium text-gray-600">
                         <b>{formatFieldName(k)}: </b>
                       </span>
-                      <span className="text-sm text-slate-900 font-medium text-right">
+                      <span className="text-sm text-gray-900 font-medium text-right">
                         {typeof v === "object" && v !== null ? (
                           <div>
                             {Object.entries(v).map(([subK, subV]) => (
@@ -280,7 +280,7 @@ const CompanyProfilePage = () => {
       return (
         <div className="flex flex-wrap gap-2">
           {value.map((item, idx) => (
-            <Badge key={idx} variant="secondary" className="bg-purple-100 text-purple-800 hover:bg-purple-200">
+            <Badge key={idx} variant="secondary" className="bg-gray-100 text-gray-800 hover:bg-gray-200">
               {item}
             </Badge>
           ))}
@@ -290,13 +290,13 @@ const CompanyProfilePage = () => {
   
     if (typeof value === "object" && value !== null) {
       return (
-        <Card className="bg-gradient-to-br from-slate-50 to-gray-50 border-slate-200">
+        <Card className="bg-white border border-gray-200 shadow-sm">
           <CardContent className="p-4">
             <div className="space-y-2 pt-4">
               {Object.entries(value).map(([k, v]) => (
                 <div key={k} className="flex justify-between items-start">
-                  <span className="text-sm font-medium text-slate-600">{formatFieldName(k)}:</span>
-                  <span className="text-sm text-slate-900 font-medium text-right">
+                  <span className="text-sm font-medium text-gray-600">{formatFieldName(k)}:</span>
+                  <span className="text-sm text-gray-900 font-medium text-right">
                     {typeof v === "object" && v !== null ? JSON.stringify(v) : v?.toString() || "N/A"}
                   </span>
                 </div>
@@ -307,7 +307,7 @@ const CompanyProfilePage = () => {
       );
     }
   
-    return <span className="text-slate-900 font-medium">{value.toString()}</span>;
+    return <span className="text-gray-900 font-medium">{value.toString()}</span>;
   };
 
   const renderAnalysisOverview = () => {
@@ -317,40 +317,40 @@ const CompanyProfilePage = () => {
     
     return (
       <div className="space-y-6">
-        <Card className="bg-gradient-to-br from-emerald-50 to-teal-100 border-emerald-200 shadow-lg">
+        <Card className="bg-white border border-gray-200 shadow-sm">
           <CardHeader>
             <CardTitle className="flex items-center space-x-3">
-              <div className="w-12 h-12 bg-emerald-600 rounded-xl flex items-center justify-center">
+              <div className="w-12 h-12 bg-gray-900 rounded-xl flex items-center justify-center">
                 <Award className="h-6 w-6 text-white" />
               </div>
               <div>
-                <h3 className="text-2xl font-bold text-emerald-900">Overall Rating</h3>
-                <p className="text-emerald-700">Acquisition Analysis Summary</p>
+                <h3 className="text-2xl font-bold text-gray-900">Overall Rating</h3>
+                <p className="text-gray-600">Acquisition Analysis Summary</p>
               </div>
             </CardTitle>
           </CardHeader>
           <CardContent>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               <div className="text-center">
-                <div className="w-20 h-20 bg-emerald-600 rounded-full flex items-center justify-center mx-auto mb-3">
+                <div className="w-20 h-20 bg-gray-900 rounded-full flex items-center justify-center mx-auto mb-3">
                   <span className="text-3xl font-bold text-white">{overall_rating?.score}</span>
                 </div>
-                <p className="font-semibold text-emerald-900">Score</p>
-                <p className="text-sm text-emerald-700">out of 5</p>
+                <p className="font-semibold text-gray-900">Score</p>
+                <p className="text-sm text-gray-600">out of 5</p>
               </div>
               <div className="text-center">
-                <div className="w-20 h-20 bg-gradient-to-br from-emerald-100 to-emerald-200 rounded-full flex items-center justify-center mx-auto mb-3">
-                  <Target className="h-8 w-8 text-emerald-600" />
+                <div className="w-20 h-20 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-3">
+                  <Target className="h-8 w-8 text-gray-600" />
                 </div>
-                <p className="font-semibold text-emerald-900">{overall_rating?.recommendation}</p>
-                <p className="text-sm text-emerald-700">Recommendation</p>
+                <p className="font-semibold text-gray-900">{overall_rating?.recommendation}</p>
+                <p className="text-sm text-gray-600">Recommendation</p>
               </div>
               <div className="text-center">
-                <div className="w-20 h-20 bg-gradient-to-br from-emerald-100 to-emerald-200 rounded-full flex items-center justify-center mx-auto mb-3">
-                  <TrendingUp className="h-8 w-8 text-emerald-600" />
+                <div className="w-20 h-20 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-3">
+                  <TrendingUp className="h-8 w-8 text-gray-600" />
                 </div>
-                <p className="font-semibold text-emerald-900">{overall_rating?.confidence_level}</p>
-                <p className="text-sm text-emerald-700">Confidence</p>
+                <p className="font-semibold text-gray-900">{overall_rating?.confidence_level}</p>
+                <p className="text-sm text-gray-600">Confidence</p>
               </div>
             </div>
           </CardContent>
@@ -358,25 +358,25 @@ const CompanyProfilePage = () => {
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {Object.entries(criteria_analysis || {}).map(([key, analysis]: [string, any]) => (
-            <Card key={key} className="bg-white border-slate-200 shadow-sm hover:shadow-md transition-shadow">
+            <Card key={key} className="bg-white border border-gray-200 shadow-sm hover:shadow-md transition-shadow">
               <CardHeader className="pb-3">
                 <CardTitle className="flex items-center justify-between">
-                  <span className="text-lg font-semibold text-slate-800">{formatFieldName(key)}</span>
+                  <span className="text-lg font-semibold text-gray-900">{formatFieldName(key)}</span>
                   <div className="flex items-center space-x-2">
-                    <div className="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center">
-                      <span className="text-sm font-bold text-blue-600">{analysis.rating}</span>
+                    <div className="w-8 h-8 bg-gray-100 rounded-lg flex items-center justify-center">
+                      <span className="text-sm font-bold text-gray-900">{analysis.rating}</span>
                     </div>
                   </div>
                 </CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="space-y-2">
-                  <p className="text-sm text-slate-600">{analysis.assessment}</p>
+                  <p className="text-sm text-gray-600">{analysis.assessment}</p>
                   {Object.entries(analysis).map(([subKey, subValue]) => {
                     if (subKey === "rating" || subKey === "assessment") return null;
                     return (
                       <div key={subKey} className="mt-2">
-                        <p className="text-xs font-medium text-slate-500 uppercase tracking-wide">{formatFieldName(subKey)}:</p>
+                        <p className="text-xs font-medium text-gray-500 uppercase tracking-wide">{formatFieldName(subKey)}:</p>
                         {renderValue(subValue)}
                       </div>
                     );
@@ -488,22 +488,23 @@ const CompanyProfilePage = () => {
   const renderAnalysisSection = () => {
     return (
       <div className="space-y-6">
-        <Card className="bg-gradient-to-br from-purple-50 to-indigo-50 border-purple-200">
+        <Card className="bg-white border border-gray-200 shadow-sm">
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
               <div className="flex items-center space-x-4 pt-4">
-                <div className="w-12 h-12 bg-purple-600 rounded-xl flex items-center justify-center">
+                <div className="w-12 h-12 bg-gray-900 rounded-xl flex items-center justify-center">
                   <Target className="h-6 w-6 text-white" />
                 </div>
                 <div>
-                  <h3 className="text-xl font-bold text-purple-900">Lyzr Analysis</h3>
-                  <p className="text-purple-700">AI-powered acquisition analysis and recommendations</p>
+                  <h3 className="text-xl font-bold text-gray-900">Lyzr Analysis</h3>
+                  <p className="text-gray-600">AI-powered acquisition analysis and recommendations</p>
                 </div>
               </div>
               <Button 
                 onClick={() => handleRefresh("analysis")} 
                 disabled={refreshing.analysis}
-                className="bg-purple-600 hover:bg-purple-700 text-white shadow-lg"
+                className="bg-gray-900 hover:bg-gray-800 text-white shadow-sm"
+                variant = "default2"
               >
                 {refreshing.analysis ? (
                   <Loader2 className="h-4 w-4 animate-spin mr-2" />
@@ -518,14 +519,14 @@ const CompanyProfilePage = () => {
 
         {analysisData ? (
           <Tabs defaultValue="overview" className="w-full">
-            <TabsList className="bg-white border border-slate-200 p-1">
-              <TabsTrigger value="overview" className="data-[state=active]:bg-purple-100 data-[state=active]:text-purple-700">
+            <TabsList className="bg-white border border-gray-200 p-1">
+              <TabsTrigger value="overview" className="data-[state=active]:bg-gray-100 data-[state=active]:text-gray-900">
                 Overview
               </TabsTrigger>
-              <TabsTrigger value="details" className="data-[state=active]:bg-purple-100 data-[state=active]:text-purple-700">
+              <TabsTrigger value="details" className="data-[state=active]:bg-gray-100 data-[state=active]:text-gray-900">
                 Detailed Analysis
               </TabsTrigger>
-              <TabsTrigger value="history" className="data-[state=active]:bg-purple-100 data-[state=active]:text-purple-700">
+              <TabsTrigger value="history" className="data-[state=active]:bg-gray-100 data-[state=active]:text-gray-900">
                 Analysis History
               </TabsTrigger>
             </TabsList>
@@ -580,7 +581,7 @@ const CompanyProfilePage = () => {
             </TabsContent>
           </Tabs>
         ) : (
-          <Card className="bg-gradient-to-br from-gray-50 to-slate-50 border-gray-200">
+          <Card className="bg-white border border-gray-200 shadow-sm pt-10">
             <CardContent className="p-12 text-center">
               <div className="w-16 h-16 bg-gray-100 rounded-2xl mx-auto mb-4 flex items-center justify-center">
                 <Target className="h-8 w-8 text-gray-600" />
@@ -654,22 +655,23 @@ const CompanyProfilePage = () => {
   const renderTalentAnalysisSection = () => {
     return (
       <div className="space-y-6">
-        <Card className="bg-gradient-to-br from-orange-50 to-amber-50 border-orange-200">
+        <Card className="bg-white border border-gray-200 shadow-sm">
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
               <div className="flex items-center space-x-4 pt-4">
-                <div className="w-12 h-12 bg-orange-600 rounded-xl flex items-center justify-center">
+                <div className="w-12 h-12 bg-gray-900 rounded-xl flex items-center justify-center">
                   <Users className="h-6 w-6 text-white" />
                 </div>
                 <div>
-                  <h3 className="text-xl font-bold text-orange-900">Talent Analysis</h3>
-                  <p className="text-orange-700">Employee data and workforce insights</p>
+                  <h3 className="text-xl font-bold text-gray-900">Talent Analysis</h3>
+                  <p className="text-gray-600">Employee data and workforce insights</p>
                 </div>
               </div>
               <Button 
                 onClick={() => handleRefresh("talent")} 
                 disabled={refreshing.talent}
-                className="bg-orange-600 hover:bg-orange-700 text-white shadow-lg"
+                className="bg-gray-900 hover:bg-gray-800 text-white shadow-sm"
+                variant="secondary"
               >
                 {refreshing.talent ? (
                   <Loader2 className="h-4 w-4 animate-spin mr-2" />
@@ -684,17 +686,17 @@ const CompanyProfilePage = () => {
 
         {talentAnalysisData ? (
           <Tabs defaultValue="overview" className="w-full">
-            <TabsList className="bg-white border border-slate-200 p-1">
-              <TabsTrigger value="overview" className="data-[state=active]:bg-orange-100 data-[state=active]:text-orange-700">
+            <TabsList className="bg-white border border-gray-200 p-1">
+              <TabsTrigger value="overview" className="data-[state=active]:bg-gray-100 data-[state=active]:text-gray-900">
                 Overview
               </TabsTrigger>
-              <TabsTrigger value="people" className="data-[state=active]:bg-orange-100 data-[state=active]:text-orange-700">
+              <TabsTrigger value="people" className="data-[state=active]:bg-gray-100 data-[state=active]:text-gray-900">
                 People
               </TabsTrigger>
-              <TabsTrigger value="leadership" className="data-[state=active]:bg-orange-100 data-[state=active]:text-orange-700">
+              <TabsTrigger value="leadership" className="data-[state=active]:bg-gray-100 data-[state=active]:text-gray-900">
                 Leadership
               </TabsTrigger>
-              <TabsTrigger value="technical" className="data-[state=active]:bg-orange-100 data-[state=active]:text-orange-700">
+              <TabsTrigger value="technical" className="data-[state=active]:bg-gray-100 data-[state=active]:text-gray-900">
                 Technical
               </TabsTrigger>
             </TabsList>
@@ -716,7 +718,7 @@ const CompanyProfilePage = () => {
             </TabsContent>
           </Tabs>
         ) : (
-          <Card className="bg-gradient-to-br from-gray-50 to-slate-50 border-gray-200">
+          <Card className="bg-white border border-gray-200 shadow-sm pt-10">
             <CardContent className="p-12 pt-5 text-center">
               <div className="w-16 h-16 bg-gray-100 rounded-2xl mx-auto mb-4 flex items-center justify-center">
                 <Users className="h-8 w-8 text-gray-600" />
@@ -740,89 +742,89 @@ const CompanyProfilePage = () => {
       <div className="space-y-6">
         <div className="flex justify-end">
           {!editingTalent ? (
-            <Button 
-              variant="outline"
-              size="sm"
-              onClick={() => setEditingTalent(true)}
-              className="border-orange-300 text-orange-700 hover:bg-orange-50 hover:border-orange-400 shadow-sm"
-            >
-              <Users className="h-3 w-3 mr-2" />
-              Human as Loop
-            </Button>
+                          <Button 
+                variant="outline"
+                size="sm"
+                onClick={() => setEditingTalent(true)}
+                className="border-gray-300 text-gray-700 hover:bg-gray-50 hover:border-gray-400 shadow-sm"
+              >
+                <Users className="h-3 w-3 mr-2" />
+                Human as Loop
+              </Button>
           ) : null}
         </div>
 
-        <Card className="bg-gradient-to-br from-orange-50 to-amber-100 border-orange-200 shadow-lg">
+        <Card className="bg-white border border-gray-200 shadow-sm">
           <CardHeader>
             <CardTitle className="flex items-center space-x-3">
-              <div className="w-12 h-12 bg-orange-600 rounded-xl flex items-center justify-center">
+              <div className="w-12 h-12 bg-gray-900 rounded-xl flex items-center justify-center">
                 <Building2 className="h-6 w-6 text-white" />
               </div>
               <div>
-                <h3 className="text-2xl font-bold text-orange-900">Talent Overview</h3>
-                <p className="text-orange-700">Workforce Analysis Summary</p>
+                <h3 className="text-2xl font-bold text-gray-900">Talent Overview</h3>
+                <p className="text-gray-600">Workforce Analysis Summary</p>
               </div>
             </CardTitle>
           </CardHeader>
           <CardContent>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
               <div className="text-center">
-                <div className="w-16 h-16 bg-orange-600 rounded-full flex items-center justify-center mx-auto mb-3">
+                <div className="w-16 h-16 bg-gray-900 rounded-full flex items-center justify-center mx-auto mb-3">
                   <span className="text-2xl font-bold text-white">{analysis.totalPeople}</span>
                 </div>
-                <p className="font-semibold text-orange-900">Total People</p>
-                <p className="text-sm text-orange-700">in database</p>
+                <p className="font-semibold text-gray-900">Total People</p>
+                <p className="text-sm text-gray-600">in database</p>
               </div>
               <div className="text-center">
-                <div className="w-16 h-16 bg-gradient-to-br from-orange-100 to-orange-200 rounded-full flex items-center justify-center mx-auto mb-3">
-                  <Users className="h-8 w-8 text-orange-600" />
+                <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-3">
+                  <Users className="h-8 w-8 text-gray-600" />
                 </div>
-                <p className="font-semibold text-orange-900">{analysis.leadership.length}</p>
-                <p className="text-sm text-orange-700">Leadership</p>
+                <p className="font-semibold text-gray-900">{analysis.leadership.length}</p>
+                <p className="text-sm text-gray-600">Leadership</p>
               </div>
               <div className="text-center">
-                <div className="w-16 h-16 bg-gradient-to-br from-orange-100 to-orange-200 rounded-full flex items-center justify-center mx-auto mb-3">
-                  <Zap className="h-8 w-8 text-orange-600" />
+                <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-3">
+                  <Zap className="h-8 w-8 text-gray-600" />
                 </div>
-                <p className="font-semibold text-orange-900">{analysis.technical.length}</p>
-                <p className="text-sm text-orange-700">Technical</p>
+                <p className="font-semibold text-gray-900">{analysis.technical.length}</p>
+                <p className="text-sm text-gray-600">Technical</p>
               </div>
               <div className="text-center">
-                <div className="w-16 h-16 bg-gradient-to-br from-orange-100 to-orange-200 rounded-full flex items-center justify-center mx-auto mb-3">
-                  <TrendingUp className="h-8 w-8 text-orange-600" />
+                <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-3">
+                  <TrendingUp className="h-8 w-8 text-gray-600" />
                 </div>
-                <p className="font-semibold text-orange-900">{analysis.pagination?.total_entries || 0}</p>
-                <p className="text-sm text-orange-700">Total Entries</p>
+                <p className="font-semibold text-gray-900">{analysis.pagination?.total_entries || 0}</p>
+                <p className="text-sm text-gray-600">Total Entries</p>
               </div>
             </div>
           </CardContent>
         </Card>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <Card className="bg-white border-slate-200 shadow-sm">
+          <Card className="bg-white border border-gray-200 shadow-sm">
             <CardHeader>
               <CardTitle className="flex items-center space-x-2">
-                <Target className="h-5 w-5 text-orange-600" />
-                <span className="text-lg font-semibold text-slate-800">Seniority Levels</span>
+                <Target className="h-5 w-5 text-gray-600" />
+                <span className="text-lg font-semibold text-gray-900">Seniority Levels</span>
               </CardTitle>
             </CardHeader>
             <CardContent>
               <div className="space-y-3">
                 {Object.entries(analysis.seniorityLevels).map(([level]) => (
                   <div key={level} className="flex justify-between items-center">
-                    <span className="text-sm font-medium text-slate-600">{formatFieldName(level)}:</span>
-                    <span className="text-sm text-slate-900 font-medium">{formatFieldName(level) as React.ReactNode}</span>
+                    <span className="text-sm font-medium text-gray-600">{formatFieldName(level)}:</span>
+                    <span className="text-sm text-gray-900 font-medium">{formatFieldName(level) as React.ReactNode}</span>
                   </div>
                 ))}
               </div>
             </CardContent>
           </Card>
 
-          <Card className="bg-white border-slate-200 shadow-sm">
+          <Card className="bg-white border border-gray-200 shadow-sm">
             <CardHeader>
               <CardTitle className="flex items-center space-x-2">
-                <Building2 className="h-5 w-5 text-orange-600" />
-                <span className="text-lg font-semibold text-slate-800">Top Departments</span>
+                <Building2 className="h-5 w-5 text-gray-600" />
+                <span className="text-lg font-semibold text-gray-900">Top Departments</span>
               </CardTitle>
             </CardHeader>
             <CardContent>
@@ -832,8 +834,8 @@ const CompanyProfilePage = () => {
                   .slice(0, 5)
                   .map(([dept, count]) => (
                     <div key={dept} className="flex justify-between items-center">
-                      <span className="text-sm font-medium text-slate-600">{formatFieldName(dept)}:</span>
-                      <span className="text-sm text-slate-900 font-medium">{count as number}</span>
+                      <span className="text-sm font-medium text-gray-600">{formatFieldName(dept)}:</span>
+                      <span className="text-sm text-gray-900 font-medium">{count as number}</span>
                     </div>
                   ))}
               </div>
@@ -842,10 +844,10 @@ const CompanyProfilePage = () => {
         </div>
 
         {editingTalent && (
-          <Card className="bg-yellow-50 border-yellow-200">
+          <Card className="bg-gray-50 border border-gray-200">
             <CardContent className="p-4">
               <div className="space-y-4">
-                <h4 className="font-semibold text-yellow-800">Edit Raw Talent Data</h4>
+                <h4 className="font-semibold text-gray-900">Edit Raw Talent Data</h4>
                 <JsonEditor 
                   value={talentEditData}
                   onChange={(newValue) => setTalentEditData(newValue)}
@@ -876,7 +878,7 @@ const CompanyProfilePage = () => {
             <Card key={person.id} className="bg-white border-slate-200 shadow-sm hover:shadow-md transition-shadow overflow-hidden">
               <CardContent className="p-0">
                 {/* Header Section */}
-                <div className="bg-gradient-to-r from-orange-50 to-amber-50 p-6 border-b border-orange-100">
+                <div className="bg-gray-200 p-6 border-radius-40 mt-8 border border-gray-200 rounded-lg">
                   <div className="flex items-start space-x-4">
                     {person.photo_url && person.photo_url !== "https://static.licdn.com/aero-v1/sc/h/9c8pery4andzj6ohjkjp54ma2" ? (
                       <img
@@ -885,8 +887,8 @@ const CompanyProfilePage = () => {
                         className="w-20 h-20 rounded-full object-cover border-3 border-white shadow-lg"
                       />
                     ) : (
-                      <div className="w-20 h-20 bg-orange-100 rounded-full flex items-center justify-center border-3 border-white shadow-lg">
-                        <Users className="h-10 w-10 text-orange-600" />
+                      <div className="w-20 h-20 bg-gray-100 rounded-full flex items-center justify-center border-3 border-white shadow-lg">
+                        <Users className="h-10 w-10 text-gray-600" />
                       </div>
                     )}
                     <div className="flex-1">
@@ -902,7 +904,7 @@ const CompanyProfilePage = () => {
                               href={person.linkedin_url}
                               target="_blank"
                               rel="noopener noreferrer"
-                              className="bg-purple-600 hover:bg-purple-700 text-white p-2 rounded-lg transition-colors shadow-sm text-sm flex"
+                              className="bg-gray-500 hover:bg-gray-700 text-white p-2 rounded-lg transition-colors shadow-sm text-sm flex"
                               title="LinkedIn Profile"
                             >
                               LinkedIn <ExternalLink className="h-4 w-4 ml-2" />
@@ -913,7 +915,7 @@ const CompanyProfilePage = () => {
                               href={person.twitter_url}
                               target="_blank"
                               rel="noopener noreferrer"
-                              className="bg-sky-500 hover:bg-sky-600 text-white p-2 rounded-lg transition-colors shadow-sm"
+                              className="bg-gray-500 hover:bg-gray-600 text-white p-2 rounded-lg transition-colors shadow-sm"
                               title="Twitter Profile"
                             >
                               <ExternalLink className="h-4 w-4" />
@@ -936,15 +938,15 @@ const CompanyProfilePage = () => {
                       {/* Badges */}
                       <div className="flex flex-wrap gap-2 mb-4">
                         {person.seniority && (
-                          <Badge className="bg-orange-100 text-orange-800 border-orange-200 font-medium">
+                          <Badge className="bg-gray-100 text-gray-800 font-medium">
                             {formatFieldName(person.seniority)}
                           </Badge>
                         )}
                         {person.email_status && (
-                          <Badge variant="outline" className={`${
+                          <Badge variant="default" className={`${
                             person.email_status === 'verified' 
-                              ? 'bg-green-50 text-green-700 border-green-200' 
-                              : 'bg-yellow-50 text-yellow-700 border-yellow-200'
+                              ? 'bg-gray-50 text-gray-700' 
+                              : 'bg-gray-50 text-gray-700'
                           }`}>
                             Email: {person.email_status}
                           </Badge>
@@ -969,8 +971,8 @@ const CompanyProfilePage = () => {
                         )}
                         {person.revealed_for_current_team && (
                           <div className="flex items-center space-x-2">
-                            <span className="w-2 h-2 bg-green-500 rounded-full"></span>
-                            <span className="text-green-700 text-xs">Revealed Contact</span>
+                            <span className="w-2 h-2 bg-gray-500 rounded-full"></span>
+                            <span className="text-gray-700 text-xs">Revealed Contact</span>
                           </div>
                         )}
                       </div>
@@ -991,7 +993,7 @@ const CompanyProfilePage = () => {
                         </h4>
                         <div className="flex flex-wrap gap-2">
                           {person.departments.map((dept: string, idx: number) => (
-                            <Badge key={idx} variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">
+                            <Badge key={idx} variant="outline" className="bg-gray-50 text-gray-700 border-gray-200">
                               {formatFieldName(dept)}
                             </Badge>
                           ))}
@@ -1007,7 +1009,7 @@ const CompanyProfilePage = () => {
                         </h4>
                         <div className="flex flex-wrap gap-2">
                           {person.functions.map((func: string, idx: number) => (
-                            <Badge key={idx} variant="outline" className="bg-green-50 text-green-700 border-green-200">
+                            <Badge key={idx} variant="outline" className="bg-gray-50 text-gray-700 border-gray-200">
                               {formatFieldName(func)}
                             </Badge>
                           ))}
@@ -1025,7 +1027,7 @@ const CompanyProfilePage = () => {
                       </h4>
                       <div className="flex flex-wrap gap-2">
                         {person.subdepartments.map((subdept: string, idx: number) => (
-                          <Badge key={idx} variant="outline" className="bg-purple-50 text-purple-700 border-purple-200">
+                          <Badge key={idx} variant="outline" className="bg-gray-50 text-gray-700 border-gray-200">
                             {formatFieldName(subdept)}
                           </Badge>
                         ))}
@@ -1046,14 +1048,14 @@ const CompanyProfilePage = () => {
                           : person.employment_history.slice(0, 2)
                         ).map((job: any, idx: number) => (
                           <div key={idx} className={`bg-slate-50 border-l-4 ${
-                            job.current ? 'border-green-500 bg-green-50' : 'border-slate-300'
+                            job.current ? 'border-gray-500 bg-gray-50' : 'border-slate-300'
                           } p-4 rounded-r-lg`}>
                             <div className="flex items-start justify-between">
                               <div className="flex-1">
                                 <div className="flex items-center space-x-2 mb-1">
                                   <h5 className="font-semibold text-slate-900">{job.title}</h5>
                                   {job.current && (
-                                    <Badge className="bg-green-100 text-green-800 text-xs">Current</Badge>
+                                    <Badge className="bg-gray-100 text-gray-800 text-xs">Current</Badge>
                                   )}
                                 </div>
                                 <p className="text-slate-700 font-medium mb-1">{job.organization_name}</p>
@@ -1067,7 +1069,7 @@ const CompanyProfilePage = () => {
                                   </span>
                                   <span>→</span>
                                   <span className="flex items-center">
-                                    <span className={`w-2 h-2 ${job.current ? 'bg-green-500' : 'bg-slate-400'} rounded-full mr-2`}></span>
+                                    <span className={`w-2 h-2 ${job.current ? 'bg-gray-500' : 'bg-slate-400'} rounded-full mr-2`}></span>
                                     {job.end_date ? new Date(job.end_date).toLocaleDateString('en-US', { 
                                       year: 'numeric', 
                                       month: 'short' 
@@ -1089,7 +1091,7 @@ const CompanyProfilePage = () => {
                         {person.employment_history.length > 2 && (
                           <button
                             onClick={() => toggleEmploymentHistory(person.id)}
-                            className="w-full mt-3 px-4 py-2 text-sm font-medium text-indigo-600 bg-indigo-50 border border-indigo-200 rounded-lg hover:bg-indigo-100 transition-colors flex items-center justify-center space-x-2"
+                            className="w-full mt-3 px-4 py-2 text-sm font-medium text-gray-600 bg-gray-50 border border-gray-200 rounded-lg hover:bg-gray-100 transition-colors flex items-center justify-center space-x-2"
                           >
                             {expandedEmploymentHistory[person.id] ? (
                               <>
@@ -1360,32 +1362,32 @@ const CompanyProfilePage = () => {
       <div className="space-y-6">
         <div className="flex justify-end">
           {!editingCompany ? (
-            <Button 
-              variant="outline"
-              size="sm"
-              onClick={() => setEditingCompany(true)}
-              className="border-purple-300 text-purple-700 hover:bg-purple-50 hover:border-purple-400 shadow-sm"
-            >
-              <Users className="h-3 w-3 mr-2" />
-              Human as Loop
-            </Button>
+                          <Button 
+                variant="outline"
+                size="sm"
+                onClick={() => setEditingCompany(true)}
+                className="border-gray-300 text-gray-700 hover:bg-gray-50 hover:border-gray-400 shadow-sm"
+              >
+                <Users className="h-3 w-3 mr-2" />
+                Human as Loop
+              </Button>
           ) : null}
         </div>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-          {keyMetrics.map(({ key, icon: Icon, label, color }) => {
+          {keyMetrics.map(({ key, icon: Icon, label }) => {
             const value = company[key];
             if (!value) return null;
             
             return (
-              <Card key={key} className={`bg-gradient-to-br from-${color}-50 to-${color}-100 border-${color}-200 shadow-sm hover:shadow-md transition-shadow`}>
+              <Card key={key} className="bg-white border border-gray-200 shadow-sm hover:shadow-md transition-shadow">
                 <CardContent className="p-4">
                   <div className="flex items-center space-x-3 pt-5">
-                    <div className={`w-10 h-10 bg-${color}-100 rounded-xl flex items-center justify-center`}>
-                      <Icon className={`h-5 w-5 text-${color}-600`} />
+                    <div className="w-10 h-10 bg-gray-100 rounded-xl flex items-center justify-center">
+                      <Icon className="h-5 w-5 text-gray-600" />
                     </div>
                     <div>
-                      <p className={`text-${color}-600 text-xs font-medium uppercase tracking-wide`}>{label}</p>
-                      <p className={`text-${color}-900 font-bold`}>
+                      <p className="text-gray-600 text-xs font-medium uppercase tracking-wide">{label}</p>
+                      <p className="text-gray-900 font-bold">
                         {Array.isArray(value) ? value.length : value}
                       </p>
                     </div>
@@ -1396,11 +1398,11 @@ const CompanyProfilePage = () => {
           })}
         </div>
 
-        <Card className="bg-gradient-to-br from-slate-50 to-gray-50 border-slate-200 shadow-sm">
+        <Card className="bg-white border border-gray-200 shadow-sm">
           <CardHeader>
             <CardTitle className="flex items-center space-x-3 pt-5">
-              <div className="w-2 h-8 bg-gradient-to-b from-purple-600 to-indigo-600 rounded-full"></div>
-              <span className="text-xl font-bold text-slate-800">Company Overview</span>
+              <div className="w-2 h-8 bg-gray-300 rounded-full"></div>
+              <span className="text-xl font-bold text-gray-900">Company Overview</span>
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -1409,10 +1411,10 @@ const CompanyProfilePage = () => {
                 if (!company[key]) return null;
                 return (
                   <div key={key} className="break-inside-avoid mb-6">
-                    <div className="bg-white rounded-xl p-4 border border-slate-200 hover:border-purple-300 transition-colors shadow-sm hover:shadow-md">
+                    <div className="bg-white rounded-xl p-4 border border-slate-200 hover:border-gray-300 transition-colors shadow-sm hover:shadow-md">
                       <div className="flex items-center space-x-2 mb-3">
-                        <Building2 className="h-4 w-4 text-purple-600" />
-                        <span className="text-sm font-semibold text-purple-700 uppercase tracking-wide">
+                        <Building2 className="h-4 w-4 text-gray-600" />
+                        <span className="text-sm font-semibold text-gray-700 uppercase tracking-wide">
                           {formatFieldName(key)}
                         </span>
                       </div>
@@ -1440,10 +1442,10 @@ const CompanyProfilePage = () => {
               })}
               {otherFields.map((key) => (
                 <div key={key} className="break-inside-avoid mb-6">
-                  <div className="bg-white rounded-xl p-4 border border-slate-200 hover:border-purple-300 transition-colors shadow-sm hover:shadow-md">
+                  <div className="bg-white rounded-xl p-4 border border-gray-200 hover:border-gray-300 transition-colors shadow-sm hover:shadow-md">
                     <div className="flex items-center space-x-2 mb-3">
-                      <Building2 className="h-4 w-4 text-purple-600" />
-                      <span className="text-sm font-semibold text-purple-700 uppercase tracking-wide">
+                      <Building2 className="h-4 w-4 text-gray-600" />
+                      <span className="text-sm font-semibold text-gray-700 uppercase tracking-wide">
                         {formatFieldName(key)}
                       </span>
                     </div>
@@ -1481,7 +1483,7 @@ const CompanyProfilePage = () => {
     );
   };
 
-  const renderDataSection = (title: string, data: any, color: string, refreshType: "apollo" | "linkedin" | "research") => {
+  const renderDataSection = (title: string, data: any, refreshType: "apollo" | "linkedin" | "research") => {
     let editing: boolean = false,
       setEditing: React.Dispatch<React.SetStateAction<boolean>> = () => {},
       editData: any = {},
@@ -1512,19 +1514,19 @@ const CompanyProfilePage = () => {
     }
     if (!data) {
       return (
-        <Card className={`bg-gradient-to-br from-${color}-50 to-${color}-100 border-${color}-200 shadow-sm`}>
+        <Card className="bg-white border border-gray-200 shadow-sm pt-10">
           <CardContent className="p-8 text-center">
-            <div className={`w-16 h-16 bg-${color}-100 rounded-2xl mx-auto mb-4 flex items-center justify-center`}>
-              {refreshType === "apollo" && <Database className={`h-8 w-8 text-${color}-600`} />}
-              {refreshType === "linkedin" && <Users className={`h-8 w-8 text-${color}-600`} />}
-              {refreshType === "research" && <Search className={`h-8 w-8 text-${color}-600`} />}
+            <div className="w-16 h-16 bg-gray-100 rounded-2xl mx-auto mb-4 flex items-center justify-center">
+              {refreshType === "apollo" && <Database className="h-8 w-8 text-gray-600" />}
+              {refreshType === "linkedin" && <Users className="h-8 w-8 text-gray-600" />}
+              {refreshType === "research" && <Search className="h-8 w-8 text-gray-600" />}
             </div>
-            <h3 className={`text-lg font-semibold text-${color}-900 mb-2`}>No {title} Available</h3>
-            <p className={`text-${color}-700 mb-4`}>Refresh to fetch the latest {title.toLowerCase()}</p>
+            <h3 className="text-lg font-semibold text-gray-900 mb-2">No {title} Available</h3>
+            <p className="text-gray-600 mb-4">Refresh to fetch the latest {title.toLowerCase()}</p>
             <Button 
               onClick={() => handleRefresh(refreshType)} 
               disabled={refreshing[refreshType]}
-              className={`bg-${color}-600 hover:bg-${color}-700 text-white shadow-lg`}
+              className="bg-gray-900 hover:bg-gray-800 text-white shadow-sm"
             >
               {refreshing[refreshType] ? (
                 <Loader2 className="h-4 w-4 animate-spin mr-2" />
@@ -1539,16 +1541,16 @@ const CompanyProfilePage = () => {
     }
     const skipFields = refreshType === "apollo" ? ["id"] : [];
     return (
-      <Card className={`bg-gradient-to-br from-${color}-50 to-${color}-100 border-${color}-200 shadow-sm`}>
+      <Card className="bg-white border border-gray-200 shadow-sm">
         <CardHeader>
           <div className="flex items-center justify-between">
             <CardTitle className="flex items-center space-x-3 pt-5">
-              <div className={`w-10 h-10 bg-${color}-600 rounded-xl flex items-center justify-center`}>
+              <div className="w-10 h-10 bg-gray-900 rounded-xl flex items-center justify-center">
                 {refreshType === "apollo" && <Database className="h-5 w-5 text-white" />}
                 {refreshType === "linkedin" && <Users className="h-5 w-5 text-white" />}
                 {refreshType === "research" && <Search className="h-5 w-5 text-white" />}
               </div>
-              <span className={`text-xl font-bold text-${color}-900`}>{title}</span>
+              <span className="text-xl font-bold text-gray-900">{title}</span>
             </CardTitle>
             <div className="flex gap-2">
               {!editing ? (
@@ -1556,7 +1558,7 @@ const CompanyProfilePage = () => {
                   variant="outline"
                   size="sm"
                   onClick={() => setEditing(true)}
-                  className={`border-${color}-300 text-${color}-700 hover:bg-${color}-50 hover:border-${color}-400 shadow-sm`}
+                  className="border-gray-300 text-gray-700 hover:bg-gray-50 hover:border-gray-400 shadow-sm"
                 >
                   <Users className="h-3 w-3 mr-2" />
                   Human as Loop
@@ -1567,7 +1569,7 @@ const CompanyProfilePage = () => {
                 size="sm" 
                 onClick={() => handleRefresh(refreshType)} 
                 disabled={refreshing[refreshType]}
-                className={`border-${color}-300 text-${color}-700 hover:bg-${color}-50 hover:border-${color}-400 shadow-sm`}
+                className="border-gray-300 text-gray-700 hover:bg-gray-50 hover:border-gray-400 shadow-sm"
               >
                 {refreshing[refreshType] ? (
                   <Loader2 className="h-3 w-3 animate-spin mr-2" />
@@ -1584,16 +1586,16 @@ const CompanyProfilePage = () => {
             {Object.entries(data)
               .filter(([key]) => !skipFields.includes(key))
               .map(([key, value]) => (
-                <div key={key} className="bg-white rounded-xl p-4 border border-slate-200 hover:border-purple-300 transition-colors shadow-sm">
+                <div key={key} className="bg-white rounded-xl p-4 border border-gray-200 hover:border-gray-300 transition-colors shadow-sm">
                   <div className="flex items-center space-x-2 mb-3">
-                    {refreshType === "apollo" && <Database className={`h-4 w-4 text-${color}-600`} />}
-                    {refreshType === "linkedin" && <Users className={`h-4 w-4 text-${color}-600`} />}
-                    {refreshType === "research" && <Search className={`h-4 w-4 text-${color}-600`} />}
-                    <span className={`text-sm font-semibold text-${color}-700 uppercase tracking-wide`}>
+                    {refreshType === "apollo" && <Database className="h-4 w-4 text-gray-600" />}
+                    {refreshType === "linkedin" && <Users className="h-4 w-4 text-gray-600" />}
+                    {refreshType === "research" && <Search className="h-4 w-4 text-gray-600" />}
+                    <span className="text-sm font-semibold text-gray-700 uppercase tracking-wide">
                       {formatFieldName(key)}
                     </span>
                   </div>
-                  <div className={`text-${color}-950`}>
+                  <div className="text-gray-900">
                     {editing ? (
                       typeof editData?.[key] === "object" && editData?.[key] !== null ? (
                         <JsonEditor 
@@ -1629,10 +1631,10 @@ const CompanyProfilePage = () => {
     return (
       <Layout>
         <div className="min-h-screen flex items-center justify-center">
-          <Card className="p-12 shadow-xl">
+          <Card className="p-12 shadow-sm">
             <div className="text-center space-y-4">
-              <div className="w-16 h-16 bg-gradient-to-br from-purple-100 to-indigo-100 rounded-2xl mx-auto flex items-center justify-center">
-                <Loader2 className="w-8 h-8 text-purple-600 animate-spin" />
+              <div className="w-16 h-16 bg-gray-100 rounded-2xl mx-auto flex items-center justify-center">
+                <Loader2 className="w-8 h-8 text-gray-600 animate-spin" />
               </div>
               <div>
                 <h3 className="text-lg font-semibold text-gray-900">Loading Company Profile</h3>
@@ -1649,12 +1651,12 @@ const CompanyProfilePage = () => {
     return (
       <Layout>
         <div className="min-h-screen flex items-center justify-center">
-          <Card className="p-12 shadow-xl text-center">
-            <div className="w-16 h-16 bg-red-100 rounded-2xl mx-auto mb-4 flex items-center justify-center">
-              <ExternalLink className="h-8 w-8 text-red-600" />
+          <Card className="p-12 shadow-sm text-center">
+            <div className="w-16 h-16 bg-gray-100 rounded-2xl mx-auto mb-4 flex items-center justify-center">
+              <ExternalLink className="h-8 w-8 text-gray-600" />
             </div>
-            <h3 className="text-lg font-semibold text-red-900 mb-2">Error Loading Company</h3>
-            <p className="text-red-600 mb-4">{error}</p>
+            <h3 className="text-lg font-semibold text-gray-900 mb-2">Error Loading Company</h3>
+            <p className="text-gray-600 mb-4">{error}</p>
             <Button onClick={() => navigate(-1)} variant="outline">
               <ArrowLeft className="h-4 w-4 mr-2" />
               Go Back
@@ -1688,29 +1690,29 @@ const CompanyProfilePage = () => {
           <span className="font-semibold text-gray-900">{company?.name}</span>
         </div>
         <div className="space-y-8">
-          <div className="w-full bg-purple-50 rounded-2xl p-6 flex items-center gap-6 mb-6 border border-purple-200">
+          <div className="w-full bg-white rounded-xl p-6 flex items-center gap-6 mb-6 border border-gray-200 shadow-sm">
             {(company.logo_url || company.data_sources?.apollo?.raw_data?.logo_url  || company.data_sources?.linkedin?.raw_data?.logo_url) ? (
-              <div className="w-16 h-16 bg-white rounded-2xl flex items-center justify-center shadow">
+              <div className="w-16 h-16 bg-gray-50 rounded-xl flex items-center justify-center border border-gray-200">
                 <img
                   src={company.logo_url || company.data_sources?.apollo?.raw_data?.logo_url || company.data_sources?.linkedin?.raw_data?.logo_url}
                   alt="Company Logo"
-                  className="h-12 w-12 rounded-xl object-contain"
+                  className="h-12 w-12 rounded-lg object-contain"
                 />
               </div>
             ) : (
-              <div className="w-16 h-16 bg-purple-400 rounded-2xl flex items-center justify-center shadow">
-                <Building2 className="h-8 w-8 text-white" />
+              <div className="w-16 h-16 bg-gray-100 rounded-xl flex items-center justify-center border border-gray-200">
+                <Building2 className="h-8 w-8 text-gray-600" />
               </div>
             )}
             <div className="flex-1">
               <div className="flex items-center gap-3 flex-wrap">
-                <h1 className="text-2xl font-bold text-purple-900">{company.name}</h1>
+                <h1 className="text-2xl font-bold text-gray-900">{company.name}</h1>
                 {company.domain_name && (
                   <a
                     href={`https://${company.domain_name}`}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="inline-flex items-center px-3 py-1 bg-purple-100 border border-white/20 text-purple-700 hover:bg-purple-200 transition-all duration-200 rounded-full text-sm font-medium"
+                    className="inline-flex items-center px-3 py-1 bg-gray-100 border border-gray-200 text-gray-700 hover:bg-gray-200 transition-all duration-200 rounded-full text-sm font-medium"
                   >
                     {company.domain_name}
                     <ExternalLink className="h-4 w-4 ml-1" />
@@ -1726,7 +1728,7 @@ const CompanyProfilePage = () => {
                     item ? (
                       <span
                         key={idx}
-                        className="bg-purple-100 text-purple-700 px-3 py-1 rounded-md text-sm font-medium"
+                        className="bg-gray-100 text-gray-700 px-3 py-1 rounded-md text-sm font-medium"
                       >
                         {item}
                       </span>
@@ -1735,48 +1737,48 @@ const CompanyProfilePage = () => {
               </div>
             </div>
           </div>
-          <Card className="shadow-xl border-0 bg-white">
+          <Card className="shadow-sm border border-gray-200 bg-white">
             <Tabs defaultValue="overview" className="w-full">
               <div className="border-b border-gray-200 px-6">
                 <TabsList className="bg-transparent h-auto p-0 space-x-8">
                   <TabsTrigger 
                     value="overview" 
-                    className="bg-transparent border-b-2 border-transparent data-[state=active]:border-purple-600 data-[state=active]:bg-transparent rounded-none px-0 py-4 text-gray-600 data-[state=active]:text-purple-600 font-medium"
+                    className="bg-transparent border-b-2 border-transparent data-[state=active]:border-gray-900 data-[state=active]:bg-transparent rounded-none px-0 py-4 text-gray-600 data-[state=active]:text-gray-900 font-medium"
                   >
                     <Building2 className="h-4 w-4 mr-2" />
                     Overview
                   </TabsTrigger>
                   <TabsTrigger 
                     value="apollo" 
-                    className="bg-transparent border-b-2 border-transparent data-[state=active]:border-blue-600 data-[state=active]:bg-transparent rounded-none px-0 py-4 text-gray-600 data-[state=active]:text-blue-600 font-medium"
+                    className="bg-transparent border-b-2 border-transparent data-[state=active]:border-gray-900 data-[state=active]:bg-transparent rounded-none px-0 py-4 text-gray-600 data-[state=active]:text-gray-900 font-medium"
                   >
                     <Database className="h-4 w-4 mr-2" />
                     Apollo Data
                   </TabsTrigger>
                   <TabsTrigger 
                     value="linkedin" 
-                    className="bg-transparent border-b-2 border-transparent data-[state=active]:border-blue-600 data-[state=active]:bg-transparent rounded-none px-0 py-4 text-gray-600 data-[state=active]:text-blue-600 font-medium"
+                    className="bg-transparent border-b-2 border-transparent data-[state=active]:border-gray-900 data-[state=active]:bg-transparent rounded-none px-0 py-4 text-gray-600 data-[state=active]:text-gray-900 font-medium"
                   >
                     <Users className="h-4 w-4 mr-2" />
                     LinkedIn Data
                   </TabsTrigger>
                   <TabsTrigger 
                     value="research" 
-                    className="bg-transparent border-b-2 border-transparent data-[state=active]:border-emerald-600 data-[state=active]:bg-transparent rounded-none px-0 py-4 text-gray-600 data-[state=active]:text-emerald-600 font-medium"
+                    className="bg-transparent border-b-2 border-transparent data-[state=active]:border-gray-900 data-[state=active]:bg-transparent rounded-none px-0 py-4 text-gray-600 data-[state=active]:text-gray-900 font-medium"
                   >
                     <Search className="h-4 w-4 mr-2" />
                     Research Data
                   </TabsTrigger>
                   <TabsTrigger 
                     value="talent" 
-                    className="bg-transparent border-b-2 border-transparent data-[state=active]:border-orange-600 data-[state=active]:bg-transparent rounded-none px-0 py-4 text-gray-600 data-[state=active]:text-orange-600 font-medium"
+                    className="bg-transparent border-b-2 border-transparent data-[state=active]:border-gray-900 data-[state=active]:bg-transparent rounded-none px-0 py-4 text-gray-600 data-[state=active]:text-gray-900 font-medium"
                   >
                     <Users className="h-4 w-4 mr-2" />
                     Talent Analysis
                   </TabsTrigger>
                   <TabsTrigger 
                     value="analysis" 
-                    className="bg-transparent border-b-2 border-transparent data-[state=active]:border-purple-600 data-[state=active]:bg-transparent rounded-none px-0 py-4 text-gray-600 data-[state=active]:text-purple-600 font-medium"
+                    className="bg-transparent border-b-2 border-transparent data-[state=active]:border-gray-900 data-[state=active]:bg-transparent rounded-none px-0 py-4 text-gray-600 data-[state=active]:text-gray-900 font-medium"
                   >
                     <Target className="h-4 w-4 mr-2" />
                     Analysis
@@ -1793,7 +1795,6 @@ const CompanyProfilePage = () => {
                 {renderDataSection(
                   "Apollo Data", 
                   company?.data_sources?.apollo?.raw_data, 
-                  "blue", 
                   "apollo"
                 )}
               </TabsContent>
@@ -1802,7 +1803,6 @@ const CompanyProfilePage = () => {
                 {renderDataSection(
                   "LinkedIn Data", 
                   company?.data_sources?.linkedin?.raw_data, 
-                  "blue", 
                   "linkedin"
                 )}
               </TabsContent>
@@ -1811,7 +1811,6 @@ const CompanyProfilePage = () => {
                 {renderDataSection(
                   "Research Data", 
                   company?.data_sources?.lyzr_research?.research_data, 
-                  "emerald", 
                   "research"
                 )}
               </TabsContent>

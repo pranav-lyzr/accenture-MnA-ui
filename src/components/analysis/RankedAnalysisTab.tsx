@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Button } from '../botton';
 import { BarChart, Users, TrendingUp, AlertTriangle } from 'lucide-react';
-import CompanyFilters from './CompanyFilters';
+// import CompanyFilters from './CompanyFilters';
 import CompanySelection from './CompanySelection';
 import AnalysisResults from './AnalysisResults';
 import AnalysisCompleteDialog from './AnalysisCompleteDialog';

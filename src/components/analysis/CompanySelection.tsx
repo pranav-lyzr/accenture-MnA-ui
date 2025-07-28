@@ -55,7 +55,7 @@ interface CompanySelectionProps {
 const CompanyFilters = ({
   companies,
   onFilterChange,
-  categorizeRevenue,
+  // categorizeRevenue,
 }: {
   companies: CompanyCardProps[];
   onFilterChange: (filters: Filters) => void;
@@ -577,7 +577,7 @@ const CompanySelection = ({
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {paginatedCompanies.map((company, index) => (
+                  {paginatedCompanies.map((company) => (
                     <TableRow
                       key={company.name}
                       className={`border-b border-gray-200 hover:bg-gray-50 transition-colors duration-150 ${

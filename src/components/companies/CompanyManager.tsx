@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { Check, X, List, FileText, Search, Filter } from "lucide-react";
+import { Check, X, Search, Filter } from "lucide-react";
 import { Button } from "../botton";
 import { Input } from "../ui/input";
 import { ShortlistedCompany, CompanyStatus } from "../../types/company";

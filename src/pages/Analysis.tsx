@@ -600,11 +600,21 @@ const Analysis = () => {
 
       {/* Modal for showing all companies */}
       <DetailDialog
-        isOpen={modalOpen}
-        onClose={() => setModalOpen(false)}
+        open={modalOpen}
+        onOpenChange={setModalOpen}
         title={modalTitle}
-        companies={modalCompanies}
-      />
+      >
+        <div className="space-y-3">
+          {modalCompanies.map((company, index) => (
+            <div
+              key={index}
+              className="bg-gray-50 rounded-lg p-4 border border-gray-200"
+            >
+              <span className="text-gray-900 font-medium">{company}</span>
+            </div>
+          ))}
+        </div>
+      </DetailDialog>
     </Layout>
   );
 };
